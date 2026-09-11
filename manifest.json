@@ -1,0 +1,27 @@
+{
+  "name": "Laureles Campestre — Mapa de ventas",
+  "short_name": "Laureles",
+  "description": "Mapa de ventas de la parcelación Laureles Campestre, El Caimo, Armenia (Quindío).",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F4F2EA",
+  "theme_color": "#32402F",
+  "lang": "es-CO",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "icono-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

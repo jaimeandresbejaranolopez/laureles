@@ -1,0 +1,1387 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Laureles Campestre · Mapa de ventas</title>
+<meta name="description" content="Mapa de ventas de la parcelación Laureles Campestre, El Caimo, Armenia (Quindío).">
+<meta name="theme-color" content="#32402F">
+<meta name="build" content="20260910b">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icono-192.png">
+<!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
+<link rel="stylesheet" href="maplibre-gl.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="armazon.css">
+<link rel="stylesheet" href="analisis.css">
+<style>
+:root{
+  --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
+  --ink:#1C221B; --ink-2:#3B453A; --muted:#6B7367;
+  --paper:#F4F2EA; --surface:#FFFFFF; --surface-2:#F8F7F1;
+  --line:#DBD9CD; --line-soft:#ECEAE1;
+  --disp:#4C8862; --sep:#C48A2A; --vend:#8A8F82; --resv:#3E6DB0;
+  --on-forest:#F6F4EC;
+  --r:13px; --r-sm:9px;
+  --sans:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --serif:"Fraunces","Cormorant Garamond",Georgia,"Times New Roman",serif;
+  --sombra:0 1px 2px rgba(28,34,27,.06),0 8px 24px rgba(28,34,27,.09);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:var(--sans);color:var(--ink);background:var(--paper);
+  -webkit-text-size-adjust:100%;overflow:hidden}
+button,input,select{font:inherit;color:inherit}
+
+/* ---------- estructura: cabecera y pie no se encogen, el mapa sí ---------- */
+.app{display:flex;flex-direction:column;height:100dvh;min-height:0}
+header{flex-shrink:0;display:flex;align-items:center;gap:14px;padding:9px 16px;
+  background:var(--surface);border-bottom:1px solid var(--line);z-index:10}
+header .marca{display:flex;align-items:center;gap:10px;min-width:0}
+header .marca img{height:30px;width:auto;display:block}
+header .marca>div{min-width:0;overflow:hidden}
+header .tit{font-family:var(--serif);font-size:17px;font-weight:600;letter-spacing:.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header .sub{font-size:10.5px;color:var(--muted);letter-spacing:.10em;text-transform:uppercase;white-space:nowrap}
+header .sp{flex:1}
+.hbtn{border:1px solid var(--line);background:var(--surface);border-radius:var(--r-sm);
+  padding:7px 12px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.hbtn:hover{border-color:var(--gold);color:var(--gold)}
+.hbtn.on{background:var(--forest);border-color:var(--forest);color:var(--on-forest)}
+main{flex:1;min-height:0;position:relative;display:flex}
+#mapa{position:absolute;inset:0}
+
+/* ---------- panel izquierdo ---------- */
+.rail{position:absolute;left:14px;top:14px;bottom:14px;width:288px;z-index:5;
+  display:flex;flex-direction:column;background:rgba(255,253,248,.94);
+  backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:var(--sombra);overflow:hidden}
+.rail .rh{flex-shrink:0;padding:12px 14px;border-bottom:1px solid var(--line-soft)}
+.rail .rb{flex:1;min-height:0;overflow-y:auto;padding:12px 14px}
+.rail .rf{flex-shrink:0;padding:10px 14px;border-top:1px solid var(--line-soft);background:var(--surface-2)}
+.blk{margin-bottom:15px}
+.blk:last-child{margin-bottom:2px}
+.et{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--gold);
+  font-weight:700;margin-bottom:7px}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.kpi{background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r-sm);padding:8px 9px}
+.kpi .v{font-family:var(--serif);font-size:19px;line-height:1.05;font-weight:600}
+.kpi .k{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.busca{display:flex;gap:6px}
+.busca input{flex:1;min-width:0;border:1px solid var(--line);border-radius:var(--r-sm);
+  padding:8px 10px;font-size:13px;background:var(--surface)}
+.busca button{border:1px solid var(--forest);background:var(--forest);color:var(--on-forest);
+  border-radius:var(--r-sm);padding:0 12px;cursor:pointer;font-weight:600}
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:2px;gap:2px}
+.seg button{flex:1;border:0;background:transparent;padding:6px 2px;border-radius:6px;cursor:pointer;
+  font-size:12px;font-weight:600;color:var(--ink-2)}
+.seg button.on{background:var(--forest);color:var(--on-forest)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);
+  border-radius:999px;padding:5px 11px;font-size:12px;cursor:pointer;font-weight:600;color:var(--ink-2)}
+.chip .pt{width:8px;height:8px;border-radius:50%}
+.chip[aria-pressed="false"]{opacity:.4}
+.tg{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12.5px;cursor:pointer;color:var(--ink-2)}
+.tg input{accent-color:var(--forest);width:15px;height:15px}
+.rango{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
+.rango b{color:var(--ink);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--forest)}
+.cuenta{font-size:12.5px;color:var(--ink-2)}
+.cuenta b{font-family:var(--serif);font-size:16px}
+
+/* ---------- ficha ---------- */
+.ficha{position:absolute;right:14px;top:14px;bottom:14px;width:352px;max-width:calc(100vw - 28px);
+  z-index:6;display:none;flex-direction:column;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sombra);overflow:hidden}
+.ficha.on{display:flex}
+.fh{flex-shrink:0;padding:16px 18px 14px;background:var(--forest);color:var(--on-forest);position:relative}
+.fh .lb{font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.72}
+.fh h2{margin:2px 0 8px;font-family:var(--serif);font-size:40px;line-height:.95;font-weight:600}
+.fh .cerrar{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:50%;
+  border:0;background:rgba(255,255,255,.14);color:var(--on-forest);cursor:pointer;font-size:17px;line-height:1}
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 10px;
+  font-size:11px;font-weight:700;letter-spacing:.03em}
+.badge .pt{width:7px;height:7px;border-radius:50%;background:currentColor}
+.b-disp{background:rgba(255,255,255,.15);color:#BFE8CD}
+.b-sep{background:rgba(255,255,255,.15);color:#F2CE86}
+.b-vend{background:rgba(255,255,255,.15);color:#D9DCD2}
+.b-resv{background:rgba(255,255,255,.15);color:#B9CFF2}
+.fb{flex:1;min-height:0;overflow-y:auto;padding:16px 18px}
+.ff{flex-shrink:0;padding:12px 18px;border-top:1px solid var(--line-soft);background:var(--surface-2);
+  display:flex;flex-direction:column;gap:8px}
+.precio{font-family:var(--serif);font-size:30px;font-weight:600;line-height:1}
+.precio-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.tabla{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px}
+.tabla td{padding:7px 0;border-bottom:1px solid var(--line-soft)}
+.tabla td:last-child{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.tabla td:first-child{color:var(--muted)}
+.barra{height:7px;border-radius:4px;background:var(--line-soft);overflow:hidden;display:flex;margin-top:14px}
+.barra i{display:block;height:100%}
+.nota{font-size:12px;color:var(--muted);line-height:1.5;margin-top:10px}
+.wa{display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:var(--r-sm);
+  background:var(--forest);color:var(--on-forest);padding:12px;font-weight:700;cursor:pointer;font-size:13.5px}
+.wa:hover{background:var(--forest-2)}
+.gh{display:flex;gap:8px}
+.gh button{flex:1;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-sm);
+  padding:9px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.gh button:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ---------- controles del mapa ---------- */
+.fondos{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;z-index:5;display:flex;gap:2px;
+  background:rgba(255,253,248,.94);backdrop-filter:blur(10px);border:1px solid var(--line);
+  border-radius:var(--r-sm);padding:4px;box-shadow:var(--sombra)}
+.fondos button{border:0;background:transparent;padding:7px 13px;border-radius:6px;cursor:pointer;
+  font-size:12px;font-weight:600;color:var(--ink-2)}
+.fondos button.on{background:var(--forest);color:var(--on-forest)}
+.aviso{position:absolute;left:50%;transform:translateX(-50%);top:16px;z-index:8;
+  background:var(--forest);color:var(--on-forest);padding:10px 16px;border-radius:999px;
+  font-size:13px;box-shadow:var(--sombra);opacity:0;pointer-events:none;transition:opacity .22s}
+.aviso.on{opacity:1}
+
+/* ---------- modal (config / acerca de) ---------- */
+.velo{position:fixed;inset:0;background:rgba(28,34,27,.5);z-index:40;display:none;
+  align-items:center;justify-content:center;padding:20px}
+.velo.on{display:flex}
+.hoja{background:var(--surface);border-radius:var(--r);width:min(560px,100%);
+  max-height:calc(100dvh - 40px);display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--sombra)}
+.hoja .hh{flex-shrink:0;padding:16px 20px;border-bottom:1px solid var(--line-soft);
+  display:flex;align-items:center;gap:12px}
+.hoja .hh h3{margin:0;font-family:var(--serif);font-size:21px;font-weight:600}
+.hoja .hb{flex:1;min-height:0;overflow-y:auto;padding:18px 20px;font-size:13.5px;line-height:1.6;color:var(--ink-2)}
+.hoja .hf{flex-shrink:0;padding:14px 20px;border-top:1px solid var(--line-soft);background:var(--surface-2);
+  display:flex;gap:9px;justify-content:flex-end}
+.hoja label{display:block;font-size:12px;font-weight:600;color:var(--ink);margin:14px 0 5px}
+.hoja input[type=text]{width:100%;border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 11px;font-size:13px}
+.hoja .pista{font-size:11.5px;color:var(--muted);margin-top:4px}
+.pri{border:1px solid var(--forest);background:var(--forest);color:var(--on-forest);
+  border-radius:var(--r-sm);padding:9px 16px;cursor:pointer;font-weight:600}
+.sec{border:1px solid var(--line);background:var(--surface);border-radius:var(--r-sm);
+  padding:9px 16px;cursor:pointer;font-weight:600;color:var(--ink-2)}
+
+/* ---------- móvil ---------- */
+.abrirRail{display:none}
+@media (max-width:430px){ header .marca>div{display:none} }
+@media (max-width:900px){
+  header{padding:8px 12px;gap:9px}
+  header .sub{display:none}
+  header .tit{font-size:15px}
+  .hbtn{padding:7px 10px;font-size:12px}
+  .abrirRail{display:inline-flex}
+  .rail{left:0;right:0;top:auto;bottom:0;width:auto;max-height:62dvh;border-radius:var(--r) var(--r) 0 0;
+    transform:translateY(101%);transition:transform .26s cubic-bezier(.2,.7,.2,1)}
+  .rail.abierto{transform:none}
+  .ficha{left:0;right:0;top:auto;bottom:0;width:auto;max-width:none;max-height:78dvh;
+    border-radius:var(--r) var(--r) 0 0}
+  .fondos{bottom:10px}
+}
+/* portátiles bajos: nada se recorta */
+@media (max-height:760px){
+  .fh h2{font-size:32px}
+  .fh{padding:12px 16px 11px}
+  .precio{font-size:26px}
+  .kpi .v{font-size:17px}
+}
+
+/* ---------- impresión: sólo la ficha ---------- */
+@media print{
+  body{overflow:visible;background:#fff}
+  .app,main{display:block;height:auto}
+  header,.rail,.fondos,.aviso,#mapa,.velo,.ff .gh{display:none!important}
+  .ficha{position:static;display:block!important;width:100%;border:0;box-shadow:none;max-height:none}
+  .fh{background:#fff;color:#000;border-bottom:2px solid #32402F}
+  .fh h2{font-size:44px}
+  .badge{border:1px solid #999;color:#000!important;background:#fff!important}
+  .fb{overflow:visible}
+  .imprimir-pie{display:block!important}
+}
+.imprimir-pie{display:none;margin-top:22px;padding-top:12px;border-top:1px solid #ccc;
+  font-size:11px;color:#555;line-height:1.6}
+
+/* --- botón del análisis y selector de idioma --- */
+.ficha .ff .anlBtn{width:100%;border:1px solid var(--forest);background:var(--forest);color:#F4F2EA;
+  border-radius:999px;padding:11px 16px;cursor:pointer;font-weight:600;font-size:12.5px;
+  letter-spacing:.05em;margin-bottom:8px}
+.ficha .ff .anlBtn:hover{background:#4E6247}
+.ficha .ff .anlBtn:disabled{background:transparent;color:var(--muted);border-color:var(--line);cursor:default}
+.langs{display:flex;gap:2px;border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:3px;margin-right:8px}
+.langs button{border:0;background:transparent;color:inherit;opacity:.66;font:600 11px/1 inherit;
+  letter-spacing:.08em;padding:6px 9px;border-radius:999px;cursor:pointer}
+.langs button.on{background:rgba(255,255,255,.16);opacity:1}
+#mapa .maplibregl-canvas-container{cursor:grab}
+#mapa .maplibregl-canvas-container:active{cursor:grabbing}
+.giro{position:absolute;right:14px;bottom:96px;z-index:5;display:flex;flex-direction:column;gap:5px;
+  background:var(--glass);border:1px solid var(--line);border-radius:999px;padding:5px;
+  box-shadow:var(--sombra);backdrop-filter:blur(6px)}
+.giro button{width:34px;height:34px;border:0;border-radius:50%;background:transparent;cursor:pointer;
+  color:var(--ink-2);display:grid;place-items:center;font-size:15px;line-height:1}
+.giro button:hover{background:var(--surface-2);color:var(--forest)}
+.giro button:active{background:var(--forest);color:var(--on-forest)}
+.giro button.on{background:var(--forest);color:var(--on-forest)}
+.tarifa{display:flex;gap:8px;margin:10px 0 4px}
+.tarifa>div{flex:1;background:var(--surface-2);border:1px solid var(--line-soft);
+  border-radius:8px;padding:7px 10px 8px}
+.tarifa span{display:block;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--muted);font-weight:600}
+.tarifa b{display:block;font-size:14px;margin-top:3px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.plan{margin:8px 0 4px;padding:9px 11px 8px;border:1px solid var(--line-soft);border-radius:8px;
+  background:var(--surface-2);font-size:12.5px;color:var(--ink-2)}
+.plan .fila{display:flex;justify-content:space-between;gap:10px;padding:3px 0}
+.plan .fila+.fila{border-top:1px solid var(--line-soft)}
+.plan .fila span{color:var(--muted)}
+.plan .fila b{font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+.plan .pieplan{margin-top:5px;font-size:11px;color:var(--muted)}
+.rotMedida{font:700 10.5px/1 var(--sans);color:#FFF6DF;white-space:nowrap;pointer-events:none;
+  letter-spacing:.02em;font-variant-numeric:tabular-nums;
+  text-shadow:0 0 3px rgba(28,34,27,.95),0 1px 2px rgba(28,34,27,.9)}
+body.baseClara .rotMedida{color:#3B453A;
+  text-shadow:0 0 3px rgba(255,253,246,.95),0 1px 2px rgba(255,253,246,.9)}
+.rotCota{font:600 10.5px/1 var(--sans);color:#FFF6DF;white-space:nowrap;pointer-events:none;
+  letter-spacing:.02em;text-shadow:0 0 3px rgba(28,34,27,.95),0 1px 2px rgba(28,34,27,.9);
+  font-variant-numeric:tabular-nums}
+body.baseClara .rotCota{color:#6B5C38;
+  text-shadow:0 0 3px rgba(255,253,246,.95),0 1px 2px rgba(255,253,246,.9)}
+/* Qué hace la rueda: con texto, porque como icono se confundía con el de girar */
+.ruedaModo{position:absolute;right:14px;bottom:52px;z-index:5;display:flex;flex-direction:column;
+  align-items:center;gap:1px;min-width:64px;padding:6px 8px 7px;cursor:pointer;
+  background:var(--glass);border:1px solid var(--line);border-radius:10px;
+  box-shadow:var(--sombra);backdrop-filter:blur(10px);line-height:1.1}
+.ruedaModo .k{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.ruedaModo b{font-size:12px;font-weight:700;color:var(--ink-2)}
+.ruedaModo[aria-pressed="true"]{background:var(--forest);border-color:var(--forest)}
+.ruedaModo[aria-pressed="true"] .k{color:rgba(246,244,236,.72)}
+.ruedaModo[aria-pressed="true"] b{color:var(--on-forest)}
+@media (max-width:900px){ .ruedaModo{bottom:auto;top:262px} }
+.giro .sep{height:1px;background:var(--line);margin:1px 5px}
+.pista-nav{position:absolute;right:62px;bottom:104px;z-index:5;background:var(--glass);
+  border:1px solid var(--line);border-radius:8px;padding:7px 11px;font-size:11.5px;color:var(--muted);
+  box-shadow:var(--sombra);max-width:238px;line-height:1.5;transition:opacity .4s}
+.pista-nav b{color:var(--ink-2);font-weight:600}
+.pista-nav.ida{opacity:0;pointer-events:none}
+@media (max-width:900px){ .giro{bottom:auto;top:150px} .pista-nav{display:none} }
+/* ---------------- relieve 3D (r3d.js): lienzo propio encima del mapa -------- */
+#c3d{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:3;
+  touch-action:none;cursor:grab;background:var(--ground,#EDEDE2)}
+#c3d:active{cursor:grabbing}
+#c3d[hidden]{display:none}
+.capa3d{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+.capa3d[hidden]{display:none}
+.rotulo3d{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;
+  background:var(--glass);border:1px solid var(--line);border-radius:6px;
+  padding:1px 5px;font-size:11px;font-weight:600;color:var(--ink-2);
+  box-shadow:var(--sombra);white-space:nowrap;margin-top:-6px}
+.rotulo3d::after{content:"";position:absolute;left:50%;bottom:-5px;width:1px;height:5px;
+  background:var(--line)}
+.rotulo3d.sel{background:var(--forest);color:var(--on-forest);border-color:var(--forest)}
+/* lotes fuera del área con curvas: se ven, pero se ven distintos */
+.rotulo3d.sinCota{border-style:dashed;border-color:var(--gold);color:var(--gold);
+  background:rgba(255,253,246,.72)}
+.rotulo3d.sinCota::after{border-left:1px dashed var(--gold);background:none}
+.rotulo3d.hora{background:rgba(255,247,228,.92);border-color:var(--gold);color:#8A6A22;
+  font-size:10px;padding:0 4px}
+.rotulo3d.hora::after{display:none}
+.ve3d{position:absolute;left:50%;transform:translateX(-50%);bottom:16px;z-index:9;
+  display:flex;align-items:center;gap:2px;
+  background:var(--glass);border:1px solid var(--line);border-radius:9px;padding:3px;
+  box-shadow:var(--sombra);font-size:12px}
+.ve3d[hidden]{display:none}
+.ve3d .et{padding:0 8px 0 6px;color:var(--muted);letter-spacing:.04em;
+  text-transform:uppercase;font-size:10px}
+.ve3d button{border:0;background:transparent;color:var(--ink-2);cursor:pointer;
+  border-radius:6px;padding:5px 9px;font:inherit;font-weight:600}
+.ve3d button.on{background:var(--forest);color:var(--on-forest)}
+.ve3d button:hover:not(.on){background:var(--surface-2,rgba(0,0,0,.05))}
+#b3d.on3d{background:var(--forest);color:var(--on-forest)}
+@media (max-width:820px){ .ve3d{bottom:12px;font-size:11px} }
+#anlModal{z-index:60}
+@media print{#anlModal{display:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <img id="logo" src="medios/logo.png" alt="Laureles Campestre">
+    <nav id="nav">
+      <button data-m="proyecto">El proyecto</button>
+      <button class="on" data-m="plano">Plano</button>
+      <button data-m="ubicacion">Ubicación</button>
+      <button data-m="imagenes">Imágenes</button>
+      <button data-m="video">Video</button>
+      <button data-m="unidades">Unidades</button>
+      <button data-m="gps">Dónde estoy</button>
+    </nav>
+    <div class="spacer"></div>
+    <div class="idioma" id="idioma">
+      <button data-l="es" title="Español" aria-label="Español">ES</button>
+      <button data-l="en" title="English" aria-label="English">EN</button>
+      <button data-l="fr" title="Français" aria-label="Français">FR</button>
+    </div>
+    <button class="hbtn abrirRail" id="bRail">Filtros</button>
+    <button class="hbtn" id="bEncuadre" title="Ver todo el predio">Ver todo</button>
+    <button class="hbtn" id="bRelieve">Relieve</button>
+    <button class="hbtn" id="b3d" title="Ver el terreno en relieve 3D">3D</button>
+    <button class="hbtn" id="bConfig">Ajustes</button>
+    <button class="cta" id="ctaTop">Consultar</button>
+  </header>
+
+  <main>
+    <div id="mapa"></div>
+    <canvas id="c3d" hidden aria-label="Vista en relieve del terreno"></canvas>
+    <div class="capa3d" id="capa3d" hidden></div>
+    <div class="ve3d" id="ve3d" hidden>
+      <span class="et">Relieve</span>
+      <button data-ve="1">1&times;</button><button data-ve="2" class="on">2&times;</button><button data-ve="3">3&times;</button>
+      <button id="ve3dMano" title="Arrastre: girar &middot; May&uacute;s+arrastre: mover">&#9995; Mano</button>
+      <button id="ve3dSol" title="B&oacute;veda solar sobre el lote">Sol</button>
+      <button id="ve3dFit" title="Volver al encuadre inicial">Encuadrar</button>
+    </div>
+    <!-- El motor 3D lee estos tres interruptores del plano vivo. Aquí el mapa no
+         los tiene en pantalla, así que quedan fijos: se dibuja todo. -->
+    <div hidden aria-hidden="true">
+      <input type="checkbox" id="cProt" checked><input type="checkbox" id="cVia" checked><input type="checkbox" id="cNum" checked>
+    </div>
+    <div class="poi" id="poi"></div>
+    <div class="giro" id="giro">
+      <button id="gIzq" title="Girar a la izquierda" aria-label="Girar a la izquierda">&#10226;</button>
+      <button id="gDer" title="Girar a la derecha" aria-label="Girar a la derecha">&#10227;</button>
+      <div class="sep"></div>
+      <button id="gArr" title="Más inclinación" aria-label="Más inclinación">&#9650;</button>
+      <button id="gAba" title="Menos inclinación" aria-label="Menos inclinación">&#9660;</button>
+      <div class="sep"></div>
+      <button id="gNorte" title="Volver al norte" aria-label="Volver al norte">N</button>
+    </div>
+    <button class="ruedaModo" id="gOrbita" aria-pressed="false"
+            title="Qu&eacute; hace la rueda del rat&oacute;n">
+      <span class="k">Rueda</span><b>Zoom</b>
+    </button>
+    <div class="pista-nav" id="pistaNav">
+      <b>Ctrl + rueda</b> gira el mapa · <b>Mayús + rueda</b> lo inclina · arrastre para mover
+    </div>
+
+    <aside class="rail" id="rail">
+      <div class="rh">
+        <div class="kpis" id="kpis"></div>
+      </div>
+      <div class="rb">
+        <div class="blk">
+          <div class="et">Buscar lote</div>
+          <div class="busca">
+            <input id="q" type="text" inputmode="numeric" placeholder="Número de lote, p. ej. 42">
+            <button id="bq">Ir</button>
+          </div>
+        </div>
+        <div class="blk">
+          <div class="et">Etapa de venta</div>
+          <div class="seg" id="segEtapa"></div>
+          <div class="pista" id="etapaPista" style="font-size:11.5px;color:var(--muted);margin-top:6px"></div>
+        </div>
+        <div class="blk">
+          <div class="et">Estado</div>
+          <div class="chips" id="chips"></div>
+        </div>
+        <div class="blk">
+          <div class="et">Afinar</div>
+          <div class="rango"><span>Área útil mínima</span><b id="vArea">sin filtro</b></div>
+          <input type="range" id="fArea" min="0" max="4000" step="50" value="0">
+          <div class="rango" style="margin-top:10px"><span>Precio máximo</span><b id="vPrec">sin filtro</b></div>
+          <input type="range" id="fPrec" min="250" max="700" step="5" value="700">
+        </div>
+        <div class="blk">
+          <div class="et">Capas</div>
+          <label class="tg"><input type="checkbox" id="cLotes" checked> Lotes</label>
+          <label class="tg"><input type="checkbox" id="cNum" checked> Números de lote</label>
+          <label class="tg"><input type="checkbox" id="cProt" checked> Zonas de protección</label>
+          <label class="tg"><input type="checkbox" id="cVia" checked> Vías internas</label>
+          <label class="tg"><input type="checkbox" id="cCom" checked> Zonas comunes</label>
+          <label class="tg"><input type="checkbox" id="cCur" checked> Curvas de nivel (aparecen al acercar)</label>
+          <label class="tg"><input type="checkbox" id="cSom" checked> Sombreado del relieve</label>
+        </div>
+      </div>
+      <div class="rf">
+        <div class="cuenta" id="cuenta"></div>
+      </div>
+    </aside>
+
+    <aside class="ficha" id="ficha" aria-live="polite"></aside>
+
+    <div class="fondos" id="fondos">
+      <button data-f="ninguno">Plano</button>
+      <button data-f="osm">Mapa</button>
+      <button data-f="sat" class="on">Satélite</button>
+      <button data-f="oscuro">Oscuro</button>
+    </div>
+    <div class="aviso" id="aviso"></div>
+  </main>
+</div>
+
+<div class="scrim" id="welcome" hidden style="--hero:url(medios/hero.jpg)">
+  <div class="wel">
+    <img src="medios/logo.png" alt="Laureles Campestre">
+    <div class="eyebrow">Armenia · Quindío · Colombia</div>
+    <h2>Bienvenidos a <em>Laureles Campestre</em></h2>
+    <p class="lead">86 lotes campestres desde 3.100 m², sobre 37 hectáreas atravesadas por una cañada de bosque
+    protegido, a minutos de Armenia y del aeropuerto El Edén.</p>
+    <ul class="stats">
+      <li><b>86</b><span>lotes</span></li>
+      <li><b>37 ha</b><span>de predio</span></li>
+      <li><b>3.100 m²</b><span>lote mínimo</span></li>
+    </ul>
+    <div class="langs">
+      <button class="on" data-l="es">Español</button>
+      <button data-l="en">English</button>
+      <button data-l="fr">Français</button>
+    </div>
+    <button class="btn" id="startBtn">Comenzar el recorrido</button>
+    <p class="fine">Geometría real del plano 039 en coordenadas MAGNA-SIRGAS CTM12, sobre imagen satelital
+    en vivo. El lindero cae a 0,42 m del carreteable existente, medido contra la foto aérea.</p>
+  </div>
+</div>
+
+<div class="scrim" id="modal" hidden><div class="sheet" id="modalBody"></div></div>
+
+<div class="intro" id="intro">
+  <div class="fallback"><img src="medios/logo.png" alt="Laureles Campestre"></div>
+  <video id="introVid" playsinline preload="auto" src="medios/intro.mp4"></video>
+  <button class="skip" id="skipBtn">Saltar intro</button>
+</div>
+
+<div class="velo" id="velo">
+  <div class="hoja">
+    <div class="hh"><h3 id="hojaTit">Ajustes</h3></div>
+    <div class="hb" id="hojaCuerpo"></div>
+    <div class="hf" id="hojaPie"></div>
+  </div>
+</div>
+
+<script src="maplibre-gl.js"></script>
+<script>
+/* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
+window.FALLO = function(t, d){
+  var e=document.createElement("div");
+  e.style.cssText="position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;"+
+    "padding:26px;background:#F4F2EA;font:15px/1.6 system-ui,sans-serif;color:#1C221B";
+  e.innerHTML='<div style="max-width:460px;background:#fff;border:1px solid #DBD9CD;border-radius:13px;padding:26px">'+
+    '<div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9B7A48;font-weight:700">'+
+    'Laureles Campestre</div><h2 style="margin:8px 0 10px;font-size:21px">'+t+'</h2>'+
+    '<p style="margin:0;color:#3B453A">'+d+'</p></div>';
+  document.body.appendChild(e);
+};
+window.addEventListener("error", function(ev){
+  if(ev && ev.target && ev.target.tagName==="SCRIPT" && !window.__avisado){
+    window.__avisado=true;
+    FALLO("No se pudo cargar un archivo del mapa",
+      "Falta <b>"+(ev.target.getAttribute("src")||"un archivo")+"</b>. Suba todos los archivos de la carpeta al "+
+      "repositorio, no solo el index.html. El mapa no puede dibujarse sin ellos.");
+  }
+}, true);
+</script>
+<script src="lotes.js"></script>
+<script>
+/* =============================================================================
+   Laureles Campestre — mapa de ventas
+   MapLibre GL JS 4.7.1 · fondo satelital de Esri o de CARTO · relieve propio.
+   El relieve NO viene de un proveedor: son teselas Terrain-RGB generadas con las
+   curvas de nivel cada 1 m del levantamiento del predio (plano 039).
+   ============================================================================= */
+"use strict";
+
+/* ---------------------------------- ajustes -------------------------------- */
+const POR_DEFECTO = {
+  telefono: "573000000000",              // WhatsApp de ventas, sólo dígitos con indicativo
+  asesor: "",                            // nombre que va en el mensaje
+  /* Estado compartido de los lotes. La llave es la PUBLICABLE de Supabase y va
+     aquí a propósito: está hecha para viajar en el navegador. Lo que la protege
+     no es esconderla sino la RLS de la tabla laureles_lotes —lectura para
+     cualquiera, escritura sólo con sesión iniciada—. Ver supabase.sql. */
+  supabaseUrl: "https://athegivjcickawibbduo.supabase.co",
+  supabaseKey: "sb_publishable_fX4xPH2lE3YSknuBvsw6Eg_030yb4CS"
+};
+const CFG = Object.assign({}, POR_DEFECTO, leer("laureles.cfg", {}));
+function leer(k, d){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
+function guardar(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+/* Plan de pagos: la inicial se paga dentro de 2026 —para separar entran
+   $20.000.000— y el saldo se reparte de enero de 2027 a diciembre de 2028, que
+   son 24 meses: 23 cuotas del 3 % del saldo y una última que absorbe lo que
+   quede, y por eso es la más alta. E1 es de contado. */
+const SEPARACION = 20000000;
+const INICIAL = {1:1.00, 2:0.60, 3:0.50, 4:0.20, 5:0.20, 6:0.20};
+const PLAN_N = 23, PLAN_PCT = 0.03;
+function planPago(v, e){
+  const frac = (INICIAL[e] != null) ? INICIAL[e] : 1;
+  const inicial = v*frac, saldo = v-inicial;
+  if(saldo <= 1) return {contado:true, inicial:inicial, saldo:0};
+  const cuota = saldo*PLAN_PCT;
+  return {contado:false, frac:frac, inicial:inicial, saldo:saldo,
+          cuota:cuota, ultima:saldo-cuota*PLAN_N, n:PLAN_N};
+}
+
+/* Precios por m² de la lista de trabajo, iguales a los de la proyección
+   financiera. El precio del lote es área útil × PRECIO_UTIL + área de
+   protección × PRECIO_PROT, etapa por etapa. */
+const PRECIO_UTIL = {1:132000,2:148500,3:156750,4:165000,5:181500,6:198000};
+const PRECIO_PROT = {1: 60000,2: 67500,3: 71250,4: 75000,5: 82500,6: 90000};
+const ETAPAS = [
+  {n:1,l:"E1",d:"Contado, −20% sobre lista"},
+  {n:2,l:"E2",d:"60% al cierre del año, −10%"},
+  {n:3,l:"E3",d:"50% al cierre del año, −5%"},
+  {n:4,l:"E4",d:"Lista VENTA 0"},
+  {n:5,l:"E5",d:"Lista +10%"},
+  {n:6,l:"E6",d:"Lista +20%"}
+];
+const ESTADOS = {
+  disponible:{t:"Disponible", c:"#4C8862", k:"disp"},
+  separado:  {t:"Separado",   c:"#C48A2A", k:"sep"},
+  vendido:   {t:"Vendido",    c:"#8A8F82", k:"vend"},
+  reservado: {t:"Reservado por la empresa", c:"#3E6DB0", k:"resv"}
+};
+
+const S = {
+  etapa: leer("laureles.etapa", 1),
+  estados: new Set(["disponible","separado","vendido","reservado"]),
+  minArea: 0, maxPrec: 700, sel: null,
+  fondo: leer("laureles.fondo","sat"),
+  relieve: leer("laureles.relieve", true),
+  orbita: leer("laureles.orbita", false),   // rueda del ratón: girar en vez de acercar
+  curvas: leer("laureles.curvas", true),    // curvas de nivel al acercar
+  cambios: leer("laureles.cambios", {})     // estados cambiados localmente
+};
+
+if(typeof maplibregl==="undefined"){
+  FALLO("Falta la librería del mapa",
+    "No se encontró <b>maplibre-gl.js</b> junto al index.html. Debe estar en la misma carpeta del repositorio.");
+  throw new Error("maplibre-gl ausente");
+}
+if(typeof LAURELES==="undefined"){
+  FALLO("Faltan los datos del loteo",
+    "No se encontró <b>lotes.js</b>. Es el archivo con los 86 lotes, las vías y las curvas de nivel; "+
+    "sin él el mapa no tiene qué dibujar.");
+  throw new Error("lotes.js ausente");
+}
+const BUILD = (document.querySelector('meta[name=build]')||{}).content || "sin sello";
+const LOTES = LAURELES.lotes;
+LOTES.features.forEach(f=>{ const c=S.cambios[f.properties.lote]; if(c) f.properties.estado=c; });
+
+const precio  = (p,e)=> p.precios[String(e)];
+const cop     = v => "$" + Math.round(v).toLocaleString("es-CO");
+const m2      = v => Math.round(v).toLocaleString("es-CO") + " m²";
+const pasa    = p => S.estados.has(p.estado) && p.area_util_m2 >= S.minArea &&
+                     precio(p,S.etapa) <= S.maxPrec*1e6;
+
+/* ------------------------------- estilo del mapa --------------------------- */
+const LIM = (()=>{                        /* límites del predio, con holgura */
+  let w=180,e=-180,s=90,n=-90;
+  LAURELES.lindero.features[0].geometry.coordinates[0].forEach(c=>{
+    w=Math.min(w,c[0]); e=Math.max(e,c[0]); s=Math.min(s,c[1]); n=Math.max(n,c[1]);
+  });
+  return {w,e,s,n,cx:(w+e)/2,cy:(s+n)/2};
+})();
+
+const ATRIB = 'Imágenes © Esri · Mapa base © OpenStreetMap © CARTO · ' +
+              'Relieve: levantamiento propio, plano 039 · <b>Laureles Campestre</b> · DAB Constructora';
+
+const estilo = {
+  version: 8,
+  sources: {
+    /* maxzoom 18, MEDIDO sobre las teselas de este predio: a z19 y z20 el
+       servidor devuelve un relleno de 2.521 bytes con HTTP 200 —no un error—,
+       así que la foto se ve borrosa y nadie entiende por qué. Con 18, MapLibre
+       reescala la buena. */
+    sat: { type:"raster", tileSize:256, maxzoom:18, attribution:ATRIB,
+      tiles:["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"] },
+    claro: { type:"raster", tileSize:256, maxzoom:19, attribution:ATRIB,
+      tiles:["https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+             "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
+             "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png"] },
+    osm: { type:"raster", tileSize:256, maxzoom:19,
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+      tiles:["https://tile.openstreetmap.org/{z}/{x}/{y}.png"] },
+    oscuro: { type:"raster", tileSize:256, maxzoom:19, attribution:ATRIB,
+      tiles:["https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+             "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+             "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png"] },
+    /* SIN 'bounds'. Se habían puesto para que el navegador no pidiera teselas de
+       altura que no existen, y con eso se quitaban los 404 de la consola. El
+       precio era mucho peor: con bounds, MapLibre 4.7.1 deja de aplicar el
+       relieve —queryTerrainElevation en el centro del predio devuelve 0 en vez
+       de la cota real— y al romperse el drapeado desaparecen del mapa los lotes,
+       las vías, el lindero y la protección. Quedaban sólo los números flotando
+       sobre la foto: eso es lo que se veía como "se fue el amarre".
+       Las teselas que faltan devuelven 404 y no pasa nada: el manejador de
+       errores del mapa ya se los traga (ver mapa.on("error")). */
+    terreno: { type:"raster-dem", tiles:["terreno/{z}/{x}/{y}.png"], tileSize:256,
+      encoding:"mapbox", minzoom:12, maxzoom:17 },
+    lotes:{type:"geojson",data:LOTES,promoteId:"lote"},
+    prot:{type:"geojson",data:LAURELES.proteccion},
+    vias:{type:"geojson",data:LAURELES.vias},
+    soc:{type:"geojson",data:LAURELES.sociales},
+    lind:{type:"geojson",data:LAURELES.lindero},
+    curvas:{type:"geojson",data:LAURELES.curvas}
+  },
+  layers: [
+    {id:"fondo-color",type:"background",paint:{"background-color":"#E4E6D8"}},
+    {id:"f-sat",type:"raster",source:"sat",layout:{visibility:"none"}},
+    {id:"f-claro",type:"raster",source:"claro",layout:{visibility:"none"}},
+    {id:"f-osm",type:"raster",source:"osm",layout:{visibility:"none"}},
+    {id:"f-oscuro",type:"raster",source:"oscuro",layout:{visibility:"none"}},
+    /* El sombreado va sobre la MISMA fuente del relieve. Tenía la suya propia
+       ('sombra'), apuntando a las mismas teselas, y con el relieve encendido esa
+       segunda fuente raster-dem rompía el drapeado: el mapa se quedaba sin
+       lotes, sin vías y sin lindero, sólo con los números encima de la foto. */
+    {id:"sombreado",type:"hillshade",source:"terreno",
+      paint:{"hillshade-exaggeration":0.42,"hillshade-shadow-color":"#20301E",
+             "hillshade-highlight-color":"#FFFDF4","hillshade-accent-color":"#4E6247"}},
+    {id:"lindero",type:"line",source:"lind",
+      paint:{"line-color":"#F7F4EA","line-width":2.6,"line-opacity":.9}},
+    {id:"soc-f",type:"fill",source:"soc",paint:{"fill-color":"#7C9878","fill-opacity":.28}},
+    {id:"soc-l",type:"line",source:"soc",paint:{"line-color":"#CFE0C6","line-width":1,"line-opacity":.6}},
+    /* Curvas de nivel del levantamiento, cada 1 m. Entran solas al acercarse:
+       de lejos serían una maraña, y de cerca son lo que deja leer el lote. */
+    {id:"curvas-l",type:"line",source:"curvas",
+      layout:{visibility:"visible","line-join":"round"},
+      paint:{"line-color":"#F2E9D2",
+             "line-width":["interpolate",["linear"],["zoom"],
+                15.6,0, 16.2,["case",["get","maestra"],1.0,0.5],
+                18.5,["case",["get","maestra"],2.2,1.1]],
+             "line-opacity":["interpolate",["linear"],["zoom"],
+                15.6,0, 16.2,["case",["get","maestra"],.55,.30],
+                18.5,["case",["get","maestra"],.95,.62]]}},
+    {id:"lotes-f",type:"fill",source:"lotes",
+      paint:{"fill-color":["match",["get","estado"],
+               "disponible","#4C8862","separado","#C48A2A","vendido","#8A8F82","reservado","#3E6DB0","#4C8862"],
+             "fill-opacity":["case",["boolean",["feature-state","oculto"],false],0.04,
+                             ["boolean",["feature-state","sel"],false],0.78,0.50]}},
+    {id:"lotes-l",type:"line",source:"lotes",
+      paint:{"line-color":["case",["boolean",["feature-state","sel"],false],"#F1DFB6","#F4F2EA"],
+             "line-width":["case",["boolean",["feature-state","sel"],false],3.4,1.1],
+             "line-opacity":["case",["boolean",["feature-state","oculto"],false],0.15,0.85]}},
+    {id:"prot-f",type:"fill",source:"prot",paint:{"fill-color":"#2E5B33","fill-opacity":.42}},
+    {id:"prot-l",type:"line",source:"prot",paint:{"line-color":"#9CC79B","line-width":1,"line-opacity":.7}},
+    {id:"vias-l",type:"line",source:"vias",
+      layout:{"line-cap":"round","line-join":"round"},
+      paint:{"line-color":"#FBFAF3","line-width":["interpolate",["linear"],["zoom"],14,1.5,17,6,20,22],
+             "line-opacity":.92}}
+  ]
+};
+
+/* --------------------------------- el mapa --------------------------------- */
+const mapa = new maplibregl.Map({
+  container:"mapa", style:estilo,
+  center:[LIM.cx, LIM.cy-0.0012], zoom:15.4, pitch:50, bearing:-12,
+  maxBounds:[[LIM.w-0.03, LIM.s-0.03],[LIM.e+0.03, LIM.n+0.03]],
+  maxZoom:18.5,
+  maxPitch:78, attributionControl:false, cooperativeGestures:false
+});
+mapa.addControl(new maplibregl.AttributionControl({compact:true}), "bottom-right");
+mapa.addControl(new maplibregl.NavigationControl({visualizePitch:true}), "top-right");
+mapa.addControl(new maplibregl.GeolocateControl({
+  positionOptions:{enableHighAccuracy:true}, trackUserLocation:true, showAccuracyCircle:true
+}), "top-right");
+mapa.addControl(new maplibregl.ScaleControl({maxWidth:110, unit:"metric"}), "bottom-left");
+
+const rotulos = {};
+
+function encuadrar(dur){
+  if(typeof sanearCamara==="function") sanearCamara();
+  const ancho = innerWidth>900;
+  mapa.fitBounds([[LIM.w,LIM.s],[LIM.e,LIM.n]], {
+    padding:{ top: ancho?70:80, bottom: ancho?70:70,
+              left: ancho?320:26, right: ancho?60:26 },
+    bearing:-12, pitch:PITCH_MAX_RELIEVE, duration:dur||0, maxZoom:17
+  });
+}
+mapa.on("load", ()=>{
+  if(S.relieve) prenderRelieve(true);
+  encuadrar(0);
+  fondo(S.fondo);
+  LOTES.features.forEach(f=>{
+    const p=f.properties;
+    const d=document.createElement("div");
+    d.className="rot"; d.textContent=p.lote;
+    d.style.cssText="font:700 11.5px/1 var(--sans);color:#20281E;background:rgba(255,253,246,.86);"+
+      "border-radius:999px;padding:3px 6px;cursor:pointer;user-select:none;"+
+      "box-shadow:0 1px 3px rgba(0,0,0,.25);white-space:nowrap";
+    d.onclick=ev=>{ ev.stopPropagation(); abrirLote(p.lote); };
+    const mk=new maplibregl.Marker({element:d, anchor:"center"})
+      .setLngLat(p.centro).addTo(mapa);
+    rotulos[p.lote]=mk;
+  });
+  mapa.on("zoom", visibilidadRotulos);
+  visibilidadRotulos();
+  mapa.on("moveend", pedirCotas);
+  mapa.on("zoomend", pedirCotas);
+  pintarCotas();
+  mapa.on("click","lotes-f", e=>{ if(e.features[0]) abrirLote(e.features[0].properties.lote); });
+  mapa.on("click", e=>{
+    const f=mapa.queryRenderedFeatures(e.point,{layers:["lotes-f"]});
+    if(!f.length) cerrarFicha();
+  });
+  mapa.on("mouseenter","lotes-f",()=>mapa.getCanvas().style.cursor="pointer");
+  mapa.on("mouseleave","lotes-f",()=>mapa.getCanvas().style.cursor="");
+  refrescar();
+  if(CFG.telefono===POR_DEFECTO.telefono)
+    avisar("Falta el número de WhatsApp: póngalo en Ajustes.", 5200);
+});
+mapa.on("error", e=>{ if(e && e.error && /terreno/.test(String(e.error.url||""))) return; });
+
+/* ------------------------ medidas del lote escogido -------------------------
+   Las cotas de los lados, como en un plano. Sólo del lote seleccionado y sólo de
+   cerca: dibujarlas de los 86 a la vez sería una maraña. Van como rótulos HTML
+   por lo mismo que las cotas de nivel: el estilo no lleva servidor de glifos.
+   -------------------------------------------------------------------------- */
+const MEDIDA_Z = 16.6;
+const medPool = [];
+function pintarMedidas(){
+  const z = mapa.getZoom();
+  const f = (S.sel!=null) ? LOTES.features.find(x=>x.properties.lote===S.sel) : null;
+  if(!f || z < MEDIDA_Z){ medPool.forEach(m=>m.getElement().style.display="none"); return; }
+  let anillo = f.geometry.coordinates[0];
+  if(anillo && anillo.length && Array.isArray(anillo[0][0])) anillo = anillo[0];
+  if(!anillo || anillo.length < 3){ medPool.forEach(m=>m.getElement().style.display="none"); return; }
+  const R=6371000, rad=Math.PI/180;
+  const puestos=[];
+  for(let i=0; i<anillo.length-1 && puestos.length<10; i++){
+    const a=anillo[i], b=anillo[i+1];
+    const dx=(b[0]-a[0])*rad*R*Math.cos(a[1]*rad), dy=(b[1]-a[1])*rad*R;
+    const largo=Math.hypot(dx,dy);
+    if(largo < 6) continue;
+    const pa=mapa.project(a), pb=mapa.project(b);
+    if(Math.hypot(pb.x-pa.x, pb.y-pa.y) < 36) continue;    /* no cabe el número */
+    let ang=Math.atan2(pb.y-pa.y, pb.x-pa.x)*180/Math.PI;
+    if(ang>90) ang-=180; if(ang<-90) ang+=180;
+    puestos.push({c:[(a[0]+b[0])/2,(a[1]+b[1])/2], t:largo.toFixed(1).replace(".",",")+" m", a:ang});
+  }
+  puestos.forEach((q,i)=>{
+    let mk=medPool[i];
+    if(!mk){
+      const d=document.createElement("div");
+      d.className="rotMedida";
+      mk=new maplibregl.Marker({element:d, anchor:"center"}).setLngLat(q.c).addTo(mapa);
+      medPool.push(mk);
+    }
+    const el=mk.getElement();
+    el.textContent=q.t; el.style.display="";
+    el.style.transform="";                       /* MapLibre pone el suyo en el padre */
+    el.style.rotate=q.a.toFixed(1)+"deg";
+    mk.setLngLat(q.c);
+  });
+  for(let i=puestos.length;i<medPool.length;i++) medPool[i].getElement().style.display="none";
+}
+
+/* --------------------------- salvavidas de la cámara ------------------------
+   Con el relieve encendido, MapLibre llega a dejar la matriz de la cámara sin
+   inversa ("failed to invert matrix") y a partir de ahí el centro sale NaN
+   ("Invalid LngLat object"): el mapa queda muerto —ni gira, ni acerca, ni se
+   mueve— y sólo revive recargando la página. Aquí se guarda la última cámara
+   buena y, si aparece un NaN, se vuelve a ella. El usuario ve medio segundo
+   raro en vez de un mapa trabado.
+   -------------------------------------------------------------------------- */
+let camaraBuena = null, reparando = false;
+function camaraSana(){
+  try{
+    const c = mapa.getCenter();
+    return Number.isFinite(c.lng) && Number.isFinite(c.lat) &&
+           Number.isFinite(mapa.getZoom()) && Number.isFinite(mapa.getBearing()) &&
+           Number.isFinite(mapa.getPitch());
+  }catch(e){ return false; }
+}
+function sanearCamara(){
+  if(camaraSana()){
+    if(!mapa.isMoving || !mapa.isMoving()){
+      const c = mapa.getCenter();
+      camaraBuena = {center:[c.lng,c.lat], zoom:mapa.getZoom(),
+                     bearing:mapa.getBearing(), pitch:mapa.getPitch()};
+    }
+    return true;
+  }
+  if(!camaraBuena || reparando) return false;
+  reparando = true;
+  /* Con la cámara en NaN no sirve jumpTo(): lee el centro roto y vuelve a
+     reventar. Hay que sanear los campos de la transformación a mano y sólo
+     después usar la interfaz normal. Va contra el interior de MapLibre, pero
+     la librería viaja en esta misma carpeta con versión fija (4.7.1), así que
+     no cambia bajo los pies. Si algún día cambia, el try lo absorbe y el mapa
+     queda como estaba, no peor. */
+  try{
+    mapa.stop();
+    const t = mapa.transform;
+    if(t){
+      if(t._center){
+        if(!Number.isFinite(t._center.lng)) t._center.lng = camaraBuena.center[0];
+        if(!Number.isFinite(t._center.lat)) t._center.lat = camaraBuena.center[1];
+      }
+      if(!Number.isFinite(t._zoom))  t._zoom  = camaraBuena.zoom;
+      if(!Number.isFinite(t.angle))  t.angle  = -camaraBuena.bearing * Math.PI / 180;
+      if(!Number.isFinite(t._pitch)) t._pitch = camaraBuena.pitch * Math.PI / 180;
+    }
+    mapa.jumpTo(camaraBuena);
+    mapa.triggerRepaint();
+    if(camaraSana()) avisar("Se recuperó la vista del mapa.");
+  }catch(e){
+    console.warn("No se pudo recuperar la cámara del mapa", e);
+  }
+  reparando = false;
+  return camaraSana();
+}
+/* red de seguridad, por si el daño ocurre sin que nadie pida un movimiento */
+setInterval(sanearCamara, 500);
+
+/* ---------------------------- rótulos de cota ------------------------------
+   El estilo no lleva servidor de glifos —para que la carpeta funcione sin red
+   ni llaves—, así que la cota no puede ir en una capa de símbolos: se dibuja
+   como rótulo HTML, igual que los números de lote. Se ponen sólo los de las
+   curvas maestras que caen dentro de la pantalla, y sólo al acercarse.
+   -------------------------------------------------------------------------- */
+const COTA_Z = 16.0;                    /* desde aquí aparecen: al abrir un lote ya se ven */
+const cotaPool = [];                    /* marcadores reutilizados */
+let cotaTimer = 0;
+
+function puntoMedioVisible(coords, b){
+  /* el vértice más cercano al centro de lo que se está viendo */
+  const cx=(b.getWest()+b.getEast())/2, cy=(b.getSouth()+b.getNorth())/2;
+  let mejor=null, dmin=Infinity;
+  for(const c of coords){
+    if(c[0]<b.getWest()||c[0]>b.getEast()||c[1]<b.getSouth()||c[1]>b.getNorth()) continue;
+    const d=(c[0]-cx)*(c[0]-cx)+(c[1]-cy)*(c[1]-cy);
+    if(d<dmin){ dmin=d; mejor=c; }
+  }
+  return mejor;
+}
+
+function pintarCotas(){
+  const z = mapa.getZoom();
+  const ver = z >= COTA_Z && S.curvas && document.getElementById("cCur").checked;
+  if(!ver){ cotaPool.forEach(m=>m.getElement().style.display="none"); return; }
+  const b = mapa.getBounds();
+  if(![b.getWest(),b.getSouth(),b.getEast(),b.getNorth()].every(Number.isFinite)) return;
+  /* una etiqueta por curva maestra visible, y no más de 26 para no empapelar */
+  const puestos = [];
+  for(const f of LAURELES.curvas.features){
+    if(!f.properties.maestra) continue;
+    const p = puntoMedioVisible(f.geometry.coordinates, b);
+    if(!p) continue;
+    /* nada de dos cotas iguales pegadas: se separan en pantalla */
+    const s = mapa.project(p);
+    if(puestos.some(q => Math.abs(q.x-s.x)<70 && Math.abs(q.y-s.y)<26)) continue;
+    puestos.push({x:s.x, y:s.y, p:p, cota:f.properties.cota});
+    if(puestos.length >= 26) break;
+  }
+  puestos.forEach((q,i)=>{
+    let mk = cotaPool[i];
+    if(!mk){
+      const d = document.createElement("div");
+      d.className = "rotCota";
+      mk = new maplibregl.Marker({element:d, anchor:"center"}).setLngLat(q.p).addTo(mapa);
+      cotaPool.push(mk);
+    }
+    const el = mk.getElement();
+    el.textContent = Math.round(q.cota).toLocaleString("es-CO") + " m";
+    el.style.display = "";
+    mk.setLngLat(q.p);
+  });
+  for(let i=puestos.length;i<cotaPool.length;i++) cotaPool[i].getElement().style.display="none";
+}
+/* Se recalcula al terminar el movimiento; hacerlo en cada cuadro sería tirar CPU.
+   Además hay un vigía propio: los 86 rótulos de lote registran cada uno su
+   escucha de movimiento, y la nuestra queda de última en la fila; si alguna de
+   las anteriores falla —pasa con el relieve puesto— la nuestra no llega a
+   correr y las cotas no aparecen nunca. El vigía no depende de esa fila. */
+function pedirCotas(){ clearTimeout(cotaTimer); cotaTimer = setTimeout(pintarCotas, 90); }
+let cotaFirma = "";
+setInterval(()=>{
+  /* Nada de exigir isStyleLoaded(): con el relieve puesto las teselas de altura
+     siguen entrando un buen rato y devuelve false, así que el vigía no arrancaba
+     nunca. Para poner un rótulo basta con que el mapa exista y esté quieto. */
+  if(!mapa || !mapa.getCenter) return;
+  if(mapa.isMoving && mapa.isMoving()) return;
+  const c = mapa.getCenter();
+  const f = mapa.getZoom().toFixed(2)+"/"+c.lng.toFixed(5)+"/"+c.lat.toFixed(5)+"/"+
+            document.getElementById("cCur").checked+"/"+S.sel;
+  if(f === cotaFirma) return;
+  cotaFirma = f;
+  try{ pintarCotas(); }catch(e){ /* que un tropiezo aquí no tumbe nada más */ }
+  try{ pintarMedidas(); }catch(e){}
+}, 260);
+
+function visibilidadRotulos(){
+  const z=mapa.getZoom(), ver=z>=15 && document.getElementById("cNum").checked;
+  Object.values(rotulos).forEach(m=>{ m.getElement().style.display = ver?"":"none"; });
+}
+/* MEDIDO: con el relieve puesto, MapLibre 4.7.1 aguanta hasta 52° de
+   inclinación. En 55° —que era la de por defecto— queryTerrainElevation devuelve
+   0 en vez de la cota real, se rompe el drapeado y desaparecen del mapa los
+   lotes, las vías, el lindero y la protección: quedan sólo los números flotando
+   sobre la foto. Se corta en 50° para dejar margen. Sin relieve no hay problema
+   y se permite inclinar hasta 78°. */
+const PITCH_MAX_RELIEVE = 50;
+function prenderRelieve(v){
+  S.relieve=v; guardar("laureles.relieve",v);
+  mapa.setTerrain(v?{source:"terreno", exaggeration:1.5}:null);
+  mapa.setMaxPitch(v ? PITCH_MAX_RELIEVE : 78);
+  if(v && mapa.getPitch() > PITCH_MAX_RELIEVE) mapa.setPitch(PITCH_MAX_RELIEVE);
+  document.getElementById("bRelieve").classList.toggle("on",v);
+  if(v && mapa.getPitch()<25) mapa.easeTo({pitch:PITCH_MAX_RELIEVE, duration:600});
+}
+function fondo(k){
+  S.fondo=k; guardar("laureles.fondo",k);
+  [["sat","f-sat"],["claro","f-claro"],["oscuro","f-oscuro"],["osm","f-osm"]].forEach(([n,id])=>
+    mapa.setLayoutProperty(id,"visibility", n===k?"visible":"none"));
+  /* sobre una imagen aérea el relleno tiene que aclararse o tapa el terreno */
+  const conImagen = (k==="sat");
+  mapa.setPaintProperty("lotes-f","fill-opacity",
+    ["case",["boolean",["feature-state","oculto"],false],0.04,
+            ["boolean",["feature-state","sel"],false], conImagen?0.62:0.78,
+            conImagen?0.34:0.50]);
+  mapa.setPaintProperty("prot-f","fill-opacity", conImagen?0.30:0.42);
+  mapa.setPaintProperty("soc-f","fill-opacity", conImagen?0.18:0.28);
+  const oscuroFondo = (k==="oscuro"||k==="sat");
+  /* "Plano" = sin teselas: fondo liso para trabajar el dibujo en sí */
+  mapa.setPaintProperty("fondo-color","background-color",
+    k==="oscuro" ? "#12160F" : k==="ninguno" ? "#EDEDE2" : "#E4E6D8");
+  mapa.setPaintProperty("lotes-l","line-color",
+    ["case",["boolean",["feature-state","sel"],false],"#F1DFB6", oscuroFondo?"#F4F2EA":"#3B453A"]);
+  /* Las curvas iban siempre en crema: sobre la foto se leen, sobre el fondo
+     claro desaparecían. Ahora siguen la base, igual que los linderos. */
+  mapa.setPaintProperty("curvas-l","line-color", oscuroFondo ? "#F2E9D2" : "#8A7A55");
+  document.body.classList.toggle("baseClara", !oscuroFondo);
+  document.querySelectorAll("#fondos button").forEach(b=>b.classList.toggle("on",b.dataset.f===k));
+}
+
+/* ------------------------------- estado / filtros -------------------------- */
+function refrescar(){
+  let nD=0,nS=0,nV=0,nR=0, visibles=0, m2u=0, val=0;
+  LOTES.features.forEach(f=>{
+    const p=f.properties, ok=pasa(p);
+    mapa.setFeatureState({source:"lotes", id:p.lote}, {oculto:!ok, sel:S.sel===p.lote});
+    if(rotulos[p.lote]) rotulos[p.lote].getElement().style.opacity = ok?1:.25;
+    if(ok) visibles++;
+    if(p.estado==="disponible"){nD++; m2u+=p.area_util_m2; val+=precio(p,S.etapa);}
+    else if(p.estado==="separado")nS++;
+    else if(p.estado==="vendido")nV++;
+    else nR++;
+  });
+  const T=LOTES.features.length;
+  document.getElementById("kpis").innerHTML =
+    kpi(nD+"/"+T,"Lotes libres") +
+    kpi("$"+(val/1e9).toFixed(2).replace(".",",")+" MM","Inventario "+ETAPAS[S.etapa-1].l) +
+    kpi(m2u.toLocaleString("es-CO"),"m² útiles libres") +
+    kpi(Math.round((nS+nV)/T*100)+" %","Colocado");
+  document.getElementById("cuenta").innerHTML =
+    "<b>"+visibles+"</b> lotes visibles de "+T+" &nbsp;·&nbsp; "+
+    nD+" libres · "+nS+" separados · "+nV+" vendidos"+(nR?" · "+nR+" reservados":"");
+  if(S.sel) pintarFicha(S.sel);
+}
+const kpi=(v,k)=>'<div class="kpi"><div class="v">'+v+'</div><div class="k">'+k+'</div></div>';
+
+/* ---------------------------------- ficha ---------------------------------- */
+function abrirLote(n){
+  S.sel=n; pintarFicha(n); refrescar();
+  const p=LOTES.features.find(f=>f.properties.lote===n).properties;
+  volarA(p.centro, Math.max(mapa.getZoom(), 17.4));
+}
+/* Con el relieve encendido, MapLibre recalcula la cámara al cambiar de centro y el
+   zoom se queda corto. Se corrige fijándolo cuando el movimiento termina. */
+function volarA(centro, zoom){
+  /* Si la cámara viene rota, flyTo revienta al desproyectar y deja el mapa
+     muerto. Se sanea primero: cuesta nada y evita el cuelgue. */
+  sanearCamara();
+  const off=[innerWidth>900?-150:0, 0];
+  mapa.flyTo({center:centro, zoom:zoom, duration:900, essential:true, offset:off});
+  mapa.once("moveend", ()=>{
+    if(Math.abs(mapa.getZoom()-zoom)>0.3){
+      mapa.easeTo({center:centro, zoom:zoom, duration:350, essential:true, offset:off});
+    }
+  });
+}
+function cerrarFicha(){
+  S.sel=null; document.getElementById("ficha").classList.remove("on"); refrescar();
+}
+function pintarFicha(n){
+  const f=LOTES.features.find(x=>x.properties.lote===n); if(!f)return;
+  const p=f.properties, E=ESTADOS[p.estado], et=ETAPAS[S.etapa-1], v=precio(p,S.etapa);
+  const topo = p.topo_ok
+    ? '<tr><td>Cota</td><td>'+p.cota_min.toFixed(0)+'–'+p.cota_max.toFixed(0)+' m s. n. m.</td></tr>'+
+      '<tr><td>Desnivel dentro del lote</td><td>'+String(p.desnivel_m).replace(".",",")+' m</td></tr>'+
+      '<tr><td>Pendiente media</td><td>'+String(p.pendiente_pct).replace(".",",")+' % ('+
+        String(p.pendiente_grados).replace(".",",")+'°)</td></tr>'+
+      '<tr><td>La ladera mira al</td><td>'+p.vista_hacia+'</td></tr>'
+    : '<tr><td colspan="2" style="color:var(--muted);font-size:12px">'+
+      'Este lote queda fuera del área con curvas de nivel del levantamiento actual.</td></tr>';
+  const ficha=document.getElementById("ficha");
+  ficha.innerHTML =
+  '<div class="fh">'+
+    '<button class="cerrar" aria-label="Cerrar">×</button>'+
+    '<div class="lb">Lote</div><h2>'+p.lote+'</h2>'+
+    '<span class="badge b-'+E.k+'"><i class="pt"></i>'+E.t+'</span>'+
+    (p.esquina?' <span class="badge b-disp" style="color:#EBD9AE"><i class="pt"></i>Esquinero</span>':'')+
+  '</div>'+
+  '<div class="fb">'+
+    '<div class="precio">'+cop(v)+'</div>'+
+    '<div class="precio-sub">Etapa '+et.l+' · '+et.d+' · '+cop(v/p.area_m2)+' por m² bruto</div>'+
+    /* la lista de esta etapa, que es lo que se negocia: el metro útil y el protegido */
+    '<div class="tarifa">'+
+      '<div><span>m² útil</span><b>'+cop(PRECIO_UTIL[S.etapa])+'</b></div>'+
+      '<div><span>m² protección</span><b>'+cop(PRECIO_PROT[S.etapa])+'</b></div>'+
+    '</div>'+
+    /* lo primero que pregunta el cliente: cuánto le queda por mes */
+    (()=>{ const pp=planPago(v,S.etapa);
+      if(pp.contado) return '<div class="plan"><b>De contado.</b> '+
+        'Separa con '+cop(SEPARACION)+' y completa el saldo en 2026.</div>';
+      return '<div class="plan">'+
+        '<div class="fila"><span>Inicial ('+Math.round(pp.frac*100)+' %) en 2026</span><b>'+cop(pp.inicial)+'</b></div>'+
+        '<div class="fila"><span>'+pp.n+' cuotas · ene 2027 a nov 2028</span><b>'+cop(pp.cuota)+'</b></div>'+
+        '<div class="fila"><span>Cuota final · dic 2028</span><b>'+cop(pp.ultima)+'</b></div>'+
+        '<div class="pieplan">Separa con '+cop(SEPARACION)+'. Sin intereses.</div>'+
+      '</div>'; })()+
+    '<table class="tabla">'+
+      '<tr><td>Área total</td><td>'+m2(p.area_m2)+'</td></tr>'+
+      '<tr><td>Área útil</td><td>'+m2(p.area_util_m2)+'</td></tr>'+
+      '<tr><td>Área de protección</td><td>'+m2(p.area_proteccion_m2)+'</td></tr>'+
+      '<tr><td>Frente sobre vía</td><td>'+String(p.frente_m).replace(".",",")+' m</td></tr>'+
+      '<tr><td>Fondo</td><td>'+String(p.fondo_m).replace(".",",")+' m</td></tr>'+
+      topo+
+    '</table>'+
+    '<div class="barra">'+
+      '<i style="width:'+(100-p.pct_proteccion)+'%;background:var(--forest)"></i>'+
+      '<i style="width:'+p.pct_proteccion+'%;background:var(--disp);opacity:.55"></i>'+
+    '</div>'+
+    '<div class="nota">'+(p.area_proteccion_m2>0
+      ? 'Incluye '+m2(p.area_proteccion_m2)+' de ronda de cañada: bosque protegido, no se puede construir ni talar allí. '+
+        'El área útil de este lote es de '+m2(p.area_util_m2)+'.'
+      : 'Todo el lote es área útil: no lo toca ninguna faja de protección.')+'</div>'+
+    '<div class="et" style="margin-top:18px">Cambiar estado</div>'+
+    '<div class="seg" id="segEstado">'+
+      Object.entries(ESTADOS).map(([k,e])=>
+        '<button data-e="'+k+'"'+(k===p.estado?' class="on"':'')+'>'+(k==="reservado"?"Reservado":e.t)+'</button>').join("")+
+    '</div>'+
+    '<div class="pista" style="font-size:11.5px;color:var(--muted);margin-top:6px" id="pistaEstado"></div>'+
+    '<div class="imprimir-pie">Laureles Campestre · El Caimo, Armenia (Quindío) · '+
+      'Áreas tomadas del plano 039 georreferenciado en MAGNA-SIRGAS / Origen Nacional CTM12. '+
+      'Precios sujetos a cambio sin previo aviso; este documento no constituye oferta comercial.</div>'+
+  '</div>'+
+  '<div class="ff">'+
+    '<button class="wa" id="bWa">Escribir por WhatsApp</button>'+
+    '<button class="anlBtn" id="bAnl">Análisis del lote y ficha PDF</button>'+
+    '<div class="gh"><button id="bImp">Imprimir ficha</button><button id="bVer">Volar al lote</button></div>'+
+  '</div>';
+  ficha.classList.add("on");
+  ficha.querySelector(".cerrar").onclick=cerrarFicha;
+  ficha.querySelector("#bWa").onclick=()=>whatsapp(p,v,et);
+  ficha.querySelector("#bImp").onclick=()=>print();
+  const bAnl=ficha.querySelector("#bAnl");
+  if(window.ANALISIS && ANALISIS.hay(p.lote)) bAnl.onclick=()=>ANALISIS.abrir(p.lote);
+  else { bAnl.disabled=true; bAnl.textContent="Análisis no disponible para este lote"; }
+  ficha.querySelector("#bVer").onclick=()=>{ mapa.easeTo({pitch:62,duration:300}); volarA(p.centro,17.6); };
+  ficha.querySelectorAll("#segEstado button").forEach(b=>b.onclick=()=>cambiarEstado(p.lote,b.dataset.e));
+  document.getElementById("pistaEstado").textContent =
+    SB.activo() ? "El cambio queda guardado y lo ven todos los asesores."
+                : "Modo local: el cambio sólo se ve en este dispositivo. Conecte Supabase en Ajustes para compartirlo.";
+}
+function whatsapp(p,v,et){
+  if(CFG.telefono===POR_DEFECTO.telefono){ abrirAjustes(); avisar("Ponga primero el número de WhatsApp."); return; }
+  const t = "Hola"+(CFG.asesor?", soy "+CFG.asesor:"")+". Le comparto el lote "+p.lote+
+    " de Laureles Campestre (El Caimo, Armenia).\n\n"+
+    "• Área total: "+m2(p.area_m2)+"\n"+
+    "• Área útil: "+m2(p.area_util_m2)+"\n"+
+    "• Frente: "+String(p.frente_m).replace(".",",")+" m · Fondo: "+String(p.fondo_m).replace(".",",")+" m\n"+
+    (p.topo_ok?"• Pendiente media: "+String(p.pendiente_pct).replace(".",",")+" %\n":"")+
+    "• Precio "+et.l+" ("+et.d+"): "+cop(v)+"\n"+
+    "• Lista "+et.l+": "+cop(PRECIO_UTIL[S.etapa])+"/m² útil · "+cop(PRECIO_PROT[S.etapa])+"/m² protección\n"+
+    (()=>{ const pp=planPago(v,S.etapa);
+      return pp.contado ? "• De contado\n"
+        : "• Inicial "+Math.round(pp.frac*100)+"% en 2026: "+cop(pp.inicial)+"\n"+
+          "• "+pp.n+" cuotas de "+cop(pp.cuota)+" (ene 2027 – nov 2028)\n"+
+          "• Cuota final dic 2028: "+cop(pp.ultima)+"\n"; })()+"\n"+
+    "¿Le cuadra que lo visitemos?";
+  open("https://wa.me/"+CFG.telefono+"?text="+encodeURIComponent(t),"_blank");
+}
+function cambiarEstado(n,e){
+  const f=LOTES.features.find(x=>x.properties.lote===n);
+  f.properties.estado=e;
+  S.cambios[n]=e; guardar("laureles.cambios",S.cambios);
+  mapa.getSource("lotes").setData(LOTES);
+  SB.escribir(n,e);
+  pintarFicha(n); refrescar();
+  avisar("Lote "+n+": "+ESTADOS[e].t);
+}
+
+/* ------------------------------- Supabase (opcional) ----------------------- */
+const SB = (()=>{
+  const activo = ()=> !!(CFG.supabaseUrl && CFG.supabaseKey);
+  const cab = ()=>({ "apikey":CFG.supabaseKey, "Authorization":"Bearer "+CFG.supabaseKey,
+                     "Content-Type":"application/json", "Prefer":"resolution=merge-duplicates" });
+  async function traer(){
+    if(!activo())return;
+    try{
+      const r=await fetch(CFG.supabaseUrl.replace(/\/$/,"")+"/rest/v1/laureles_lotes?select=lote,estado,notas",{headers:cab()});
+      if(!r.ok)throw new Error(r.status+" "+r.statusText);
+      const filas=await r.json();
+      filas.forEach(x=>{
+        const f=LOTES.features.find(o=>o.properties.lote===x.lote);
+        if(f&&x.estado&&ESTADOS[x.estado]){ f.properties.estado=x.estado; if(x.notas)f.properties.notas=x.notas; }
+      });
+      mapa.getSource("lotes").setData(LOTES); refrescar();
+      avisar("Estados sincronizados ("+filas.length+" lotes).");
+    }catch(e){ avisar("No se pudo leer Supabase: "+e.message, 5000); }
+  }
+  async function escribir(lote,estado){
+    if(!activo())return;
+    try{
+      const r=await fetch(CFG.supabaseUrl.replace(/\/$/,"")+"/rest/v1/laureles_lotes?on_conflict=lote",
+        {method:"POST",headers:cab(),body:JSON.stringify([{lote,estado,actualizado:new Date().toISOString()}])});
+      if(!r.ok)throw new Error(r.status+" "+r.statusText);
+    }catch(e){ avisar("El cambio quedó local: "+e.message, 5000); }
+  }
+  return {activo, traer, escribir};
+})();
+
+/* ---------------------------------- interfaz -------------------------------- */
+const segE=document.getElementById("segEtapa");
+ETAPAS.forEach(e=>{
+  const b=document.createElement("button"); b.textContent=e.l;
+  if(e.n===S.etapa)b.className="on";
+  b.onclick=()=>{ S.etapa=e.n; guardar("laureles.etapa",e.n);
+    segE.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
+    document.getElementById("etapaPista").textContent=e.d; refrescar(); };
+  segE.appendChild(b);
+});
+document.getElementById("etapaPista").textContent=ETAPAS[S.etapa-1].d;
+
+const chips=document.getElementById("chips");
+Object.entries(ESTADOS).forEach(([k,e])=>{
+  const b=document.createElement("button");
+  b.className="chip"; b.setAttribute("aria-pressed","true");
+  b.innerHTML='<i class="pt" style="background:'+e.c+'"></i>'+(k==="reservado"?"Reservado":e.t);
+  b.onclick=()=>{ const on=b.getAttribute("aria-pressed")==="true";
+    b.setAttribute("aria-pressed",String(!on));
+    on?S.estados.delete(k):S.estados.add(k); refrescar(); };
+  chips.appendChild(b);
+});
+
+const fA=document.getElementById("fArea"), vA=document.getElementById("vArea");
+fA.oninput=()=>{ S.minArea=+fA.value; vA.textContent=S.minArea?m2(S.minArea)+" o más":"sin filtro"; refrescar(); };
+const fP=document.getElementById("fPrec"), vP=document.getElementById("vPrec");
+fP.oninput=()=>{ S.maxPrec=+fP.value;
+  vP.textContent=S.maxPrec>=700?"sin filtro":"hasta $"+S.maxPrec+" M"; refrescar(); };
+
+const q=document.getElementById("q");
+const buscar=()=>{ const n=parseInt(q.value,10);
+  if(LOTES.features.some(f=>f.properties.lote===n)){ abrirLote(n); if(innerWidth<=900) rail.classList.remove("abierto"); }
+  else avisar("No existe el lote "+(q.value||"—")+"."); };
+document.getElementById("bq").onclick=buscar;
+q.onkeydown=e=>{ if(e.key==="Enter")buscar(); };
+
+const capas={cLotes:["lotes-f","lotes-l"],cProt:["prot-f","prot-l"],cVia:["vias-l"],
+             cCom:["soc-f","soc-l"],cCur:["curvas-l"],cSom:["sombreado"]};
+Object.entries(capas).forEach(([id,ids])=>{
+  const c=document.getElementById(id);
+  const aplicar=()=>ids.forEach(l=>mapa.setLayoutProperty(l,"visibility",c.checked?"visible":"none"));
+  c.onchange=aplicar;
+  /* y también al arrancar, para que el interruptor y la capa digan lo mismo */
+  if(mapa.isStyleLoaded()) aplicar(); else mapa.on("load", aplicar);
+});
+document.getElementById("cNum").onchange=visibilidadRotulos;
+document.getElementById("cCur").addEventListener("change", pedirCotas);
+document.getElementById("bRelieve").onclick=()=>prenderRelieve(!S.relieve);
+document.getElementById("bEncuadre").onclick=()=>{ cerrarFicha(); encuadrar(900); };
+addEventListener("resize",()=>{ if(!S.sel) encuadrar(0); });
+document.querySelectorAll("#fondos button").forEach(b=>b.onclick=()=>fondo(b.dataset.f));
+
+/* ------------------------------- navegación -------------------------------
+   La rueda sola acerca y aleja, como en cualquier mapa. Con Ctrl gira el eje y
+   con Mayús lo inclina: es lo que pedía sin perder el zoom de siempre.
+   Arrastrar mueve (paneo de mano) y arrastrar con el botón derecho gira.
+   -------------------------------------------------------------------------- */
+mapa.dragRotate.enable();
+mapa.touchZoomRotate.enableRotation();
+
+/* Modo órbita. En muchos equipos el navegador o el sistema se quedan con
+   Ctrl+rueda antes de que la página la vea (en macOS es el zoom de
+   accesibilidad), así que el atajo no basta: hace falta un interruptor.
+   Con el modo encendido la rueda sola gira el eje y el zoom pasa a Ctrl. */
+function modoOrbita(v){
+  S.orbita = v;
+  guardar("laureles.orbita", v);
+  const b = document.getElementById("gOrbita");
+  b.setAttribute("aria-pressed", v ? "true" : "false");
+  b.querySelector("b").textContent = v ? "Gira" : "Zoom";
+  b.title = v ? "La rueda gira el mapa. Ctrl+rueda acerca. Toque para volver al zoom."
+              : "La rueda acerca. Toque para que gire el mapa.";
+  if(v) mapa.scrollZoom.disable(); else mapa.scrollZoom.enable();
+  const pista = document.getElementById("pistaNav");
+  if(pista) pista.innerHTML = v
+    ? "<b>Rueda</b> gira el mapa · <b>Ctrl + rueda</b> acerca · <b>Mayús + rueda</b> lo inclina · arrastre para mover"
+    : "<b>Ctrl + rueda</b> gira el mapa · <b>Mayús + rueda</b> lo inclina · arrastre para mover";
+}
+
+mapa.getCanvas().addEventListener("wheel", e=>{
+  if(!sanearCamara()) return;
+  const paso = e.deltaY > 0 ? 1 : -1;
+  if(S.orbita){
+    e.preventDefault(); e.stopPropagation();
+    if(e.ctrlKey || e.metaKey){
+      mapa.easeTo({zoom: mapa.getZoom() - paso*0.4, duration:120});
+    } else if(e.shiftKey){
+      mapa.setPitch(Math.max(0, Math.min(mapa.getMaxPitch(), mapa.getPitch() + paso*3)));
+    } else {
+      mapa.setBearing(mapa.getBearing() + paso*5);
+    }
+    ocultarPista();
+    return;
+  }
+  /* modo normal: la rueda sola acerca; los atajos siguen ahí para quien los tenga */
+  if(!(e.ctrlKey || e.metaKey || e.shiftKey)) return;
+  e.preventDefault(); e.stopPropagation();
+  if(e.shiftKey) mapa.setPitch(Math.max(0, Math.min(mapa.getMaxPitch(), mapa.getPitch() + paso*3)));
+  else           mapa.setBearing(mapa.getBearing() + paso*5);
+  ocultarPista();
+}, {passive:false, capture:true});
+
+const gira    = d => { sanearCamara(); mapa.easeTo({bearing: mapa.getBearing()+d, duration:260}); };
+const inclina = d => { sanearCamara();
+  mapa.easeTo({pitch: Math.max(0,Math.min(mapa.getMaxPitch(), mapa.getPitch()+d)), duration:260}); };
+document.getElementById("gIzq").onclick   = ()=>gira(-20);
+document.getElementById("gDer").onclick   = ()=>gira(20);
+document.getElementById("gArr").onclick   = ()=>inclina(10);
+document.getElementById("gAba").onclick   = ()=>inclina(-10);
+document.getElementById("gNorte").onclick = ()=>mapa.easeTo({bearing:0, duration:420});
+document.getElementById("gOrbita").onclick = ()=>{
+  modoOrbita(!S.orbita);
+  avisar(S.orbita ? "Rueda del ratón: gira el mapa. Para acercar, Ctrl + rueda."
+                  : "Rueda del ratón: acerca y aleja, como siempre.");
+};
+modoOrbita(S.orbita);
+
+/* la pista se va sola en cuanto el usuario gira: ya no hace falta */
+let pistaIda=false;
+function ocultarPista(){
+  if(pistaIda) return; pistaIda=true;
+  const el=document.getElementById("pistaNav"); if(el) el.classList.add("ida");
+}
+mapa.on("rotatestart", ocultarPista);
+mapa.on("pitchstart", ocultarPista);
+setTimeout(ocultarPista, 14000);
+
+const rail=document.getElementById("rail");
+document.getElementById("bRail").onclick=()=>{
+  const ab=rail.classList.toggle("abierto");
+  document.getElementById("bRail").classList.toggle("on",ab);
+  document.getElementById("fondos").style.display = ab && innerWidth<=900 ? "none" : "";
+};
+
+let tAviso=0;
+function avisar(t,ms){ const a=document.getElementById("aviso");
+  a.textContent=t; a.classList.add("on"); clearTimeout(tAviso);
+  tAviso=setTimeout(()=>a.classList.remove("on"), ms||2600); }
+
+/* --------------------------------- ajustes ---------------------------------- */
+const velo=document.getElementById("velo");
+function abrirAjustes(){
+  document.getElementById("hojaTit").textContent="Ajustes";
+  document.getElementById("hojaCuerpo").innerHTML =
+    '<label>Número de WhatsApp de ventas</label>'+
+    '<input type="text" id="aTel" value="'+CFG.telefono+'" placeholder="573001234567">'+
+    '<div class="pista">Con indicativo de país y sin signos. Colombia es 57.</div>'+
+    '<label>Nombre del asesor</label>'+
+    '<input type="text" id="aAse" value="'+(CFG.asesor||"")+'" placeholder="Jaime Bejarano">'+
+    '<label>Supabase — URL del proyecto (opcional)</label>'+
+    '<input type="text" id="aUrl" value="'+(CFG.supabaseUrl||"")+'" placeholder="https://xxxx.supabase.co">'+
+    '<label>Supabase — llave pública (anon)</label>'+
+    '<input type="text" id="aKey" value="'+(CFG.supabaseKey||"")+'" placeholder="eyJhbGciOi...">'+
+    '<div class="pista" style="margin-top:18px;padding-top:12px;border-top:1px solid var(--line-soft)">'+
+    'Versión publicada: <b>'+BUILD+'</b></div>'+
+    '<div class="pista">Sin Supabase el mapa funciona igual, pero los cambios de estado se quedan '+
+    'en el dispositivo de cada asesor. El archivo <b>supabase.sql</b> del repositorio crea la tabla.</div>';
+  document.getElementById("hojaPie").innerHTML =
+    '<button class="sec" id="bAcerca">Acerca de los datos</button>'+
+    '<button class="sec" id="bCancel">Cancelar</button>'+
+    '<button class="pri" id="bOk">Guardar</button>';
+  velo.classList.add("on");
+  document.getElementById("bCancel").onclick=()=>velo.classList.remove("on");
+  document.getElementById("bAcerca").onclick=acercaDe;
+  document.getElementById("bOk").onclick=()=>{
+    CFG.telefono=document.getElementById("aTel").value.replace(/\D/g,"")||POR_DEFECTO.telefono;
+    CFG.asesor=document.getElementById("aAse").value.trim();
+    CFG.supabaseUrl=document.getElementById("aUrl").value.trim();
+    CFG.supabaseKey=document.getElementById("aKey").value.trim();
+    guardar("laureles.cfg",CFG); velo.classList.remove("on");
+    avisar("Ajustes guardados."); if(SB.activo())SB.traer();
+  };
+}
+function acercaDe(){
+  document.getElementById("hojaTit").textContent="Acerca de los datos";
+  document.getElementById("hojaCuerpo").innerHTML =
+    '<p><b>Geometría.</b> Los 86 lotes, las vías, las fajas de protección y el lindero salen del '+
+    'DXF del plano 039 del 9 de septiembre de 2026, georreferenciado en MAGNA-SIRGAS / Origen '+
+    'Nacional CTM12 (EPSG:9377) y transformado a WGS84. No están dibujados a mano sobre la imagen.</p>'+
+    '<p><b>Relieve.</b> Las teselas de altura se generaron con las 158 curvas de nivel cada 1 m del '+
+    'mismo levantamiento (58.278 vértices, cota 1.197 a 1.237 m s. n. m.). El modelo reproduce esas '+
+    'curvas con un error cuadrático medio de 0,12 m. <b>Fuera del predio el relieve es un relleno '+
+    'suavizado, no un levantamiento</b>: sirve para que el terreno no termine en un corte vertical, '+
+    'pero no debe leerse como dato.</p>'+
+    '<p><b>Sin curvas.</b> Seis lotes del extremo norte y del vértice occidental quedan fuera del área '+
+    'levantada; su ficha lo advierte y no muestra cota ni pendiente.</p>'+
+    '<p><b>Áreas y precios.</b> Las áreas son las rotuladas en el plano. Los precios se calculan como '+
+    'área útil × valor del m² útil de la etapa, más área de protección × su valor. Son precios de '+
+    'trabajo, no una oferta comercial.</p>'+
+    '<p><b>Imagen de fondo.</b> Satelital de Esri World Imagery; mapa claro y oscuro de CARTO sobre '+
+    'datos de OpenStreetMap. Ninguno requiere llave. Cuando esté la ortofoto del dron, reemplaza al '+
+    'satelital y el mapa gana en definición.</p>';
+  document.getElementById("hojaPie").innerHTML='<button class="pri" id="bCerrar">Cerrar</button>';
+  velo.classList.add("on");
+  document.getElementById("bCerrar").onclick=()=>velo.classList.remove("on");
+}
+document.getElementById("bConfig").onclick=abrirAjustes;
+velo.onclick=e=>{ if(e.target===velo) velo.classList.remove("on"); };
+addEventListener("keydown",e=>{ if(e.key==="Escape"){ velo.classList.remove("on"); cerrarFicha(); } });
+
+/* ---------------------------------- PWA ------------------------------------- */
+if("serviceWorker" in navigator)
+  addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+if(SB.activo()) addEventListener("load",()=>SB.traer());
+
+/* ------------- puente para el armazón (intro, nav, POI, idioma) ------------ */
+window.POIS = [["Autopista del Café","Conexión regional","1,4 km · 3 min"],
+               ["Aeropuerto El Edén","Vuelos nacionales","6,2 km · 10 min"],
+               ["La Tebaida","Zona Franca del Eje","8,5 km · 10 min"],
+               ["Armenia","Centro y servicios","15,0 km · 18 min"],
+               ["Parque del Café","Entorno turístico","22,7 km · 30 min"]];
+/* encuadrar() ya existe en este archivo: el armazón la usa tal cual.
+   No redefinirla aquí — se la estaba tapando. */
+/* pasa() y LOTES son const: no llegan a window por sí solas y el relieve 3D
+   las necesita para filtrar y para abrir la ficha del lote que se toca. */
+window.__MAPA = { pasa: pasa, LOTES: LOTES, ESTADOS: ESTADOS };
+
+window.seleccionarLote = n => {
+  try{
+    if(n==null){ cerrarFicha(); return; }
+    const f=LOTES.features.find(x=>x.properties.lote===n);
+    if(f){ pintarFicha(n); volarA(f.properties.centro, 17.4); }
+  }catch(e){}
+};
+
+
+</script>
+
+<!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
+<div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
+<script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png"};</script>
+<script src="datos-analisis.js"></script>
+<script src="datos-terreno.js"></script>
+<script src="datos-logo.js"></script>
+<script src="adaptador.js"></script>
+<script src="analisis.js"></script>
+<script src="datos-via.js"></script>
+<script src="r3d.js"></script>
+<script src="armazon.js"></script>
+<script>
+(function(){
+  const m=document.getElementById("anlModal");
+  m.addEventListener("click", e=>{ if(e.target===m && window.ANALISIS) ANALISIS.cerrar(); });
+  addEventListener("keydown", e=>{ if(e.key==="Escape" && !m.hidden && window.ANALISIS) ANALISIS.cerrar(); });
+  /* el selector de idioma vive ahora en el armazón (armazon.js) */
+})();
+</script>
+</body>
+</html>
