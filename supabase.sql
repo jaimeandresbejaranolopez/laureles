@@ -93,3 +93,49 @@ end $$;
 drop trigger if exists laureles_bitacora_t on public.laureles_lotes;
 create trigger laureles_bitacora_t after update on public.laureles_lotes
   for each row execute function public.laureles_bitacora();
+
+-- =============================================================================
+-- DOS ROLES: visitante y ventas   (aplicado el 11-09-2026)
+--
+-- No hay un "usuario visitante": visitante es NO tener sesión. La llave que
+-- viaja en index.html es la publicable y el rol anon sólo tiene la política de
+-- SELECT sobre laureles_lotes. Cambiar un estado exige un token de sesión, y
+-- ese token lo entrega Supabase Auth contra un correo y una contraseña que no
+-- están en el repositorio.
+--
+-- Las cuentas de ventas se crean en el panel de Supabase:
+--   Authentication -> Users -> Add user  (correo + contraseña, "Auto Confirm")
+-- Una cuenta por asesor, para que la bitácora diga quién movió cada lote.
+-- =============================================================================
+
+-- Información comercial que el rol ventas envía desde el mapa.
+-- Un visitante no puede ni leerla: son datos de personas, no del proyecto.
+create table if not exists public.laureles_prospectos (
+  id          bigserial primary key,
+  lote        integer,
+  nombre      text not null,
+  telefono    text,
+  correo      text,
+  etapa       integer,
+  precio_cop  bigint,
+  origen      text default 'mapa-web',
+  notas       text,
+  asesor      uuid default auth.uid(),
+  creado      timestamptz not null default now()
+);
+
+create index if not exists laureles_prospectos_lote_idx on public.laureles_prospectos(lote);
+
+alter table public.laureles_prospectos enable row level security;
+
+drop policy if exists laureles_prospectos_lectura on public.laureles_prospectos;
+create policy laureles_prospectos_lectura on public.laureles_prospectos
+  for select to authenticated using (true);
+
+drop policy if exists laureles_prospectos_insercion on public.laureles_prospectos;
+create policy laureles_prospectos_insercion on public.laureles_prospectos
+  for insert to authenticated with check (true);
+
+drop policy if exists laureles_prospectos_update on public.laureles_prospectos;
+create policy laureles_prospectos_update on public.laureles_prospectos
+  for update to authenticated using (true) with check (true);

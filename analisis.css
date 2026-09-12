@@ -192,3 +192,28 @@
 #anlModal .anlAcc{padding:12px 20px}
 #anlModal .anlH h2{font-size:36px}
 }
+@media (max-width:440px){
+#anlModal .anlB{padding:16px 14px 16px}
+#anlModal .t3, #anlModal .t2{font-size:12px}
+#anlModal .t3.fach td:first-child{width:auto}
+#anlModal .t3.fach td{padding:7px 6px 7px 0}
+#anlModal .t3 th{font-size:8.5px;letter-spacing:.05em}
+#anlModal .tamCasa{gap:8px;margin:8px 0 12px}
+#anlModal .tamCasa .seg{width:100%}
+#anlModal .tamCasa .seg button{flex:1;padding:9px 4px;font-size:11.5px;white-space:nowrap}
+#anlModal .asoCtl{gap:10px}
+#anlModal .asoCtl .seg{width:100%}
+#anlModal .asoCtl .seg button{flex:1;padding:9px 4px;font-size:11.5px;white-space:nowrap}
+#anlModal .asoH{min-width:0;width:100%}
+#anlModal .asoH b{min-width:72px;font-size:12px}
+#anlModal .leyP{grid-template-columns:1fr}
+#anlModal .leyC{gap:5px 12px;font-size:11px}
+#anlModal .anlAcc{padding:10px 14px;gap:8px}
+#anlModal .anlAcc .btn{min-width:0;padding:12px 10px;font-size:12px}
+}
+@media (pointer:coarse){
+#anlModal .anlAcc .btn{min-height:44px}
+#anlModal .anlB .seg button{min-height:40px}
+#anlModal .anlB input[type=range]{height:36px}
+#anlModal .anl .close, #anlModal .sheet .close, #anlModal .anlH .close{width:40px;height:40px}
+}

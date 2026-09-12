@@ -6,7 +6,7 @@
 <title>Laureles Campestre · Mapa de ventas</title>
 <meta name="description" content="Mapa de ventas de la parcelación Laureles Campestre, El Caimo, Armenia (Quindío).">
 <meta name="theme-color" content="#32402F">
-<meta name="build" content="20260910b">
+<meta name="build" content="2026-09-12 · movil3">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
@@ -1968,6 +1968,12 @@ function avisar(t,ms){ const a=document.getElementById("aviso");
 const velo=document.getElementById("velo");
 function abrirAjustes(){
   document.getElementById("hojaTit").textContent="Ajustes";
+  /* El sello de versión: con esto se sabe de un vistazo si lo que se está
+     viendo es lo último publicado o una copia guardada del navegador. Era la
+     pregunta que no se podía responder desde la propia página. */
+  const sello = BUILD +
+    (navigator.serviceWorker && navigator.serviceWorker.controller
+      ? " · copia guardada" : " · desde la red");
   document.getElementById("hojaCuerpo").innerHTML =
     '<label>Número de WhatsApp de ventas</label>'+
     '<input type="text" id="aTel" value="'+CFG.telefono+'" placeholder="573001234567">'+
@@ -1981,7 +1987,7 @@ function abrirAjustes(){
         '<input type="text" id="aKey" value="'+(CFG.supabaseKey||"")+'" placeholder="sb_publishable_...">'
       : '')+
     '<div class="pista" style="margin-top:18px;padding-top:12px;border-top:1px solid var(--line-soft)">'+
-    'Versión publicada: <b>'+BUILD+'</b></div>'+
+    'Versión publicada: <b>'+sello+'</b></div>'+
     '<div class="pista">Sin Supabase el mapa funciona igual, pero los cambios de estado se quedan '+
     'en el dispositivo de cada asesor. El archivo <b>supabase.sql</b> del repositorio crea la tabla.</div>'+
     '<div class="pista" style="margin-top:10px">Entrando ahora como <b>'+
@@ -2032,9 +2038,29 @@ ROL.pintar();
 velo.onclick=e=>{ if(e.target===velo) velo.classList.remove("on"); };
 addEventListener("keydown",e=>{ if(e.key==="Escape"){ velo.classList.remove("on"); cerrarFicha(); } });
 
-/* ---------------------------------- PWA ------------------------------------- */
-if("serviceWorker" in navigator)
-  addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+/* ---------------------------------- PWA -------------------------------------
+   EL PROBLEMA DE "SIGO VIENDO LA VERSIÓN VIEJA".
+   El service worker ya se instala de una y toma el control sin esperar, pero la
+   pestaña que estaba abierta en el momento del cambio se queda con el código
+   anterior cargado en memoria hasta que alguien la recargue a mano. Aquí se
+   recarga sola, una sola vez, en cuanto el nuevo toma el mando. Así publicar y
+   abrir el sitio basta: no hay que borrar caché ni entrar de incógnito.        */
+if("serviceWorker" in navigator){
+  addEventListener("load",()=>{
+    navigator.serviceWorker.register("sw.js").then(reg=>{
+      try{ reg.update(); }catch(e){}
+      /* y se vuelve a preguntar cada vez que se vuelve a la pestaña */
+      document.addEventListener("visibilitychange",()=>{
+        if(!document.hidden) try{ reg.update(); }catch(e){}
+      });
+    }).catch(()=>{});
+    let recargando = false;
+    navigator.serviceWorker.addEventListener("controllerchange",()=>{
+      if(recargando) return; recargando = true;
+      location.reload();
+    });
+  });
+}
 if(SB.activo()) addEventListener("load",()=>SB.traer());
 
 /* ------------- puente para el armazón (intro, nav, POI, idioma) ------------ */
@@ -2070,7 +2096,10 @@ window.seleccionarLote = n => {
 <script src="adaptador.js"></script>
 <script src="analisis.js"></script>
 <script src="datos-via.js"></script>
-<script src="r3d.js"></script>
+<script src="three.min.js"></script>
+<script src="relieve.js"></script>
+<script src="enganche3d.js"></script>
+<script src="barra_casas.js"></script>
 <script src="armazon.js"></script>
 <script>
 (function(){

@@ -664,15 +664,51 @@ const IMPL = window.__IMPL || {};
    avisarles uno por uno.
    ========================================================================= */
 const TAMANOS = ["300","250","200"];
+/* LOS TRES TIPOS REALES DEL PROYECTO
+   Hasta ahora el selector decía 200, 250 y 300 m², que eran los tamaños con los
+   que se corrió la implantación: envolventes redondas, no casas. Los tipos que
+   de verdad se están vendiendo son otros tres, con el área rotulada en su propio
+   plano y todos con 35,5 m² de parqueadero aparte. Cada uno se enseña montado
+   sobre la envolvente más cercana, y la diferencia entre las dos cifras va
+   dicha al pie: no se disfraza un número con el otro.
+     tipo 199,6 m²  ->  envolvente de 200 m²   (0,2 % de diferencia)
+     tipo 228,7 m²  ->  envolvente de 250 m²   (8,5 %)
+     tipo 316 m²    ->  envolvente de 300 m²   (5,3 %)
+   El movimiento de tierra que sale en el informe es el de la ENVOLVENTE, que es
+   lo que se calculó contra el terreno medido. */
+const TIPOS_CASA = {
+  "200":{et:"199,6 m²", area:199.6, env:200},
+  "250":{et:"228,7 m²", area:228.7, env:250},
+  "300":{et:"316 m²",   area:316.0, env:300}
+};
+const PARQ_TIPO = 35.5, ALTO_TIPO = 4.00;
+
+/* =========================================================================
+   LA VOLUMETRÍA REAL DE CADA TIPO
+   Los muros de los tres tipos, leídos de los PDF de arquitectura y reducidos a
+   rectángulos alineados a los ejes (46, 72 y 76 piezas). Con esto el volumen
+   que se levanta deja de ser una caja: es la planta de la casa escogida,
+   extruida 4,00 m. 'w' y 'd' son la envolvente propia del tipo, en metros; los
+   rectángulos van en ese mismo marco, con el origen en la esquina.
+   Calibración: la escala salió del rectángulo de 35,5 m² de parqueadero y se
+   contrastó con los bloques CAD de carro del propio plano — ±5 %.
+   ========================================================================= */
+const MUROS_TIPO = {"200":{"w":16.05,"d":19.68,"area_tipo":199.6,"area_muros":14.54,"r":[[1.16,0.0,1.37,0.79],[1.38,0.0,1.64,0.79],[1.64,0.0,2.04,0.16],[2.04,0.0,5.99,0.16],[5.99,0.0,6.3,0.58],[7.89,0.0,8.21,0.79],[8.21,0.0,11.15,0.16],[11.15,0.0,11.31,4.18],[11.31,4.18,12.35,4.5],[10.52,4.34,11.31,4.5],[1.38,8.32,1.85,8.58],[0.0,11.55,0.21,12.03],[0.21,11.55,0.37,16.21],[2.04,11.55,2.28,11.87],[2.28,11.55,2.44,16.21],[7.89,11.55,12.45,11.87],[2.44,11.71,6.3,11.87],[5.72,12.82,6.14,12.98],[6.14,12.82,6.3,17.85],[6.3,13.14,7.68,13.3],[7.68,13.14,7.84,13.88],[7.84,13.14,9.9,13.3],[9.9,13.14,10.06,13.88],[12.13,13.14,12.29,13.88],[12.29,13.14,14.35,13.3],[14.35,13.14,14.51,13.88],[14.51,13.14,15.89,13.3],[15.89,13.14,16.05,18.12],[11.02,13.18,11.18,17.85],[6.3,14.62,6.94,14.78],[7.68,14.62,7.84,17.85],[14.35,14.62,14.51,17.85],[15.26,14.62,15.89,14.78],[0.37,16.05,1.0,16.21],[0.0,17.27,0.16,19.51],[0.16,17.27,0.97,17.66],[2.06,17.27,3.65,17.43],[3.65,17.27,3.81,19.51],[5.72,17.54,6.14,17.85],[7.84,17.69,8.47,17.85],[10.59,17.69,11.02,17.85],[11.18,17.69,11.6,17.85],[13.72,17.69,14.35,17.85],[0.0,19.52,1.37,19.67],[1.38,19.52,2.04,19.67],[2.04,19.52,3.81,19.67]]},"250":{"w":17.99,"d":18.57,"area_tipo":228.7,"area_muros":17.21,"r":[[1.1,0.0,1.29,0.55],[1.3,0.0,1.55,0.55],[1.55,0.0,5.64,0.15],[5.64,0.0,5.95,0.55],[7.45,0.0,7.74,0.75],[7.74,0.0,10.14,0.15],[10.14,0.0,10.28,4.25],[10.29,0.0,12.69,0.15],[12.69,0.0,12.84,0.5],[11.09,1.35,12.69,1.5],[12.69,1.35,12.84,2.35],[12.69,3.8,12.84,4.25],[11.19,4.1,12.69,4.25],[10.14,5.25,10.28,6.15],[10.29,5.25,11.17,5.4],[12.13,5.25,12.28,6.08],[7.45,6.0,7.59,8.1],[7.59,6.0,9.45,6.15],[9.45,6.0,9.6,8.1],[9.6,6.0,10.14,6.15],[12.13,7.28,12.28,8.1],[1.3,7.85,1.75,8.1],[9.6,7.95,10.28,8.1],[10.29,7.95,12.13,8.1],[0.0,10.9,0.2,11.35],[0.2,10.9,0.35,12.54],[1.93,10.9,2.15,11.2],[2.15,10.9,2.3,12.54],[7.45,10.9,10.28,11.2],[10.29,10.9,11.09,11.2],[14.34,10.9,16.09,11.2],[2.3,11.05,5.95,11.2],[5.39,12.1,5.79,12.25],[5.79,12.1,5.95,12.54],[7.45,12.4,9.79,12.54],[10.79,12.4,11.09,12.54],[14.34,12.4,14.64,12.54],[15.64,12.4,17.99,12.54],[0.2,12.55,0.35,15.3],[2.15,12.55,2.3,15.3],[5.79,12.55,5.95,16.45],[7.45,12.55,7.59,17.3],[7.59,12.55,7.74,12.9],[10.79,12.55,10.94,15.89],[10.94,12.55,11.09,13.0],[14.34,12.55,14.49,13.0],[14.49,12.55,14.64,15.89],[17.69,12.55,17.84,12.9],[17.84,12.55,17.99,17.3],[11.09,12.85,12.64,13.0],[12.64,12.85,12.79,18.09],[12.79,12.85,14.34,13.0],[10.94,14.75,11.14,14.9],[12.04,14.75,12.64,14.9],[12.79,14.75,13.39,14.9],[14.29,14.75,14.49,14.9],[0.35,15.15,0.95,15.3],[5.39,16.14,5.79,16.45],[0.0,16.3,0.15,18.41],[0.15,16.3,0.92,16.66],[1.95,16.3,3.45,16.45],[3.45,16.3,3.6,18.41],[7.59,16.79,7.74,17.3],[10.79,16.79,10.94,18.24],[10.94,16.79,11.14,17.09],[14.29,16.79,14.49,17.09],[14.49,16.79,14.64,18.24],[17.69,16.79,17.84,17.3],[10.94,17.95,11.14,18.24],[14.29,17.95,14.49,18.24],[0.0,18.42,1.29,18.56],[1.3,18.42,3.6,18.56]]},"300":{"w":24.76,"d":24.76,"area_tipo":316.0,"area_muros":24.51,"r":[[4.8,0.0,4.96,1.05],[4.96,0.0,6.29,0.17],[6.29,0.0,9.82,0.39],[9.82,0.0,11.47,0.17],[11.47,0.0,11.64,1.05],[11.64,0.0,13.13,0.17],[13.13,0.0,13.29,1.05],[13.13,2.15,13.46,3.2],[13.46,2.15,16.44,2.32],[16.44,2.15,16.6,2.98],[4.8,2.37,4.96,3.48],[11.47,2.37,11.97,2.54],[11.97,2.37,12.13,5.35],[4.47,3.14,4.8,3.48],[16.44,3.14,17.15,3.48],[20.85,3.14,23.11,3.48],[11.47,5.18,11.64,8.66],[11.64,5.18,11.97,5.35],[11.64,6.34,13.18,6.51],[13.95,6.34,14.12,8.16],[16.44,6.34,16.6,8.66],[11.64,8.0,11.8,8.66],[11.8,8.0,13.95,8.16],[14.12,8.0,16.44,8.16],[11.47,11.31,11.8,12.3],[16.44,11.31,16.6,12.3],[11.8,12.13,16.44,12.3],[16.44,14.51,16.82,14.67],[16.82,14.51,17.15,15.5],[13.13,14.53,13.29,15.33],[13.29,14.53,16.44,14.67],[4.47,16.33,4.96,16.93],[4.96,16.33,9.43,16.49],[9.43,16.33,9.82,16.93],[13.13,16.33,14.17,16.66],[16.82,16.33,17.15,16.66],[20.85,16.33,23.11,16.66],[14.17,16.49,16.82,16.66],[3.48,16.77,4.47,16.93],[13.13,18.32,13.29,23.72],[13.29,18.32,15.72,18.48],[16.82,18.32,16.99,22.17],[16.99,18.32,17.15,18.97],[20.74,18.32,20.9,18.97],[20.9,18.32,21.07,22.17],[22.17,18.32,24.6,18.48],[24.6,18.32,24.77,23.72],[9.65,18.48,9.82,19.73],[17.15,18.81,18.86,18.97],[18.86,18.81,19.03,21.07],[19.03,18.81,20.74,18.97],[9.65,20.05,9.82,24.76],[0.17,20.41,0.33,22.01],[1.99,20.41,3.81,20.57],[3.81,20.41,3.97,22.01],[4.96,20.79,9.65,20.96],[16.99,20.9,17.21,21.07],[18.2,20.9,18.86,21.07],[19.03,20.9,19.69,21.07],[20.68,20.9,20.9,21.07],[1.99,21.07,2.15,21.9],[18.86,21.16,19.03,24.6],[13.29,23.16,13.46,23.72],[16.82,23.16,16.99,24.76],[16.99,23.16,17.21,23.5],[20.68,23.16,20.9,23.5],[20.9,23.16,21.07,24.76],[24.43,23.16,24.6,23.72],[0.0,23.66,0.17,24.76],[0.17,23.66,0.33,23.83],[1.99,23.66,2.15,24.76],[4.96,23.66,5.29,24.76],[16.99,24.43,17.21,24.76],[20.68,24.43,20.9,24.76],[0.17,24.6,1.99,24.76],[5.29,24.6,9.65,24.76]]}};
 let TAM_CASA = (function(){ try{ const v=localStorage.getItem("laureles.tamCasa");
   return TAMANOS.indexOf(v)>=0 ? v : "300"; }catch(e){ return "300"; } })();
 
+/* Devuelve la envolvente implantada de este lote para el tamaño pedido, y deja
+   dicho en A.env CUÁL quedó: el número si es una de las tres, o "min" si en
+   este lote no cabe ninguna de las tres y lo que hay es la envolvente mínima
+   que la implantación logró meter (lotes 21 y 49). Antes esto se callaba y el
+   informe rotulaba "tipo de 316 m²" sobre un volumen de 108 m² construidos. */
 function casaDelLote(A, t){
-  if(!A || !A.ks) return A ? A.k : null;
-  if(A.ks[t]) return A.ks[t];
-  /* si el escogido no cabe en este lote, el mayor que sí */
-  for(const q of TAMANOS) if(A.ks[q]) return A.ks[q];
-  return A.k || null;
+  if(!A) return null;
+  if(!A.ks){ A.env=null; return A.k || null; }
+  if(A.ks[t]){ A.env=+t; return A.ks[t]; }
+  for(const q of TAMANOS) if(A.ks[q]){ A.env=+q; return A.ks[q]; }
+  if(A.ks.min){ A.env="min"; return A.ks.min; }
+  A.env=null; return A.k || null;
 }
 function ponerTamano(t){
   if(TAMANOS.indexOf(t) < 0) return;
@@ -680,14 +716,17 @@ function ponerTamano(t){
   try{ localStorage.setItem("laureles.tamCasa", t); }catch(e){}
   for(const n in IMPL){
     const A = IMPL[n];
-    if(A && A.ks) A.k = casaDelLote(A, t);
+    if(!A) continue;
+    /* también los lotes sin variantes por tamaño pasan por aquí: si no, se
+       quedaban con A.env sin definir y el informe no sabía qué rotular */
+    A.k = casaDelLote(A, t);
   }
 }
 ponerTamano(TAM_CASA);          /* deja 'k' en el tamaño guardado desde el arranque */
 
 /* =========================================================================
    PLAN DE PAGOS
-   La cuota inicial se paga dentro de 2026: para separar entran $20.000.000 y el
+   La cuota inicial se paga dentro de 2026: para separar entran $50.000.000 y el
    resto de la inicial se completa hasta diciembre. El saldo se reparte de enero
    de 2027 a diciembre de 2028, que son 24 meses: 23 cuotas del 3 % del saldo y
    una última que absorbe lo que quede, y por eso es la más alta.
@@ -777,7 +816,10 @@ const rumboTxt=b=>{
   const d=["norte","nororiente","oriente","suroriente","sur","suroccidente","occidente","noroccidente"];
   return T(d[Math.round(((b%360)+360)%360/45)%8]);
 };
-const ALTURA_MAX=5.0, ENTRE_NIVELES=3.0;
+/* La altura del volumen: 4,00 m, que es la de los tres tipos reales del
+   proyecto. Estaba en 5,0 m —la de la casa de estudio 30JB— y con eso la
+   sombra del informe salía un 25 % más larga que el volumen que se dibuja. */
+const ALTURA_MAX=ALTO_TIPO, ENTRE_NIVELES=3.0;
 const CLASES=[["Plano","menos de 5 %","#4C8862"],["Suave","5 – 10 %","#7BA36B"],
               ["Medio","10 – 15 %","#C4B45A"],["Fuerte","15 – 25 %","#C48A2A"],
               ["Escarpado","más de 25 %","#A3543F"]];
@@ -1069,7 +1111,22 @@ function muestrearLote(ring, paso){
     }
   return out;
 }
+/* Caja envolvente cacheada por anillo: dentroAnillo era el 38 % del tiempo de
+   abrir un análisis, y la mayoría de las llamadas son puntos que ni siquiera
+   caen en la caja del anillo (las fajas de protección, sobre todo). */
+const CAJA_ANILLO = new WeakMap();
+function cajaAnillo(ring){
+  let c = CAJA_ANILLO.get(ring);
+  if(c) return c;
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for(let i=0;i<ring.length;i++){ const p=ring[i];
+    if(p[0]<x0)x0=p[0]; if(p[0]>x1)x1=p[0];
+    if(p[1]<y0)y0=p[1]; if(p[1]>y1)y1=p[1]; }
+  c=[x0,y0,x1,y1]; CAJA_ANILLO.set(ring,c); return c;
+}
 function dentroAnillo(x,y,ring){
+  const c=cajaAnillo(ring);
+  if(x<c[0]||x>c[2]||y<c[1]||y>c[3]) return false;
   let d=false;
   for(let i=0,j=ring.length-1;i<ring.length;j=i++){
     const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];
@@ -1900,40 +1957,122 @@ const ISO = (()=>{
 
   /* ---- la escena: todo en metros, con el origen en el centro de la casa ---- */
   function escena(n, L, A){
-    const K = A && A.k; if(!K || !K.o) return null;
-    const casa = CASA30;
-    const escU = K.L/casa.W, escV = (K.Dc||casa.D)/casa.D;
-
-    /* PX del plano: x al oriente, y al sur. Aquí N = -y. */
-    const o=K.o, ux=K.ux, uv=K.uv;
-    const XY=(u,v)=>{ const uu=u*escU, vv=v*escV;
-      return [o[0]+ux[0]*uu+uv[0]*vv, o[1]+ux[1]*uu+uv[1]*vv]; };
-    /* centro de la casa, para dejar el origen ahí */
-    const c = XY(casa.W/2, casa.D/2);
+    /* En cinco lotes del predio —48, 65, 83, 84 y 86— no cabe ningún volumen
+       tipo dentro del área construible. Antes esta función devolvía null y esos
+       lotes se quedaban SIN el dibujo del sol: justo los más difíciles, que son
+       los que más falta hace entender. Ahora la escena se arma igual con el
+       terreno medido y el recorrido del sol; lo único que no se dibuja es la
+       casa, porque no la hay. */
+    const K = (A && A.k && A.k.o) ? A.k : null;
+    /* Si no cabe una casa de una sola plataforma, no es que no se pueda
+       construir: es que hay que hacerla en bancales. Ese volumen se implanta
+       aquí y se levanta igual que el otro. */
+    const KT = K ? null : implantarTerraza(n);
+    const B  = K || KT;
+    const o = B ? B.o : null, ux = B ? B.ux : null, uv = B ? B.uv : null;
+    const LC = K ? (K.L || 18) : (KT ? KT.L : 0);
+    const DC = K ? (K.A || K.Dc || 12) : (KT ? KT.A : 0);
+    const XY = B ? ((u,v)=>[ o[0]+ux[0]*u+uv[0]*v, o[1]+ux[1]*u+uv[1]*v ]) : null;
+    let c, z0;
+    if(B){ c = XY(LC/2, DC/2); z0 = K ? K.z : KT.z; }
+    else {
+      c = PX(L.c);
+      const zc = MDT.cotaDibujo(c[0], c[1]);
+      if(isNaN(zc)){
+        let sz=0, nz=0;
+        L.g.map(PX).forEach(q=>{ const z=MDT.cotaDibujo(q[0],q[1]); if(!isNaN(z)){sz+=z;nz++;} });
+        if(!nz) return null;
+        z0 = sz/nz;
+      } else z0 = zc;
+    }
     const EN = p => [ p[0]-c[0], -(p[1]-c[1]) ];
+    /* Dos alturas, a propósito: la estricta devuelve NaN donde no hay modelo de
+       terreno —y esa celda no se dibuja—, y la tolerante cae al nivel de la
+       plataforma para el lindero y los cuerpos, que sí tienen que cerrar.
+       Antes había una sola con caída a 0 y el resultado era una meseta plana
+       falsa: en el lote 3 eran el 30 % de las celdas, y en el 63 el 21 %. */
+    const altN = p => { const z=MDT.cotaDibujo(p[0],p[1]); return isNaN(z) ? NaN : z-z0; };
+    const alt  = p => { const z=altN(p); return isNaN(z) ? 0 : z; };
+    const P3  = p => { const e=EN(p); return [e[0], e[1], alt(p)]; };
+    const P3N = p => { const e=EN(p); return [e[0], e[1], altN(p)]; };
 
     const piezas=[], suelo=[];
 
-    /* --- el suelo: el entorno inmediato de la casa, no el lote entero.
-           Un lote de 100 m de fondo dejaría la casa del tamaño de una uña. --- */
-    const MU=9.0/escU, MV=8.0/escV;      /* márgenes en metros de referencia */
-    const W0=casa.W, D0=casa.D;
-    suelo.push({tipo:"plataforma", pts:[
-      XY(-MU,-MV), XY(W0+MU,-MV), XY(W0+MU,D0+MV), XY(-MU,D0+MV)].map(EN)});
-    /* la línea del antejardín, por donde se llega desde la vía */
-    suelo.push({tipo:"antejardin", pts:[XY(-MU,0), XY(W0+MU,0)].map(EN)});
+    /* ------------------------------------------------------------------
+       EL SUELO ES EL TERRENO DEL LOTE, NO UNA TARIMA.
+       Antes el sol se dibujaba sobre un cuadrado plano puesto a nivel. En un
+       lote con 28 % de pendiente eso cuenta otra cosa: la casa parecía posada
+       en una mesa y el lote no se reconocía. Ahora el suelo es el lote de
+       verdad —su forma del plano 039— mallado cada 3 m y colgado del mismo
+       modelo de alturas que usan el corte y el mapa de pendientes del informe.
+       Cada celda lleva su propio sombreado según cómo mire su cara al sol, que
+       es lo que deja leer la ladera.
+       ------------------------------------------------------------------ */
+    const anillo = L.g.map(PX);
+    let bx0=1e9,by0=1e9,bx1=-1e9,by1=-1e9;
+    anillo.forEach(q=>{bx0=Math.min(bx0,q[0]);bx1=Math.max(bx1,q[0]);
+                       by0=Math.min(by0,q[1]);by1=Math.max(by1,q[1]);});
+    const PASO = Math.max(2.5, Math.min(5, Math.hypot(bx1-bx0,by1-by0)/44));
+    const LUZ = [-0.45, -0.35, 0.82];                      /* luz de estudio, fija */
+    for(let x=bx0; x<bx1; x+=PASO) for(let y=by0; y<by1; y+=PASO){
+      const cxm=x+PASO/2, cym=y+PASO/2;
+      if(!dentroAnillo(cxm,cym,anillo)) continue;
+      const q=[[x,y],[x+PASO,y],[x+PASO,y+PASO],[x,y+PASO]].map(P3N);
+      if(q.some(v=>isNaN(v[2]))) continue;
+      /* normal aproximada de la celda, para el sombreado */
+      const ax=PASO, dzx=(q[1][2]-q[0][2]), dzy=(q[3][2]-q[0][2]);
+      const nx=-dzx/ax, ny=-dzy/ax, nz=1, m=Math.hypot(nx,ny,nz);
+      const lam=Math.max(0,(nx*LUZ[0]+ny*LUZ[1]+nz*LUZ[2])/m);
+      suelo.push({tipo:"terreno", pts:q, tono:0.55+0.45*lam,
+                  z:(fondo(q[0][0],q[0][1],q[0][2])+fondo(q[2][0],q[2][1],q[2][2]))/2});
+    }
+    suelo.sort((a,b)=>b.z-a.z);                            /* del fondo hacia adelante */
+    /* el lindero, colgado de su propia cota */
+    suelo.push({tipo:"lindero", pts:anillo.map(P3)});
+    /* la línea del antejardín, sobre el terreno (sólo si hay implantación) */
+    if(B) suelo.push({tipo:"antejardin", pts:[XY(-9,0), XY(LC+9,0)].map(P3)});
 
-    /* --- los volúmenes --- */
-    casa.bloques.forEach(([nom,u0,v0,u1,v1,h,cls])=>{
-      const q=[XY(u0,v0),XY(u1,v0),XY(u1,v1),XY(u0,v1)].map(EN);
-      if(cls==="patio"){ suelo.push({tipo:"patio", pts:q}); return; }
-      piezas.push({nom, base:q, h, cls,
-        z: q.reduce((a,p)=>a+fondo(p[0],p[1],h),0)/4});
-    });
-    piezas.sort((a,b)=>b.z-a.z);              /* del fondo hacia adelante */
+    /* ------------------------------------------------------------------
+       EL VOLUMEN ES EL DEL TIPO ESCOGIDO.
+       Antes se dibujaban siempre los tres cuerpos de la Casa 30JB, dijera lo
+       que dijera el selector. Ahora se levanta la envolvente del tipo que esté
+       escogido —199,6, 228,7 o 316 m²—, con los 35,5 m² de parqueadero aparte
+       y los 4,00 m de altura de la simulación. Es un volumen, no una planta, y
+       así va dicho en el pie: cuando llegue el DXF de cada casa se reemplaza.
+       ------------------------------------------------------------------ */
+    const ALTO_T = 4.00, ALTO_P = 2.60, PARQ = 35.5;
+    const cuerpo=(u0,v0,u1,v1,h,cls,b0)=>{
+      const base=[XY(u0,v0),XY(u1,v0),XY(u1,v1),XY(u0,v1)];
+      const q=base.map(EN);
+      const zs=base.map(alt);
+      piezas.push({nom:cls, base:q, h:h, cls:cls,
+        base0: b0!=null ? b0 : Math.min.apply(null,zs),     /* apoya en lo más bajo, o en su plataforma */
+        z: q.reduce((a,pp,i)=>a+fondo(pp[0],pp[1],h),0)/4});
+    };
+    if(K){
+      /* La envolvente del tipo escogido. Se probó levantar aquí los muros
+         reales leídos de los PDF, pero en un isométrico de este tamaño 72
+         tabiques de 20 cm se leen como ruido, y además el PDF sólo vectorizó
+         parte de los muros: la silueta construida que sale de ellos da 108 m²
+         donde el tipo tiene 199,6. Así que aquí va la envolvente —que es lo
+         que se midió contra el terreno— y la planta real va en el simulador. */
+      cuerpo(0,0,LC,DC,ALTO_T,"casa");
+      const lp=Math.sqrt(PARQ*1.35), ap=PARQ/lp;
+      cuerpo(LC+1.2, 0, LC+1.2+lp, ap, ALTO_P, "porche");
+      piezas.sort((a,b)=>b.z-a.z);
+    } else if(KT){
+      /* un cuerpo por bancal, cada uno apoyado en el nivel de piso de su banda */
+      KT.niveles.forEach(nv=>{
+        cuerpo(nv.u0, 0, nv.u1, DC, KT.alto, "casa", nv.npt - z0);
+      });
+      piezas.sort((a,b)=>b.z-a.z);
+    }
+
+    /* medidas del entorno, para el tamaño de la bóveda */
+    const anchoSuelo = Math.hypot(bx1-bx0, by1-by0)*0.72;
+    const fondoSuelo = anchoSuelo;
 
     /* --- los recorridos del sol --- */
-    const anchoSuelo=(casa.W*escU+18), fondoSuelo=(casa.D*escV+16);
     const R = 0.62*Math.hypot(anchoSuelo, fondoSuelo)*0.92;
     const cielo=[];
     SOL.FECHAS.forEach(f=>{
@@ -1968,7 +2107,7 @@ const ISO = (()=>{
     const ver=(E,N,U)=>{ const q=proy(E,N,U);
       x0=Math.min(x0,q[0]); x1=Math.max(x1,q[0]);
       y0=Math.min(y0,q[1]); y1=Math.max(y1,q[1]); };
-    esc.suelo.forEach(s=>s.pts.forEach(p=>ver(p[0],p[1],0)));
+    esc.suelo.forEach(s=>s.pts.forEach(p=>ver(p[0],p[1],p[2]||0)));
     esc.piezas.forEach(b=>b.base.forEach(p=>{ver(p[0],p[1],0);ver(p[0],p[1],b.h);}));
     esc.cielo.forEach(a=>a.pts.forEach(p=>ver(p[0],p[1],p[2])));
     esc.rosa.forEach(r=>ver(r.p[0],r.p[1],0));
@@ -1996,11 +2135,20 @@ function diagramaIso(n, W, H){
 
   /* --- el suelo --- */
   esc.suelo.forEach(g=>{
-    const pts=g.pts.map(p=>P(p[0],p[1],0));
-    if(g.tipo==="plataforma")
-      o+='<path d="'+d(pts)+'" fill="#F4F3EB" stroke="#BFBDAE" stroke-width="1.2"/>';
+    const pts=g.pts.map(p=>P(p[0],p[1],p[2]||0));
+    if(g.tipo==="terreno"){
+      /* cada celda del terreno lleva su sombreado: es lo que deja leer la
+         ladera en vez de un plano de color liso */
+      const t=g.tono==null?1:g.tono;
+      const c2=[Math.round(143*t+18), Math.round(163*t+14), Math.round(106*t+12)];
+      o+='<path d="'+d(pts)+'" fill="rgb('+c2[0]+','+c2[1]+','+c2[2]+')" '+
+         'stroke="rgb('+c2[0]+','+c2[1]+','+c2[2]+')" stroke-width=".4"/>';
+    } else if(g.tipo==="lindero")
+      o+='<path d="'+d(pts)+'" fill="none" stroke="#7D6B3E" stroke-width="1.7" stroke-linejoin="round"/>';
     else if(g.tipo==="antejardin")
       o+='<path d="'+dl(pts)+'" fill="none" stroke="#C9A45C" stroke-width="1.1" stroke-dasharray="6 5"/>';
+    else if(g.tipo==="plataforma")
+      o+='<path d="'+d(pts)+'" fill="#F4F3EB" stroke="#BFBDAE" stroke-width="1.2"/>';
     else
       o+='<path d="'+d(pts)+'" fill="#E4E0D2" stroke="#BFBDAE" stroke-width=".8"/>';
   });
@@ -2116,10 +2264,721 @@ function diagramaSolar(R, rumboCasa){
 }
 
 /* ------------------------------ la hoja -------------------------------- */
+/* =========================================================================
+   VIVIENDA EN TERRAZA — lotes 47 a 53
+   Estos siete lotes son los de la ladera del occidente y son los más difíciles
+   del proyecto. No es una opinión: rasterizando el levantamiento a 1 m, el 47
+   tiene 167 m² por debajo del 5 % en 3.830, y el 48 tiene 131 m² en 3.119 con
+   el 60 % del lote por encima del 25 %. Una casa de una sola plataforma ahí no
+   se posa: se entierra. El propio modelo de implantación lo dice — 976 m³ de
+   corte en el 47, 1.412 m³ en el 53, y en el 48 sencillamente no cabe.
+
+   Así que para estos lotes se proponen dos maneras de construir que trabajan
+   CON la pendiente en vez de pelearse con ella. Son modelos volumétricos de
+   arquitectura, no levantamientos: lo medido es el terreno —la pendiente, el
+   desnivel, la dirección de caída y por tanto el corte que resulta—; lo
+   propuesto son las dimensiones de la casa, y van dichas como propuesta.
+
+   T1 · BANCAL      Tres plataformas escalonadas siguiendo la ladera. La
+                    profundidad de cada una sale de la pendiente MEDIDA del
+                    lote, de modo que el escalón entre plataformas sea de
+                    1,50 m. Eso tiene una consecuencia bonita y demostrable:
+                    el corte máximo es s·p/2 = 0,75 m en cualquier lote, porque
+                    p se eligió como 1,50/s. Un solo escalón de altura media
+                    persona, no un muro de contención.
+
+   T2 · MIRADOR     Dos pisos de verdad: el nivel inferior metido contra la
+                    ladera por el lado alto y abierto al valle por el bajo.
+                    El fondo sale de la pendiente medida, F = 3,00/s, que es
+                    exactamente lo que hace falta para que la cara de abajo
+                    salga a la luz. Estos siete son los únicos lotes del
+                    proyecto donde ese nivel inferior es posible.
+   ========================================================================= */
+/* ¿QUÉ LOTE NECESITA TERRACEO? NO SE DECIDE POR NÚMERO.
+   La lista fija 47–53 dejaba fuera lotes más difíciles que varios de los que
+   incluía. Ahora lo decide la medida: el desnivel que queda BAJO LA HUELLA de
+   la casa una vez implantada. Si el terreno baja 3,00 m o más a lo largo de la
+   casa —un piso entero— una sola plataforma obliga a un corte que el terraceo
+   resuelve en bancales; es exactamente el caso que la implantación ya marca
+   como "dos niveles". Y entran también los lotes donde no cabe ningún volumen:
+   son los más difíciles del predio y los que más falta hace saber explicar.
+   Los 47 a 53 van siempre, porque así se pidieron. */
+const LOTES_TERRAZA=[47,48,49,50,51,52,53];
+const DESNIVEL_TERRAZA = 3.00;
+const TZ={ escalon:1.50, areaPlat:70, piso:3.00, alto:3.00, areaNivel:150, volado:3.00 };
+function esTerraza(n){
+  if(LOTES_TERRAZA.indexOf(+n)>=0) return true;
+  const A=IMPL[String(n)];
+  if(!A) return false;
+  if(!A.k) return true;                       /* no cabe ningún volumen: el caso extremo */
+  return (A.k.d||0) >= DESNIVEL_TERRAZA || A.k.mod==="2p";
+}
+
+function datosTerraza(n){
+  const L=DATA.lotes.find(x=>x.n===n); if(!L) return null;
+  const g0=L.g.map(PX), PR=DATA.prot.map(r=>r.map(PX));
+  const PASO=1.5;
+  let sp=0, np=0, plano=0, esc=0, planoTot=0, nTot=0;
+  muestrearLote(g0,PASO).forEach(([x,y,pe])=>{
+    nTot++; if(pe<5) planoTot++;
+    if(PR.some(r=>dentroAnillo(x,y,r))) return;     /* la faja de protección no se construye */
+    sp+=pe; np++; if(pe<5) plano++; if(pe>25) esc++;
+  });
+  if(np<20) return null;
+  const s=(sp/np)/100, A2=PASO*PASO;
+  const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+  /* T1: la profundidad del bancal la fija la pendiente, no el gusto */
+  const p1=cl(TZ.escalon/s, 4.0, 8.0), a1=cl(TZ.areaPlat/p1, 9, 18);
+  const esc1=s*p1;                          /* escalón real que resulta */
+  /* T2: el fondo que hace falta para que el nivel inferior salga a la luz */
+  const F=cl(TZ.piso/s, 9.0, 16.0), a2=cl(TZ.areaNivel/F, 9, 18);
+  const A=IMPL[String(n)], K=A&&A.k;
+  return {
+    pend:s*100, util:np*A2, plano:plano*A2, escarp:esc*A2,
+    planoTot:planoTot*A2, totalMed:nTot*A2,
+    t1:{ p:p1, a:a1, esc:esc1, area:3*p1*a1, corte:s*p1/2,
+         vol:3*a1*p1*(s*p1/4), largo:3*p1, caida:3*esc1 },
+    t2:{ F:F, a:a2, area:2*F*a2, terraza:a2*TZ.volado, corte:TZ.piso/2,
+         vol:F*a2*TZ.piso/2, aflora:s*F-TZ.piso, alto:2*TZ.alto },
+    plana: K ? {area:K.ac||K.an, co:K.co, ll:K.ll||0} : null
+  };
+}
+
+/* --------------------------------------------------------------------------
+   El corte del modelo sobre el perfil REAL del lote. El terreno sale del MDT
+   exactamente igual que en "El corte del terreno"; lo único que se añade es la
+   casa propuesta, dibujada a la misma escala y en la misma línea de máxima
+   pendiente, para que se vea cuánta tierra se mueve de verdad.
+   -------------------------------------------------------------------------- */
+/* La geometría del corte se calcula una sola vez y la usan los dos dibujos: el
+   de pantalla, en SVG, y el de la ficha PDF. Si se calculara aparte en cada uno
+   acabarían diciendo cosas distintas del mismo lote. */
+function geomTerraza(n, modo){
+  const L=DATA.lotes.find(x=>x.n===n), D=datosTerraza(n);
+  if(!L||!D) return null;
+  const g0=L.g.map(PX);
+  const c=PX(L.c); let cx=c[0], cy=c[1];
+  let dx=0, dy=0;
+  muestrearLote(g0,4).forEach(([x,y])=>{ const b=MDT.bajada(x,y); if(b){dx+=b[0]; dy+=b[1];} });
+  let m=Math.hypot(dx,dy); if(m<1e-6){dx=1;dy=0;m=1;} dx/=m; dy/=m;
+  const alcance=sg=>{ let t=0; for(let k=0.5;k<400;k+=0.5){
+      if(!dentroAnillo(cx+dx*sg*k, cy+dy*sg*k, g0)) break; t=k; } return t; };
+  const tA=-alcance(-1), tB=alcance(1);
+  if(tB-tA<12) return "";
+  const N=200, muestras=[];
+  for(let i=0;i<=N;i++){
+    const t=tA+(tB-tA)*i/N, z=MDT.cota(cx+dx*t, cy+dy*t);
+    if(!isNaN(z)) muestras.push([t,z]);
+  }
+  if(muestras.length<12) return "";
+  const zEn = t => {                       /* cota del terreno en la abscisa t */
+    let mejor=muestras[0];
+    for(const v of muestras) if(Math.abs(v[0]-t)<Math.abs(mejor[0]-t)) mejor=v;
+    return mejor[1];
+  };
+  /* dónde se posa la casa: arranca a un tercio del recorrido, ladera abajo */
+  const largoCasa = modo==="t1" ? D.t1.largo : D.t2.F;
+  let t0 = tA + (tB-tA-largoCasa)*0.38;
+  t0 = Math.max(tA+1, Math.min(t0, tB-largoCasa-1));
+  const t1f = t0+largoCasa;
+
+  /* --- niveles de la casa --- */
+  const cuerpos=[];                        /* {ta,tb,npt,alto,rot} */
+  if(modo==="t1"){
+    for(let k=0;k<3;k++){
+      const a=t0+k*D.t1.p, b=a+D.t1.p;
+      const npt=(zEn(a)+zEn(b))/2;         /* plataforma a media altura: corte = lleno */
+      cuerpos.push({ta:a, tb:b, npt:npt, alto:TZ.alto, rot:["B1","B2","B3"][k]});
+    }
+  } else {
+    const nptSup=zEn(t0);                                   /* entra a nivel por arriba */
+    cuerpos.push({ta:t0, tb:t1f, npt:nptSup-TZ.piso, alto:TZ.piso, rot:"N−1"});
+    cuerpos.push({ta:t0, tb:t1f, npt:nptSup, alto:TZ.alto, rot:"N0"});
+  }
+  const zs=muestras.map(v=>v[1]);
+  let zmin=Math.min(...zs), zmax=Math.max(...zs);
+  cuerpos.forEach(q=>{ zmin=Math.min(zmin,q.npt); zmax=Math.max(zmax,q.npt+q.alto); });
+  const holg=Math.max(1.5,(zmax-zmin)*0.14); zmin-=holg; zmax+=holg;
+  const azArriba=(Math.atan2(-dx,dy)*180/Math.PI+360)%360;
+  return {D:D, tA:tA, tB:tB, muestras:muestras, cuerpos:cuerpos,
+          zmin:zmin, zmax:zmax, az:azArriba};
+}
+
+function corteTerraza(n, modo, W, H){
+  const G=geomTerraza(n, modo);
+  if(!G) return "";
+  const D=G.D, tA=G.tA, tB=G.tB, muestras=G.muestras, cuerpos=G.cuerpos;
+  const zmin=G.zmin, zmax=G.zmax;
+  const M={i:52,d:16,s:16,b:34}, gw=W-M.i-M.d, gh=H-M.s-M.b;
+  const X=t=>M.i+(t-tA)/(tB-tA)*gw, Y=z=>M.s+(zmax-z)/(zmax-zmin)*gh;
+  const perfil=muestras.map(([t,z],i)=>(i?"L":"M")+X(t).toFixed(1)+" "+Y(z).toFixed(1)).join("");
+
+  let o='<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+Math.round(H)+
+        '" preserveAspectRatio="xMidYMid meet" style="display:block;border-radius:9px;background:var(--surface-2)">';
+  o+='<defs>'
+   + '<pattern id="tzc'+n+modo+'" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">'
+   + '<line x1="0" y1="0" x2="0" y2="6" stroke="#A3543F" stroke-width="1.6" stroke-opacity=".55"/></pattern>'
+   + '<pattern id="tzl'+n+modo+'" width="6" height="6" patternTransform="rotate(-45)" patternUnits="userSpaceOnUse">'
+   + '<line x1="0" y1="0" x2="0" y2="6" stroke="#4C8862" stroke-width="1.6" stroke-opacity=".55"/></pattern>'
+   + '</defs>';
+  const pasoZ=(zmax-zmin)>26?5:(zmax-zmin)>13?2:1;
+  for(let z=Math.ceil(zmin/pasoZ)*pasoZ; z<=zmax; z+=pasoZ)
+    o+='<line x1="'+M.i+'" y1="'+Y(z).toFixed(1)+'" x2="'+(W-M.d)+'" y2="'+Y(z).toFixed(1)+
+       '" stroke="var(--line-soft)" stroke-width="1"/>'
+     + '<text x="'+(M.i-7)+'" y="'+(Y(z)+3.2).toFixed(1)+'" font-size="9" text-anchor="end" '+
+       'fill="var(--muted)" font-variant-numeric="tabular-nums">'+ent(z)+'</text>';
+  o+='<path d="'+perfil+'L'+X(muestras[muestras.length-1][0]).toFixed(1)+' '+(H-M.b)+
+     'L'+X(muestras[0][0]).toFixed(1)+' '+(H-M.b)+'Z" fill="var(--ground)" fill-opacity=".55"/>';
+
+  /* corte y lleno de cada plataforma, cuerpo a cuerpo */
+  cuerpos.forEach(q=>{
+    if(modo==="t2" && q.rot==="N0") return;             /* el piso alto no toca tierra */
+    const dentro=muestras.filter(([t])=>t>=q.ta&&t<=q.tb);
+    if(dentro.length<2) return;
+    const banda=arriba=>{
+      let d="M"+X(dentro[0][0]).toFixed(1)+" "+Y(q.npt).toFixed(1);
+      dentro.forEach(([t,z])=>{ d+="L"+X(t).toFixed(1)+" "+Y(arriba?Math.max(z,q.npt):Math.min(z,q.npt)).toFixed(1); });
+      return d+"L"+X(dentro[dentro.length-1][0]).toFixed(1)+" "+Y(q.npt).toFixed(1)+"Z";
+    };
+    o+='<path d="'+banda(true)+'" fill="url(#tzc'+n+modo+')"/>';
+    o+='<path d="'+banda(false)+'" fill="url(#tzl'+n+modo+')"/>';
+  });
+  o+='<path d="'+perfil+'" fill="none" stroke="var(--ink-2)" stroke-width="1.9" '+
+     'stroke-dasharray="6 4" stroke-linejoin="round"/>';
+
+  /* los cuerpos de la casa */
+  cuerpos.forEach(q=>{
+    const xa=X(q.ta), xb=X(q.tb), yt=Y(q.npt+q.alto), yb=Y(q.npt);
+    const bajo = (modo==="t2" && q.rot==="N−1");
+    o+='<rect x="'+xa.toFixed(1)+'" y="'+yt.toFixed(1)+'" width="'+(xb-xa).toFixed(1)+
+       '" height="'+(yb-yt).toFixed(1)+'" fill="var(--forest)" fill-opacity="'+(bajo?".40":".78")+
+       '" stroke="var(--forest-deep)" stroke-width="1.2"/>';
+    o+='<line x1="'+xa.toFixed(1)+'" y1="'+yb.toFixed(1)+'" x2="'+xb.toFixed(1)+'" y2="'+yb.toFixed(1)+
+       '" stroke="var(--forest-deep)" stroke-width="2.6"/>';
+    if(xb-xa>26)
+      o+='<text x="'+((xa+xb)/2).toFixed(1)+'" y="'+((yt+yb)/2+4).toFixed(1)+
+         '" font-size="10.5" font-weight="700" text-anchor="middle" fill="'+
+         (bajo?"var(--forest-deep)":"var(--on-forest)")+'">'+q.rot+'</text>';
+  });
+  /* la terraza del modelo mirador: la losa que vuela sobre el nivel de abajo */
+  if(modo==="t2"){
+    const q=cuerpos[1], xb=X(q.tb), xv=X(q.tb+TZ.volado), y=Y(q.npt);
+    o+='<line x1="'+xb.toFixed(1)+'" y1="'+y.toFixed(1)+'" x2="'+Math.min(xv,W-M.d).toFixed(1)+
+       '" y2="'+y.toFixed(1)+'" stroke="var(--gold)" stroke-width="3.4" stroke-linecap="round"/>';
+    o+='<text x="'+Math.min(xv,W-M.d).toFixed(1)+'" y="'+(y-7).toFixed(1)+
+       '" font-size="9.5" font-weight="700" text-anchor="end" fill="#8A5F14">'+T("terraza")+'</text>';
+  }
+  /* eje horizontal */
+  o+='<line x1="'+M.i+'" y1="'+(H-M.b)+'" x2="'+(W-M.d)+'" y2="'+(H-M.b)+
+     '" stroke="var(--line)" stroke-width="1"/>';
+  const largo=tB-tA, pasoX=largo>140?40:largo>70?20:10;
+  for(let t=Math.ceil(tA/pasoX)*pasoX; t<=tB; t+=pasoX)
+    o+='<line x1="'+X(t).toFixed(1)+'" y1="'+(H-M.b)+'" x2="'+X(t).toFixed(1)+'" y2="'+(H-M.b+4)+
+       '" stroke="var(--line)" stroke-width="1"/>'
+     + '<text x="'+X(t).toFixed(1)+'" y="'+(H-M.b+15)+'" font-size="9" text-anchor="middle" '+
+       'fill="var(--muted)" font-variant-numeric="tabular-nums">'+ent(t-tA)+'</text>';
+  o+='<text x="14" y="'+(H-M.b+15)+'" font-size="9" fill="var(--muted)">'+TT("cota","elev.","cote")+'</text>';
+  o+='<text x="'+((M.i+W-M.d)/2).toFixed(0)+'" y="'+(H-6)+'" font-size="9" text-anchor="middle" '+
+     'fill="var(--muted)">'+TT("metros a lo largo del corte","metres along the section",
+                               "mètres le long de la coupe")+'</text>';
+  const azArriba=G.az;
+  o+='<text x="'+M.i+'" y="'+(M.s+10)+'" font-size="9" fill="var(--muted)">'+rumboTxt((azArriba+180)%360)+'</text>';
+  o+='<text x="'+(W-M.d)+'" y="'+(M.s+10)+'" font-size="9" text-anchor="end" fill="var(--muted)">'+
+     rumboTxt(azArriba)+'</text>';
+  /* si el dibujo no sale a la misma escala en las dos direcciones hay que decirlo:
+     una ladera exagerada vende miedo, y una aplanada vende humo */
+  const VE=(gh/(zmax-zmin))/(gw/(tB-tA));
+  if(VE>1.12||VE<0.89)
+    o+='<text x="'+((M.i+W-M.d)/2).toFixed(0)+'" y="'+(M.s+10)+'" font-size="9" text-anchor="middle" '+
+       'fill="var(--muted)">'+TT("escala vertical ×","vertical scale ×","échelle verticale ×")+dec(VE,1)+'</text>';
+  return o+'</svg>';
+}
+
+/* --------------------------------------------------------------------------
+   El bloque que se mete en el informe del lote. Sólo para los siete de ladera.
+   -------------------------------------------------------------------------- */
+function bloqueTerraza(n){
+  const AW = anchoDib();
+  if(!esTerraza(n)) return "";
+  const D=datosTerraza(n); if(!D) return "";
+  const L=DATA.lotes.find(x=>x.n===n);
+  const pctPlano=D.plano/D.util*100, pctEsc=D.escarp/D.util*100;
+  const fila=(a,b,c,d)=>'<tr><td>'+a+'</td><td>'+b+'</td><td>'+c+'</td><td>'+d+'</td></tr>';
+  const tabla=
+   '<table class="tbl" style="margin-top:12px"><thead><tr>'+
+     '<th>'+T("Manera de construir")+'</th><th>'+T("Área construida")+'</th>'+
+     '<th>'+T("Corte máximo")+'</th><th>'+T("Tierra movida")+'</th></tr></thead><tbody>'+
+   (D.plana
+     ? fila(T("Una sola plataforma")+' <span style="color:var(--muted)">('+T("casa tipo")+')</span>',
+            ent(D.plana.area)+' m²',
+            '<b style="color:#A3543F">'+dec(D.pend/100*Math.sqrt(D.plana.area)/2,2)+' m</b>',
+            ent(D.plana.co)+' m³ '+T("de corte")+' + '+ent(D.plana.ll)+' m³ '+T("de lleno"))
+     : fila(T("Una sola plataforma")+' <span style="color:var(--muted)">('+T("casa tipo")+')</span>',
+            '<span style="color:#A3543F">'+T("no cabe")+'</span>','—','—'))+
+   fila('<b>T1 · '+T("Bancal")+'</b>', ent(D.t1.area)+' m²',
+        '<b style="color:var(--forest-deep)">'+dec(D.t1.corte,2)+' m</b>',
+        ent(D.t1.vol)+' m³ '+T("de corte")+' + '+ent(D.t1.vol)+' m³ '+T("de lleno"))+
+   fila('<b>T2 · '+T("Mirador")+'</b>', ent(D.t2.area)+' m²',
+        '<b>'+dec(TZ.piso,2)+' m</b> <span style="color:var(--muted)">('+T("un piso")+')</span>',
+        ent(D.t2.vol)+' m³ '+T("de corte"))+
+   '</tbody></table>';
+
+  return '<h3>'+TT("Vivienda en terraza","Terraced house","Maison en terrasses")+'</h3>'+
+  '<div class="avisoDato" style="border-color:#8A5F14">'+TT(
+    'Este es uno de los siete lotes de la ladera. En todo el lote hay '+ent(D.planoTot)+
+    ' m² por debajo del 5 % de pendiente, pero fuera de la faja de protección —que es lo único '+
+    'construible— quedan '+ent(D.plano)+' m² ('+dec(pctPlano,1)+' % del área útil). '+
+    ent(D.escarp)+' m² ('+dec(pctEsc,1)+' %) pasan del 25 %, y la pendiente media medida del área '+
+    'útil es del '+dec(D.pend,1)+' %. Aquí la casa no se posa: se escalona.',
+    'This is one of the seven hillside lots. Over the measured usable area, only '+
+    ent(D.plano)+' m² ('+dec(pctPlano,1)+'%) fall below 5% slope and '+ent(D.escarp)+' m² ('+
+    dec(pctEsc,1)+'%) exceed 25%. The measured mean slope is '+dec(D.pend,1)+'%. Here a house '+
+    'cannot simply sit on the ground: it has to step down.',
+    'C\u2019est l\u2019un des sept lots en pente. Sur la surface utile mesurée, seuls '+
+    ent(D.plano)+' m² ('+dec(pctPlano,1)+' %) sont sous 5 % de pente et '+ent(D.escarp)+' m² ('+
+    dec(pctEsc,1)+' %) dépassent 25 %. La pente moyenne mesurée est de '+dec(D.pend,1)+' %.')+'</div>'+
+  tabla+
+  '<p class="p pie">'+TT(
+    'El terreno de las tres filas es el mismo y está medido. Lo que cambia es la manera de posarse '+
+    'encima. La casa tipo de una sola plataforma tiene que abrir un solo banco para toda el área: '+
+    'por eso el corte se va a metros. Los dos modelos de abajo reparten ese desnivel.',
+    'The ground in all three rows is the same and it is measured. What changes is how the house sits '+
+    'on it. The single-platform house has to open one bench for the whole area, which is why the cut '+
+    'runs into metres. The two models below spread that drop out.',
+    'Le terrain des trois lignes est le même et il est mesuré. Ce qui change, c\u2019est la façon de s\u2019y '+
+    'poser. La maison type à plateforme unique doit ouvrir un seul banc pour toute la surface.')+'</p>'+
+
+  '<h4 style="margin:20px 0 6px">T1 · '+TT("Bancal","Bench","Banquette")+' — '+
+    ent(D.t1.area)+' m² '+TT("en tres plataformas","on three platforms","sur trois plateformes")+'</h4>'+
+  '<div class="ubiBox">'+corteTerraza(n,"t1",AW,altoDib(AW,300))+'</div>'+
+  '<p class="p pie">'+TT(
+    'Tres plataformas de '+dec(D.t1.a,1)+' × '+dec(D.t1.p,1)+' m, cada una '+dec(D.t1.esc,2)+
+    ' m más abajo que la anterior. El fondo de la plataforma no se escogió: sale de la pendiente '+
+    'medida del lote, de manera que el escalón quede en el metro y medio. Por eso el corte máximo '+
+    'es de '+dec(D.t1.corte,2)+' m —media persona— y el lleno el mismo, así que la tierra que sale '+
+    'de una plataforma es la que entra en la siguiente: '+ent(D.t1.vol)+' m³ que no salen del lote. '+
+    'La cubierta de cada bancal es la terraza del de arriba. En total la casa recorre '+
+    dec(D.t1.largo,1)+' m de ladera y baja '+dec(D.t1.caida,2)+' m.',
+    'Three platforms of '+dec(D.t1.a,1)+' × '+dec(D.t1.p,1)+' m, each '+dec(D.t1.esc,2)+
+    ' m below the previous one. The platform depth was not chosen: it comes from the lot\u2019s measured '+
+    'slope so that the step stays around a metre and a half. The maximum cut is therefore '+
+    dec(D.t1.corte,2)+' m and the fill the same, so the soil taken from one platform goes into the '+
+    'next: '+ent(D.t1.vol)+' m³ that never leave the lot. Each bench\u2019s roof is the terrace above it.',
+    'Trois plateformes de '+dec(D.t1.a,1)+' × '+dec(D.t1.p,1)+' m, chacune '+dec(D.t1.esc,2)+
+    ' m sous la précédente. Le déblai maximal est de '+dec(D.t1.corte,2)+' m et le remblai identique.')+'</p>'+
+
+  '<h4 style="margin:20px 0 6px">T2 · '+TT("Mirador","Overlook","Belvédère")+' — '+
+    ent(D.t2.area)+' m² '+TT("en dos pisos","on two floors","sur deux niveaux")+'</h4>'+
+  '<div class="ubiBox">'+corteTerraza(n,"t2",AW,altoDib(AW,300))+'</div>'+
+  '<p class="p pie">'+TT(
+    'Dos niveles de '+dec(D.t2.a,1)+' × '+dec(D.t2.F,1)+' m, uno sobre otro, con '+dec(TZ.piso,2)+
+    ' m entre pisos. El de arriba entra a nivel desde la vía; el de abajo va contra la ladera por el '+
+    'lado alto y sale a la luz por el bajo — el fondo de '+dec(D.t2.F,1)+' m es justamente el que hace '+
+    'falta para que eso ocurra con la pendiente medida de este lote, del '+dec(D.pend,1)+' %. '+
+    'La losa que vuela '+dec(TZ.volado,1)+' m sobre el nivel de abajo es la terraza, '+ent(D.t2.terraza)+
+    ' m² mirando al valle. Corte: '+ent(D.t2.vol)+' m³, todo bajo el propio edificio. '+
+    'Estos siete lotes son los únicos del proyecto donde ese nivel inferior tiene sentido, porque '+
+    'son los únicos con desnivel suficiente para que no quede enterrado.',
+    'Two levels of '+dec(D.t2.a,1)+' × '+dec(D.t2.F,1)+' m, one above the other, '+dec(TZ.piso,2)+
+    ' m apart. The upper one is entered at grade from the road; the lower one is cut into the hill '+
+    'on the uphill side and opens to daylight on the downhill side — the '+dec(D.t2.F,1)+' m depth is '+
+    'exactly what that takes at this lot\u2019s measured '+dec(D.pend,1)+'% slope. Cut: '+ent(D.t2.vol)+' m³.',
+    'Deux niveaux de '+dec(D.t2.a,1)+' × '+dec(D.t2.F,1)+' m, superposés, '+dec(TZ.piso,2)+
+    ' m d\u2019écart. Déblai : '+ent(D.t2.vol)+' m³.')+'</p>'+
+  '<p class="p pie" style="border-top:1px dashed var(--line);padding-top:9px">'+TT(
+    'Qué está medido y qué está propuesto: el terreno de los dos cortes, la pendiente, el desnivel y '+
+    'la dirección de caída salen del levantamiento del plano 039 y del modelo de alturas. Las '+
+    'dimensiones de los dos modelos son una propuesta de arquitectura —no hay planos aprobados de '+
+    'estas dos casas— y el movimiento de tierra que se anuncia es el que resulta de posarlas sobre '+
+    'ese terreno medido. Cualquier proyecto definitivo debe pasar por estudio de suelos.',
+    'What is measured and what is proposed: the ground in both sections, the slope, the drop and the '+
+    'fall direction come from the survey of plan 039 and the elevation model. The dimensions of the '+
+    'two models are an architectural proposal — there are no approved drawings for these two houses — '+
+    'and the earthwork quoted is what results from setting them on that measured ground. Any final '+
+    'project requires a soil study.',
+    'Ce qui est mesuré et ce qui est proposé : le terrain des deux coupes vient du levé du plan 039. '+
+    'Les dimensions des deux modèles sont une proposition architecturale.')+'</p>';
+}
+
+/* =========================================================================
+   TOUR INTELIGENTE DE VIVIENDA
+   La idea, dicha por la gerencia, es que el cliente entienda a fondo qué puede
+   construir en SU lote: la casa, y además el deck, el kiosco, la piscina, el
+   jacuzzi, la cancha, la huerta. Lo que se puede responder hoy, y se responde
+   aquí, es la pregunta que de verdad decide una compra: QUÉ CABE.
+
+   Se contesta con geometría, no con ganas. Se rasteriza el lote a 1 m y se deja
+   sólo el suelo donde de verdad se puede construir —dentro del lindero, a 3 m
+   de cada vecino, a 10 m de la vía y fuera de las fajas de protección—, se le
+   descuenta la huella de la casa escogida, y sobre lo que queda se prueba si
+   cabe cada cosa, girándola en ocho orientaciones. El método se validó contra
+   el área construible que ya trae el informe: en seis lotes de prueba la
+   diferencia va del 0,2 % al 10 %.
+
+   Las medidas de las canchas son de reglamento y van citadas. Las del deck, el
+   kiosco, la piscina, el jacuzzi y la huerta son medidas corrientes y van
+   dichas como declaradas: no hay un reglamento que fije el tamaño de un kiosco.
+
+   Lo que NO está y se dice que no está: los renders dinámicos de la casa
+   escogida. Esos salen del estudio de arquitectura, no de aquí.
+   ========================================================================= */
+const COSAS = [
+  {k:"deck",  n:["Deck / terraza","Deck / terrace","Terrasse"],          w:8.0,  d:4.0,  f:"decl"},
+  {k:"kios",  n:["Kiosco","Gazebo","Kiosque"],                            w:5.0,  d:5.0,  f:"decl"},
+  {k:"jacu",  n:["Jacuzzi","Hot tub","Jacuzzi"],                          w:2.5,  d:2.5,  f:"decl"},
+  {k:"pisc",  n:["Piscina 8 × 4 m con andén","8 × 4 m pool with deck","Piscine 8 × 4 m"],
+                                                                          w:11.0, d:7.0,  f:"decl"},
+  {k:"huer",  n:["Huerta","Vegetable garden","Potager"],                  w:12.0, d:6.0,  f:"decl"},
+  {k:"voli",  n:["Cancha de voleibol reglamentaria","Regulation volleyball court","Terrain de volley"],
+                                                                          w:18.0, d:9.0,  f:"FIVB"},
+  {k:"volz",  n:["Voleibol con zona libre de 3 m","Volleyball with 3 m free zone","Volley avec zone libre"],
+                                                                          w:24.0, d:15.0, f:"FIVB"},
+  {k:"fut5",  n:["Cancha de fútbol sala, medida mínima","Futsal court, minimum size","Terrain de futsal"],
+                                                                          w:25.0, d:16.0, f:"FIFA"},
+  {k:"balo",  n:["Cancha de baloncesto reglamentaria","Regulation basketball court","Terrain de basket"],
+                                                                          w:28.0, d:15.0, f:"FIBA"}
+];
+const FUENTE_COSA = {
+  decl:["medida corriente, declarada","common size, declared","taille courante, déclarée"],
+  FIVB:["reglamento FIVB","FIVB rules","règlement FIVB"],
+  FIFA:["reglamento FIFA de fútbol sala","FIFA futsal rules","règlement FIFA de futsal"],
+  FIBA:["reglamento FIBA","FIBA rules","règlement FIBA"]
+};
+const RETIRO_LAT = 3.0, ANTEJARDIN = 10.0, PASO_TOUR = 1.0;
+/* los tres idiomas ya vienen escritos en el propio dato */
+const tri = a => a[LANG==="en"?1:LANG==="fr"?2:0] || a[0];
+
+function distPoli(x,y,pts){
+  let m=Infinity;
+  for(let i=0;i<pts.length-1;i++){
+    const ax=pts[i][0], ay=pts[i][1], bx=pts[i+1][0], by=pts[i+1][1];
+    const dx=bx-ax, dy=by-ay, L=dx*dx+dy*dy;
+    let t=L?((x-ax)*dx+(y-ay)*dy)/L:0; t=t<0?0:t>1?1:t;
+    const d=Math.hypot(x-(ax+t*dx), y-(ay+t*dy));
+    if(d<m) m=d;
+  }
+  return m;
+}
+
+/* El suelo donde de verdad se puede poner algo, celda a celda de 1 m */
+function sueloLibre(n){
+  const L=DATA.lotes.find(x=>x.n===n); if(!L) return null;
+  const A=IMPL[String(n)], K=A&&A.k;
+  const g=L.g.map(PX), anillo=g.concat([g[0]]);
+  const PR=DATA.prot.map(r=>r.map(PX));
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  g.forEach(p=>{x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);y0=Math.min(y0,p[1]);y1=Math.max(y1,p[1]);});
+  const VIAS=DATA.via.map(v=>v.map(PX))
+    .filter(v=>v.some(q=>q[0]>x0-70&&q[0]<x1+70&&q[1]>y0-70&&q[1]<y1+70));
+  const cel=[];
+  let casa=0;
+  for(let x=x0;x<=x1;x+=PASO_TOUR) for(let y=y0;y<=y1;y+=PASO_TOUR){
+    if(!dentroAnillo(x,y,g)) continue;
+    if(PR.some(r=>dentroAnillo(x,y,r))) continue;
+    if(distPoli(x,y,anillo) < RETIRO_LAT) continue;
+    let dv=Infinity;
+    for(const v of VIAS){ const d=distPoli(x,y,v); if(d<dv) dv=d; }
+    if(dv < ANTEJARDIN) continue;
+    if(K && K.g && dentroAnillo(x,y,K.g)){ casa++; continue; }   /* la casa ya ocupa */
+    cel.push([x,y]);
+  }
+  /* La pendiente del suelo que queda libre: sin esto, "cabe una cancha" se lee
+     como "hay dónde ponerla", y en la ladera del occidente eso sería mentir. */
+  let sp=0, np=0, pmax=0;
+  cel.forEach(([x,y])=>{ const pe=MDT.pendiente(x,y);
+    if(!isNaN(pe)){ sp+=pe; np++; if(pe>pmax) pmax=pe; } });
+  return {cel:cel, m2:cel.length*PASO_TOUR*PASO_TOUR, casa_m2:casa*PASO_TOUR*PASO_TOUR,
+          pend:np?sp/np:NaN, pendMax:np?pmax:NaN, bbox:[x0,y0,x1,y1]};
+}
+
+/* ¿Cabe un rectángulo de w × d en ese suelo? Se prueba en ocho orientaciones,
+   rasterizando y usando una tabla de sumas para que la respuesta sea inmediata
+   aunque el lote tenga tres mil celdas. Devuelve el ángulo donde cabe, o null. */
+function cabe(cel, w, d){
+  if(!cel.length) return null;
+  const W=Math.ceil(w/PASO_TOUR), D=Math.ceil(d/PASO_TOUR);
+  for(let a=0;a<8;a++){
+    const th=a*Math.PI/8, c=Math.cos(th), sn=Math.sin(th);
+    let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    const rot=cel.map(([x,y])=>{
+      const u=x*c+y*sn, v=-x*sn+y*c;
+      if(u<x0)x0=u; if(u>x1)x1=u; if(v<y0)y0=v; if(v>y1)y1=v;
+      return [u,v];
+    });
+    const nx=Math.ceil((x1-x0)/PASO_TOUR)+2, ny=Math.ceil((y1-y0)/PASO_TOUR)+2;
+    if(nx*ny>400000) continue;
+    const m=new Uint8Array(nx*ny);
+    rot.forEach(([u,v])=>{
+      const i=Math.round((u-x0)/PASO_TOUR), j=Math.round((v-y0)/PASO_TOUR);
+      if(i>=0&&j>=0&&i<nx&&j<ny) m[j*nx+i]=1;
+    });
+    /* tabla de sumas acumuladas */
+    const S=new Int32Array((nx+1)*(ny+1));
+    for(let j=0;j<ny;j++) for(let i=0;i<nx;i++)
+      S[(j+1)*(nx+1)+i+1] = m[j*nx+i] + S[j*(nx+1)+i+1] + S[(j+1)*(nx+1)+i] - S[j*(nx+1)+i];
+    const prueba=(ww,dd)=>{
+      if(ww>nx||dd>ny) return false;
+      for(let j=0;j+dd<=ny;j++) for(let i=0;i+ww<=nx;i++){
+        const s=S[(j+dd)*(nx+1)+i+ww]-S[j*(nx+1)+i+ww]-S[(j+dd)*(nx+1)+i]+S[j*(nx+1)+i];
+        if(s===ww*dd) return true;
+      }
+      return false;
+    };
+    if(prueba(W,D) || prueba(D,W)) return Math.round(th*180/Math.PI);
+  }
+  return null;
+}
+
+/* =========================================================================
+   IMPLANTACIÓN EN BANCALES
+   No hay lote donde no se pueda construir. Lo que hay son lotes donde no cabe
+   una casa de UNA SOLA PLATAFORMA: en 48, 65, 83, 84 y 86 el rectángulo de
+   22,4 × 28,4 m no entra en el área construible, y de ahí salía el «no cabe»
+   del informe. Pero la casa en tres bancales ocupa 12 × 17,5 m —la profundidad
+   de cada bancal la fija la pendiente, no el gusto— y eso sí entra, medido
+   celda a celda sobre el mismo suelo libre que usa el tour.
+
+   Aquí se implanta esa casa: se busca dónde cabe el rectángulo, con el eje
+   largo puesto sobre la línea de máxima pendiente para que los bancales queden
+   atravesados a la ladera, y se calcula el nivel de piso de cada bancal como el
+   promedio del terreno bajo su banda —corte igual a lleno, que es lo que hace
+   que el movimiento de tierra baje de más de mil metros cúbicos a menos de cien.
+   ========================================================================= */
+function ubicarRect(cel, w, d, thPref){
+  if(!cel || !cel.length) return null;
+  const P=PASO_TOUR;
+  /* HOLGURA. La rejilla es de 1 m y lo que se comprueba son CENTROS de celda:
+     el rectángulo de verdad puede sobresalir hasta medio metro por cada lado de
+     la celda más externa. En el lote 48 eso bastaba para que una esquina de la
+     casa cayera sobre la faja de protección. Se busca entonces un hueco un
+     metro más grande por lado y el rectángulo se coloca centrado dentro. */
+  const HOL=1;
+  const W=Math.ceil(w/P)+2*HOL, D=Math.ceil(d/P)+2*HOL;
+  const angs=[];
+  if(thPref!=null) angs.push(thPref);
+  for(let a=0;a<8;a++) angs.push(a*Math.PI/8);
+  for(const th of angs){
+    const c=Math.cos(th), sn=Math.sin(th);
+    let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    const rot=cel.map(([x,y])=>{ const u=x*c+y*sn, v=-x*sn+y*c;
+      if(u<x0)x0=u; if(u>x1)x1=u; if(v<y0)y0=v; if(v>y1)y1=v; return [u,v]; });
+    const nx=Math.ceil((x1-x0)/P)+2, ny=Math.ceil((y1-y0)/P)+2;
+    if(nx*ny>400000) continue;
+    const m=new Uint8Array(nx*ny);
+    rot.forEach(([u,v])=>{ const i=Math.round((u-x0)/P), j=Math.round((v-y0)/P);
+      if(i>=0&&j>=0&&i<nx&&j<ny) m[j*nx+i]=1; });
+    const S=new Int32Array((nx+1)*(ny+1));
+    for(let j=0;j<ny;j++) for(let i=0;i<nx;i++)
+      S[(j+1)*(nx+1)+i+1]=m[j*nx+i]+S[j*(nx+1)+i+1]+S[(j+1)*(nx+1)+i]-S[j*(nx+1)+i];
+    let cu=0, cv=0; rot.forEach(([u,v])=>{cu+=u;cv+=v;}); cu/=rot.length; cv/=rot.length;
+    let mejor=null;
+    for(let j=0;j+D<=ny;j++) for(let i=0;i+W<=nx;i++){
+      const q=S[(j+D)*(nx+1)+i+W]-S[j*(nx+1)+i+W]-S[(j+D)*(nx+1)+i]+S[j*(nx+1)+i];
+      if(q!==W*D) continue;
+      const mu=x0+(i+W/2)*P, mv=y0+(j+D/2)*P;
+      const e=(mu-cu)*(mu-cu)+(mv-cv)*(mv-cv);      /* la posición más centrada en el suelo libre */
+      if(!mejor||e<mejor.e) mejor={e:e, u:x0+i*P, v:y0+j*P};
+    }
+    if(!mejor) continue;
+    const u0=mejor.u+HOL*P, v0=mejor.v+HOL*P;         /* centrado dentro del hueco */
+    return { o:[ u0*c - v0*sn, u0*sn + v0*c ],
+             ux:[c, sn], uv:[-sn, c], ang:th, L:(W-2*HOL)*P, A:(D-2*HOL)*P };
+  }
+  return null;
+}
+
+const CACHE_TZ = {};
+function implantarTerraza(n){
+  if(CACHE_TZ[n]!==undefined) return CACHE_TZ[n];
+  let R=null;
+  try{
+    const L=DATA.lotes.find(x=>x.n===n);
+    const D=datosTerraza(n), S=L?sueloLibre(n):null;
+    if(L && D && S && S.cel.length){
+      const g0=L.g.map(PX);
+      let dx=0, dy=0;
+      muestrearLote(g0,4).forEach(([x,y])=>{ const b=MDT.bajada(x,y); if(b){dx+=b[0];dy+=b[1];} });
+      const mm=Math.hypot(dx,dy);
+      const thPref = mm>1e-6 ? Math.atan2(dy,dx) : null;
+      let modo="t1";
+      let U = ubicarRect(S.cel, 3*D.t1.p, D.t1.a, thPref);
+      if(!U){ U = ubicarRect(S.cel, D.t2.F, D.t2.a, thPref); modo = U ? "t2" : modo; }
+      /* Y aún así se comprueba el rectángulo de verdad, no la rejilla: se
+         recorre su perímetro cada 50 cm y ni un punto puede quedar fuera del
+         lote, dentro de una faja de protección ni a menos de 3 m del lindero.
+         Sin número no está verificado, y esto es el número. */
+      if(U){
+        const XYv=(u,v)=>[U.o[0]+U.ux[0]*u+U.uv[0]*v, U.o[1]+U.ux[1]*u+U.uv[1]*v];
+        const anillo=g0.concat([g0[0]]);
+        const PRv=DATA.prot.map(r=>r.map(PX));
+        let malo=false;
+        for(let u=0;u<=U.L+1e-6 && !malo;u+=0.5)
+          for(let v=0;v<=U.A+1e-6 && !malo;v+=0.5){
+            if(u>0.25 && u<U.L-0.25 && v>0.25 && v<U.A-0.25) continue;   /* sólo el borde */
+            const q=XYv(u,v);
+            if(!dentroAnillo(q[0],q[1],g0)) malo=true;
+            else if(PRv.some(r=>dentroAnillo(q[0],q[1],r))) malo=true;
+            else if(distPoli(q[0],q[1],anillo) < RETIRO_LAT-0.05) malo=true;
+          }
+        if(malo) U=null;
+      }
+      if(U){
+        const XY=(u,v)=>[U.o[0]+U.ux[0]*u+U.uv[0]*v, U.o[1]+U.ux[1]*u+U.uv[1]*v];
+        const nb = modo==="t1" ? 3 : 1;
+        const pb = U.L/nb;
+        const niveles=[]; let zmin=1e9, zmax=-1e9, ok=true;
+        for(let k=0;k<nb;k++){
+          let sz=0, nz=0;
+          for(let u=k*pb; u<=(k+1)*pb+1e-6; u+=1.0)
+            for(let v=0; v<=U.A+1e-6; v+=1.0){
+              const q=XY(u,v), z=MDT.cotaDibujo(q[0],q[1]);
+              if(!isNaN(z)){ sz+=z; nz++; if(z<zmin)zmin=z; if(z>zmax)zmax=z; }
+            }
+          if(!nz){ ok=false; break; }
+          niveles.push({u0:k*pb, u1:(k+1)*pb, npt:sz/nz});
+        }
+        if(ok){
+          /* cada bancal se queda donde está: su nivel de piso sale del terreno
+             que tiene debajo, no de reordenar la lista */
+          const nAlto = niveles.reduce((a,b)=>b.npt>a.npt?b:a, niveles[0]);
+          const nBajo = niveles.reduce((a,b)=>b.npt<a.npt?b:a, niveles[0]);
+          const alturaN = modo==="t1" ? TZ.alto : 2*TZ.alto;
+          R={ o:U.o, ux:U.ux, uv:U.uv, L:U.L, A:U.A, ang:U.ang, modo:modo,
+              niveles:niveles, alto:alturaN, nb:nb,
+              z:nAlto.npt, zBaja:nBajo.npt,
+              escalonReal:+((nAlto.npt-nBajo.npt)/Math.max(1,nb-1)).toFixed(2),
+              d:+(zmax-zmin).toFixed(2),
+              area:+(U.L*U.A).toFixed(0),
+              areaCubierta:+(nb*pb*U.A).toFixed(0),
+              corte:Math.round(modo==="t1"?D.t1.vol:D.t2.vol),
+              escalon:+(D.t1.esc.toFixed(2)),
+              libre:Math.round(S.m2),
+              g:[XY(0,0),XY(U.L,0),XY(U.L,U.A),XY(0,U.A),XY(0,0)] };
+        }
+      }
+    }
+  }catch(e){ R=null; }
+  CACHE_TZ[n]=R; return R;
+}
+window.__IMPLANTAR_TERRAZA = implantarTerraza;
+
+function contenidoTour(n){
+  const L=DATA.lotes.find(x=>x.n===n), A=IMPL[String(n)];
+  if(!L||!A) return "";
+  const S=sueloLibre(n);
+  if(!S) return "";
+  const K=A.k, ti=TIPOS_CASA[TAM_CASA];
+  /* si la casa de este lote es la de bancales, su huella también ocupa suelo:
+     descontarla aquí y no dentro de sueloLibre, que es de donde sale */
+  const KT2 = K ? null : implantarTerraza(n);
+  if(KT2){
+    const antes=S.cel.length;
+    S.cel = S.cel.filter(([x,y])=>!dentroAnillo(x,y,KT2.g));
+    S.casa_m2 = (antes-S.cel.length)*PASO_TOUR*PASO_TOUR;
+    S.m2 = S.cel.length*PASO_TOUR*PASO_TOUR;
+  }
+  const filas = COSAS.map(c=>{
+    const ang = cabe(S.cel, c.w, c.d);
+    const ok = ang!==null;
+    return '<tr><td>'+tri(c.n)+'</td>'+
+      '<td>'+dec(c.w,1)+' × '+dec(c.d,1)+' m</td>'+
+      '<td style="font-size:11px;color:var(--muted)">'+tri(FUENTE_COSA[c.f])+'</td>'+
+      '<td style="color:'+(ok?"var(--forest-deep)":"#A3543F")+';font-weight:700">'+
+        (ok ? TT("cabe","fits","tient") : TT("no cabe","does not fit","ne tient pas"))+'</td></tr>';
+  }).join("");
+
+  return '<div class="avisoDato" style="border-color:#8A5F14">'+TT(
+      'Módulo en construcción. Lo que ya responde, y responde con geometría, es qué cabe en '+
+      'este lote además de la casa. Los recorridos con renders de la casa escogida entran '+
+      'cuando el estudio de arquitectura entregue las imágenes.',
+      'Module under construction. What it already answers, and answers with geometry, is what '+
+      'fits on this lot besides the house.',
+      'Module en construction. Ce qu\u2019il répond déjà, et avec de la géométrie, c\u2019est ce qui tient '+
+      'sur ce lot en plus de la maison.')+'</div>'+
+    '<p class="p">'+(K||KT2
+      ? TT('Con la casa '+(KT2? 'en '+KT2.nb+' bancales' : 'de '+ti.et)+' puesta —ocupa '+ent(S.casa_m2)+' m² con su patio— y descontando '+
+           'los 3 m de aislamiento a cada vecino, los 10 m de antejardín sobre la vía y las fajas de '+
+           'protección, quedan <b>'+ent(S.m2)+' m² libres</b> donde se puede construir algo más.',
+           'With the '+ti.et+' house in place ('+ent(S.casa_m2)+' m² including its yard) and after the '+
+           '3 m side setbacks, the 10 m front yard and the protection strips, <b>'+ent(S.m2)+' m² are '+
+           'left free</b>.',
+           'Avec la maison de '+ti.et+' posée, il reste <b>'+ent(S.m2)+' m² libres</b>.')
+      : TT('En este lote la casa tipo no cabe, así que lo que sigue es sobre el lote entero: '+
+           'descontando los 3 m de aislamiento a cada vecino, los 10 m de antejardín sobre la vía y '+
+           'las fajas de protección, quedan <b>'+ent(S.m2)+' m² construibles</b>. Para la vivienda, '+
+           'mire los dos modelos en terraza de más arriba.',
+           'The standard house does not fit on this lot, so what follows covers the whole lot: '+
+           '<b>'+ent(S.m2)+' m² are buildable</b> after setbacks and protection strips.',
+           'La maison type ne tient pas sur ce lot : il reste <b>'+ent(S.m2)+' m² constructibles</b>.'))+'</p>'+
+    (isNaN(S.pend) ? '' :
+      '<p class="p">'+TT(
+        'Ese suelo libre tiene una pendiente media del <b>'+dec(S.pend,1)+' %</b> y llega al '+
+        dec(S.pendMax,0)+' % en su punto más parado.'+
+        (S.pend>15 ? ' Es decir: cabe, pero no está plano. Cualquier cosa con piso horizontal '+
+                     '—una cancha, una piscina, un deck— hay que bancarla.' : ''),
+        'That free ground has a mean slope of <b>'+dec(S.pend,1)+'%</b> and reaches '+
+        dec(S.pendMax,0)+'% at its steepest.'+
+        (S.pend>15 ? ' It fits, but it is not level: anything with a horizontal floor needs a bench.' : ''),
+        'Ce sol libre a une pente moyenne de <b>'+dec(S.pend,1)+' %</b> et atteint '+
+        dec(S.pendMax,0)+' %.')+'</p>')+
+    '<table class="tbl"><thead><tr><th>'+T("Qué")+'</th><th>'+T("Medida")+'</th>'+
+      '<th>'+T("De dónde sale")+'</th><th>'+T("En este lote")+'</th></tr></thead>'+
+      '<tbody>'+filas+'</tbody></table>'+
+    '<p class="p pie">'+TT(
+      'Cada cosa se probó girándola en ocho orientaciones sobre el suelo libre, rasterizado a 1 m. '+
+      '"Cabe" quiere decir que el rectángulo entra entero dentro de lo construible, no que el '+
+      'terreno esté plano ahí: para eso están el mapa de pendientes y el corte de más arriba. '+
+      'Las canchas llevan la medida de reglamento; el deck, el kiosco, la piscina, el jacuzzi y la '+
+      'huerta llevan una medida corriente, que se puede cambiar.',
+      'Each item was tested at eight orientations over the free ground, rasterised at 1 m. "Fits" '+
+      'means the rectangle sits entirely inside the buildable ground, not that the ground is level '+
+      'there — the slope map and the section above answer that.',
+      'Chaque élément a été testé selon huit orientations sur le sol libre, tramé à 1 m.')+'</p>';
+}
+
+/* El relieve 3D necesita las cifras de los modelos en terraza para levantar
+   los volúmenes sobre el lote. Se exponen aquí, donde ya están calculadas, en
+   vez de repetir la cuenta en el motor. */
+window.__DATOS_TERRAZA = datosTerraza;
+window.__ES_TERRAZA    = esTerraza;
+
+/* ---------------------------------------------------------------------------
+   EL ANCHO CON EL QUE SE DIBUJAN LOS ESQUEMAS
+   Todos los dibujos del informe se generaban con un viewBox de 760 unidades de
+   ancho. En un celular la caja mide 272 px: el SVG se encoge a 0,36 y un rótulo
+   de 9,5 unidades acaba midiendo 3,4 px en pantalla. Ilegible. MEDIDO en los
+   seis esquemas del informe a 360 px.
+   La solución no es agrandar el SVG sino DIBUJARLO al ancho que de verdad hay:
+   si el viewBox mide lo mismo que la caja, una unidad es un píxel y el rótulo
+   de 9,5 se ve a 9,5 px. En pantalla ancha nada cambia.
+   --------------------------------------------------------------------------- */
+function anchoDib(){
+  let w = 0;
+  try{ const c = document.querySelector(".anlB"); if(c) w = c.clientWidth - 42; }catch(e){}
+  if(!w) w = Math.min(760, (window.innerWidth||760) - 88);
+  return Math.max(300, Math.min(760, Math.round(w)));
+}
+/* alto proporcional: se conserva la proporción que tenía cada esquema a 760 */
+const altoDib = (w, h0) => Math.round(h0 * Math.max(0.62, Math.min(1, w/760)));
+
 function analisis(n){
   const L=DATA.lotes.find(x=>x.n===n); if(!L)return;
   const A=IMPL[String(n)]; if(!A)return;
   const casa=A.k, ej=casa?ejeLargo(casa.g):null;
+  const AW = anchoDib();                       /* ancho real de los esquemas */
+  /* Donde no cabe una casa de una sola plataforma, no es que no se pueda
+     construir: la casa va en bancales. Se implanta y se informa igual. */
+  const KT = casa ? null : implantarTerraza(n);
+  /* Cómo hay que llamar al volumen que de verdad se dibuja en este lote: en 21
+     y 49 no cabe ninguno de los tres tipos y lo que se levanta es la envolvente
+     máxima posible; rotularlo "tipo de 316 m²" sería falso. */
+  const VOLN = (A.env==="min")
+    ? TT('volumen máximo que cabe en este lote',
+         'largest volume that fits on this lot',
+         'volume maximal qui tient sur ce lot')
+    : TT('volumen del tipo de '+TIPOS_CASA[TAM_CASA].et,
+         'volume of the '+TIPOS_CASA[TAM_CASA].et+' type',
+         'volume du type de '+TIPOS_CASA[TAM_CASA].et);
   const ver=ej?veredicto(ej.rumbo):null;
   const fachadas=ej?[(ej.rumbo+90)%360,(ej.rumbo+270)%360].map(rumboTxt):null;
 
@@ -2172,7 +3031,7 @@ function analisis(n){
 
   /* con qué empieza el informe: dónde está el lote dentro del proyecto */
   '<h3>'+T("Dónde está el lote")+'</h3>'+
-  '<div class="ubiBox">'+planoUbicacion(n,760,300)+'</div>'+
+  '<div class="ubiBox">'+planoUbicacion(n,AW,altoDib(AW,300))+'</div>'+
   '<p class="p pie">'+TT(
      'Todo el proyecto en gris; en dorado, el lote '+n+'. Área total '+fmtA(L.at)+
      (L.pr?', de los cuales '+fmtA(L.pr)+' son faja de protección':', sin faja de protección')+'.',
@@ -2184,13 +3043,13 @@ function analisis(n){
   '<h3>'+T("Cómo es el terreno")+'</h3>'+
 
   /* el mismo lote pintado por rango de pendiente: dónde está lo plano */
-  '<div class="ubiBox">'+mapaPendientes(n,760,330)+'</div>'+
+  '<div class="ubiBox">'+mapaPendientes(n,AW,altoDib(AW,330))+'</div>'+
   leyendaPendientes(n)+
 
   /* el mismo lote, en volumen: los colores de pendiente sobre el terreno real
      y la casa implantada encima. Es lo que le hace entender al cliente de un
      vistazo lo que las barras dicen en frío. */
-  '<div class="ubiBox">'+bloque3D(n,760,380)+'</div>'+
+  '<div class="ubiBox">'+bloque3D(n,AW,altoDib(AW,380))+'</div>'+
   '<p class="p pie">'+TT(
      'El mismo lote en volumen, con los colores de pendiente sobre el terreno y la casa parada '+
      'sobre su plataforma. El relieve va exagerado —el factor sale al pie del dibujo— para que la '+
@@ -2254,16 +3113,31 @@ function analisis(n){
   '<h3>'+T("Dónde cabe la casa")+'</h3>'+
   /* el cliente escoge el tamaño y ve cómo cambia el volumen sobre SU lote */
   ((A.ks && Object.keys(A.ks).length>1)
-    ? '<div class="tamCasa"><span class="et">'+T("Tamaño de la casa")+'</span>'+
+    ? '<div class="tamCasa"><span class="et">'+T("Tipo de casa")+'</span>'+
       '<div class="seg" id="segTam">'+
       TAMANOS.slice().reverse().map(t=>
         '<button data-t="'+t+'"'+(A.ks[t]?'':' disabled title="'+
           T("No cabe en este lote")+'"')+
-        (t===TAM_CASA?' class="on"':'')+'>'+t+' m²</button>').join("")+
+        (t===TAM_CASA?' class="on"':'')+'>'+TIPOS_CASA[t].et+'</button>').join("")+
       '</div>'+
       (A.ks[TAM_CASA] ? '' : '<span class="ojo">'+
-        T("El tamaño escogido no cabe aquí; se muestra el mayor que sí.")+'</span>')+
-      '</div>'
+        T("El tipo escogido no cabe aquí; se muestra el mayor que sí.")+'</span>')+
+      '</div>'+
+      '<p class="p pie">'+TT(
+        'Los tres tipos del proyecto, con el área construida rotulada en su plano y '+
+        ent(PARQ_TIPO)+' m² de parqueadero aparte en todos. En 3D se simulan con '+
+        dec(ALTO_TIPO,2)+' m de altura. Lo que se dibuja aquí es la ENVOLVENTE con la que se '+
+        'corrió la implantación —'+TIPOS_CASA[TAM_CASA].env+' m²— que es la que da el corte y el '+
+        'lleno contra el terreno medido; el tipo tiene '+dec(TIPOS_CASA[TAM_CASA].area,1)+' m². '+
+        'Cuando llegue el DXF de cada casa, la huella se reemplaza por la planta exacta.',
+        'The three house types of the project, with the built area labelled on their own drawing and '+
+        ent(PARQ_TIPO)+' m² of parking on top in every one. In 3D they are simulated '+
+        dec(ALTO_TIPO,2)+' m tall. What is drawn here is the ENVELOPE the siting was run with — '+
+        TIPOS_CASA[TAM_CASA].env+' m² — which is what yields the cut and fill against the measured '+
+        'ground; the type itself is '+dec(TIPOS_CASA[TAM_CASA].area,1)+' m².',
+        'Les trois types du projet, avec la surface bâtie indiquée sur leur propre plan et '+
+        ent(PARQ_TIPO)+' m² de stationnement en plus. Ce qui est dessiné ici est l\u2019ENVELOPPE '+
+        'de '+TIPOS_CASA[TAM_CASA].env+' m² ; le type fait '+dec(TIPOS_CASA[TAM_CASA].area,1)+' m².')+'</p>'
     : '')+
   (A.cm2>0
     ? '<p class="p">'+(TT('Descontando <b>3 m de aislamiento</b> a cada vecino, <b>10 m de antejardín</b> sobre la vía y '+
@@ -2287,11 +3161,34 @@ function analisis(n){
             'non levée. Où la maison peut réellement se poser dépend de la pente, mesurée '+
             'seulement sur '+Math.round(A.cob*100)+' % du lot.')+'</p>'
         : '')
-    : '<p class="p">'+(TT('Con los aislamientos y la protección, este lote no deja un área construible continua.','With the setbacks and the protection strips, this lot leaves no continuous buildable area.'))+'</p>')+
+    : '<p class="p">'+(KT
+        ? TT('Descontando las fajas de protección, los 3 m de aislamiento a cada vecino y los 10 m de '+
+             'antejardín sobre la vía, a este lote le quedan <b>'+ent(KT.libre)+' m² de suelo libre</b>. '+
+             'No forman un rectángulo donde quepa una casa de una sola plataforma —por eso el informe decía '+
+             'antes que no cabía—, pero sí donde cabe una casa en bancales, y ahí es donde va.',
+             'After the protection strips, the 3 m side setbacks and the 10 m front yard, this lot has '+
+             '<b>'+ent(KT.libre)+' m² of free ground</b>: not a rectangle for a single-platform house, but '+
+             'enough for a terraced one.',
+             'Ce lot dispose de <b>'+ent(KT.libre)+' m² de sol libre</b> : de quoi poser une maison en terrasses.')
+        : TT('Con los aislamientos y la protección, este lote no deja un área construible continua.',
+             'With the setbacks and the protection strips, this lot leaves no continuous buildable area.'))+'</p>')+
   (casa
     ? '<table class="t2">'+
-      '<tr><td>'+T("Modelo")+'</td><td>'+T("Casa 30JB")+' · '+
+      '<tr><td>'+T("Modelo")+'</td><td>'+
+        (A.env==="min"
+          ? '<b>'+(TT("ninguno de los tres tipos cabe","none of the three types fits","aucun des trois types ne tient"))+'</b> · '+
+            (TT("volumen máximo posible","largest volume that fits","volume maximal possible"))
+          : (TT("Tipo de ","Type ","Type de "))+TIPOS_CASA[TAM_CASA].et)+' · '+
         (casa.mod==="2p" ? T("dos niveles (uno semienterrado)") : T("un solo piso"))+'</td></tr>'+
+      '<tr><td>'+(TT("Envolvente implantada","Implanted envelope","Enveloppe implantée"))+'</td><td>'+
+        (A.env==="min"
+          ? '<b>'+ent(casa.ac||casa.an)+' m²</b> · '+
+            (TT("la de "+TIPOS_CASA[TAM_CASA].env+" m² no cabe entre linderos",
+                "the "+TIPOS_CASA[TAM_CASA].env+" m² one does not fit between the boundaries"))
+          : TIPOS_CASA[TAM_CASA].env+' m²'+
+            (A.env && A.env!==TIPOS_CASA[TAM_CASA].env
+              ? ' · <b>'+(TT("en este lote sólo cupo la de ","on this lot only the "))+A.env+' m²</b>'
+              : ''))+'</td></tr>'+
       '<tr><td>'+T("Área construida")+'</td><td>'+ent(casa.ac||casa.an)+' m²</td></tr>'+
       (casa.pat?'<tr><td>'+T("Patio interior")+'</td><td>'+ent(casa.pat)+' m²</td></tr>':'')+
       '<tr><td>'+T("Huella en el lote")+'</td><td>'+dec(casa.L,1)+' × '+dec(casa.A,1)+' m</td></tr>'+
@@ -2299,9 +3196,8 @@ function analisis(n){
       (casa.mod==="2p"
         ? '<tr><td>'+T("Nivel −1 (semienterrado)")+'</td><td>'+dec(casa.zm,2)+SNM()+'</td></tr>'
         : '')+
-      '<tr><td>'+T("Altura sobre el acceso")+'</td><td>'+dec(ALTURA_MAX,1)+
-        (TT(' m el acceso · 3,4 m el resto',' m at the entrance · 3.4 m elsewhere',
-            ' m à l\'entrée · 3,4 m ailleurs'))+'</td></tr>'+
+      '<tr><td>'+T("Altura sobre el acceso")+'</td><td>'+dec(ALTURA_MAX,2)+
+        (TT(' m — altura del tipo',' m — height of the type',' m — hauteur du type'))+'</td></tr>'+
       '<tr><td>'+T("Desnivel bajo la casa")+'</td><td>'+dec(casa.d,2)+' m</td></tr>'+
       '<tr><td>'+(casa.mod==="2p"?T("Excavación del nivel −1"):T("Movimiento de tierra"))+'</td><td>'+
         casa.co+' m³'+(casa.ll
@@ -2338,33 +3234,69 @@ function analisis(n){
       (casa.L<22.3
         ? '<p class="p" style="margin-top:10px">'+(TT('La casa tuvo que bajar un escalón de tamaño: entre linderos quedan '+dec(casa.w,1)+
               ' m libres una vez descontados los 3 m de aislamiento, así que la versión completa de 22,4 m de '+
-              'frente no cabe. El modelo conserva la proporción de la 30JB en <b>'+dec(casa.L,1)+' × '+dec(casa.A,1)+
+              'frente no cabe. El volumen conserva la proporción del tipo en <b>'+dec(casa.L,1)+' × '+dec(casa.A,1)+
               ' m</b>, con <b>'+ent(casa.ac||casa.an)+' m² construidos</b> en vez de 302.',
     'The house had to drop one size step: between the side boundaries there are only '+dec(casa.w,1)+
               ' m clear once the 3 m setbacks are taken out, so the full 22.4 m frontage does not fit. The model '+
-              'keeps the 30JB proportions at <b>'+dec(casa.L,1)+' × '+dec(casa.A,1)+' m</b>, with <b>'+
+              'keeps the type proportions at <b>'+dec(casa.L,1)+' × '+dec(casa.A,1)+' m</b>, with <b>'+
               ent(casa.ac||casa.an)+' m² built</b> instead of 302.',
     'La maison a dû descendre d\'un cran : entre les limites latérales il ne reste que '+dec(casa.w,1)+
               ' m libres une fois les 3 m de retrait déduits, la version complète de 22,4 m de façade ne tient '+
-              'donc pas. Le modèle garde les proportions de la 30JB en <b>'+dec(casa.L,1)+' × '+dec(casa.A,1)+
+              'donc pas. Le volume garde les proportions du type en <b>'+dec(casa.L,1)+' × '+dec(casa.A,1)+
               ' m</b>, avec <b>'+ent(casa.ac||casa.an)+' m² construits</b> au lieu de 302.'))+'</p>'
         : '')+
-      '<p class="p pie">'+(TT('El volumen es la <b>Casa 30JB</b> del proyecto —arquitectura mediterránea y moderna, 300 m² '+
-          'construidos en un piso, con su patio interior— reducida a volúmenes y puesta '+
-          'sobre el terreno real. Va alineada con los linderos laterales, así los 3 m de aislamiento quedan '+
-          'parejos en todo el largo, centrada entre ellos y lo más adelante que permite el antejardín. Sirve para '+
-          'entender la escala y cuánta tierra habría que mover; la casa que se construya puede ser otra.',
-    'The volume is aligned with the side boundaries —so the 3 m setbacks stay even along the whole '+
-          'length— centred between them, and pushed as close to the front yard as it will go. It is not a '+
-          'design: it is a volume placed there to grasp the scale and how much earth would have to move.'))+'</p>'
-    : '<p class="p">'+(TT('Ni un volumen de 264 m² en un piso ni uno de 132 m² en dos niveles caben dentro del área construible '+
-          'de este lote. Habría que plantear una casa más compacta o repartida en varios cuerpos.',
-    'Neither a 264 m² volume on one storey nor 132 m² on two levels fits inside this lot\'s buildable '+
-          'area. It would need a more compact house, or one split into several volumes.'))+'</p>')+
+      '<p class="p pie">'+(TT('El dibujo es el <b>'+VOLN+'</b> '+
+          (A.env==="min" ? '—'+ent(casa.ac||casa.an)+' m² construidos, '+dec(ALTO_TIPO,2)+' m de altura— '
+                         : '—'+ent(TIPOS_CASA[TAM_CASA].area)+' m² construidos más '+dec(PARQ_TIPO,1)+' m² de parqueadero, '+
+                           dec(ALTO_TIPO,2)+' m de altura— ')+'puesto sobre el terreno medido de este lote. Va alineada con los '+
+          'linderos laterales, así los 3 m de aislamiento quedan parejos en todo el largo, centrada entre ellos '+
+          'y lo más adelante que permite el antejardín. El movimiento de tierra que sale arriba es el de la '+
+          'envolvente de '+TIPOS_CASA[TAM_CASA].env+' m² con la que se corrió la implantación contra el terreno '+
+          'medido. Es un volumen para entender escala y tierra movida, no el plano de la casa.',
+    'The volume is the envelope of the <b>'+TIPOS_CASA[TAM_CASA].et+' type</b> —'+ent(TIPOS_CASA[TAM_CASA].area)+
+          ' m² built plus '+dec(PARQ_TIPO,1)+' m² of parking, '+dec(ALTO_TIPO,2)+' m tall— placed on this lot\'s '+
+          'measured ground, aligned with the side boundaries and centred between them. The earthworks quoted above '+
+          'are those of the '+TIPOS_CASA[TAM_CASA].env+' m² envelope run against the measured ground.',
+    'Le volume est l\'enveloppe du <b>type de '+TIPOS_CASA[TAM_CASA].et+'</b> posée sur le terrain mesuré de ce lot.'))+'</p>'
+    : (KT
+      ? '<table class="t2">'+
+        '<tr><td>'+T("Modelo")+'</td><td><b>'+(TT("casa en "+KT.nb+" bancales","house on "+KT.nb+" terraces",
+            "maison sur "+KT.nb+" terrasses"))+'</b></td></tr>'+
+        '<tr><td>'+(TT("Área construida","Built area","Surface construite"))+'</td><td>'+ent(KT.areaCubierta)+' m²'+
+            (KT.nb>1?' ('+KT.nb+' × '+ent(Math.round(KT.areaCubierta/KT.nb))+' m²)':'')+'</td></tr>'+
+        '<tr><td>'+T("Huella en el lote")+'</td><td>'+dec(KT.L,1)+' × '+dec(KT.A,1)+' m</td></tr>'+
+        '<tr><td>'+(TT("Nivel del bancal alto","Upper terrace level","Niveau du bancal haut"))+'</td><td>'+dec(KT.z,2)+SNM()+'</td></tr>'+
+        '<tr><td>'+(TT("Nivel del bancal bajo","Lower terrace level","Niveau du bancal bas"))+'</td><td>'+dec(KT.zBaja,2)+SNM()+'</td></tr>'+
+        '<tr><td>'+(TT("Escalón entre bancales","Step between terraces","Marche entre bancals"))+'</td><td>'+dec(KT.escalonReal,2)+' m</td></tr>'+
+        '<tr><td>'+(TT("Altura de cada nivel","Height of each level","Hauteur de chaque niveau"))+'</td><td>'+dec(KT.alto,2)+' m</td></tr>'+
+        '<tr><td>'+(TT("Movimiento de tierra","Earthworks","Terrassement"))+'</td><td>'+ent(KT.corte)+' m³'+
+            (TT(' de corte',' of cut',' de déblai'))+'</td></tr>'+
+        '<tr><td>'+(TT("Suelo libre del lote","Free ground on the lot","Sol libre du lot"))+'</td><td>'+ent(KT.libre)+' m²</td></tr>'+
+        '</table>'+
+        '<p class="p" style="margin-top:12px">'+(TT(
+          '<b>Aquí no cabe una casa de una sola plataforma, pero sí se puede construir.</b> El rectángulo de '+
+          'la casa tipo no entra en el suelo libre; el de la casa en bancales sí, y se implantó donde de '+
+          'verdad cabe: '+dec(KT.L,1)+' × '+dec(KT.A,1)+' m, con el eje largo puesto sobre la línea de máxima '+
+          'pendiente para que los '+KT.nb+' bancales queden atravesados a la ladera. Cada plataforma se pone al '+
+          'promedio del terreno que tiene debajo —corte igual a lleno—, y por eso el movimiento de tierra queda '+
+          'en <b>'+ent(KT.corte)+' m³</b> en vez de los más de mil que exigiría aplanar todo a un solo nivel.',
+          '<b>No single-platform house fits here, but the lot can be built on.</b> The terraced volume was '+
+          'implanted where it actually fits: '+dec(KT.L,1)+' × '+dec(KT.A,1)+' m, long axis on the fall line, '+
+          KT.nb+' terraces across the slope, '+ent(KT.corte)+' m³ of earthworks.',
+          '<b>Aucune maison sur une seule plateforme ne tient ici, mais le lot est constructible.</b>'))+'</p>'+
+        '<p class="p pie">'+(TT(
+          'El escalón de '+dec(KT.escalonReal,2)+' m es el que resulta del terreno medido bajo esta implantación, '+
+          'no un número escogido: la profundidad del bancal la fija la pendiente. El volumen es una propuesta de '+
+          'arquitectura para enseñar que el lote sí funciona; no es el plano de la casa.',
+          'The '+dec(KT.escalonReal,2)+' m step is what the measured ground under this implantation yields. The '+
+          'volume is an architectural proposal, not a construction drawing.',
+          'La marche de '+dec(KT.escalonReal,2)+' m résulte du terrain mesuré sous cette implantation.'))+'</p>'
+      : '<p class="p">'+(TT('No se pudo implantar ningún volumen en el suelo libre de este lote.',
+          'No volume could be implanted on this lot\'s free ground.'))+'</p>'))+
 
   /* el corte del terreno: lo que explica el movimiento de tierra */
   '<h3>'+T("El corte del terreno")+'</h3>'+
-  '<div class="ubiBox">'+corteTerreno(n,760,330)+'</div>'+
+  '<div class="ubiBox">'+corteTerreno(n,AW,altoDib(AW,330))+'</div>'+
   '<div class="leyC">'+
     '<div><i class="ln nat"></i>'+T("Terreno natural")+'</div>'+
     (casa?'<div><i class="ln npt"></i>'+T("Plataforma de la casa (NPT)")+'</div>':'')+
@@ -2401,20 +3333,52 @@ function analisis(n){
        'de la tranche forte. Elle part de la dernière cote mesurée et descend, sans jamais passer '+
        'sous le point le plus bas relevé sur la propriété.') : '')+'</p>'+
 
+  bloqueTerraza(n)+
+
+  '<h3>'+TT("Tour inteligente de vivienda","Smart home tour","Visite intelligente")+'</h3>'+
+  '<p class="p">'+TT(
+    'Un módulo aparte para entender a fondo qué se puede construir en este lote: la casa y, '+
+    'alrededor de ella, el deck, el kiosco, la piscina, el jacuzzi, la cancha y la huerta. '+
+    'Todavía le faltan los recorridos con renders de la casa escogida, que entran cuando el '+
+    'estudio de arquitectura entregue las imágenes. Lo que ya contesta es lo que decide una '+
+    'compra: qué cabe de verdad, medido sobre la geometría del lote.',
+    'A separate module for understanding in depth what can be built on this lot: the house and, '+
+    'around it, the deck, the gazebo, the pool, the hot tub, the court and the garden. '+
+    'What it already answers is what decides a purchase: what actually fits.',
+    'Un module à part pour comprendre en profondeur ce qui peut être construit sur ce lot.')+'</p>'+
+  '<div style="margin:6px 0 4px"><button class="btn" id="btnTour" style="width:auto;padding:11px 22px">'+
+    TT("Entrar al tour","Enter the tour","Entrer dans la visite")+'</button></div>'+
+  '<div id="huecoTour"></div>'+
+
   '<h3>'+T("El sol sobre el lote")+'</h3>'+
+  '<div class="isoBox" id="isoHueco"></div>'+
   (casa
-    ? '<div class="isoBox" id="isoHueco"></div>'+
-      '<p class="p pie">'+(TT('La Casa 30JB puesta en este lote, con su orientación real, y encima el recorrido del sol '+
+    ? '<p class="p pie">'+(TT('El '+VOLN+' puesto sobre el terreno medido de '+
+          'este lote —su forma real del plano 039 y su pendiente— con la orientación de la implantación, y encima '+
+          'el recorrido del sol '+
           'en los tres momentos que mandan: el solsticio de junio, los equinoccios y el solsticio de diciembre. '+
           'Los soles marcan las 8 de la mañana, el mediodía y las 4 de la tarde. Las posiciones están calculadas '+
           'para 4,47° N y 75,74° O, hora de Colombia.',
-        'Casa 30JB placed on this lot, at its real orientation, with the path of the sun on the three dates that '+
-          'matter: the June solstice, the equinoxes and the December solstice. The suns mark 8 in the morning, '+
-          'noon and 4 in the afternoon. Positions are computed for 4.47° N, 75.74° W, Colombian time.',
-        'La Casa 30JB posée sur ce lot, à son orientation réelle, avec la course du soleil aux trois moments qui '+
-          'comptent : le solstice de juin, les équinoxes et le solstice de décembre. Les soleils marquent 8 h, '+
+        'The '+VOLN+' placed on this lot\'s measured ground —its real shape from '+
+          'plan 039 and its slope— at the orientation of the implantation, with the path of the sun on the three '+
+          'dates that matter: the June solstice, the equinoxes and the December solstice. The suns mark 8 in the '+
+          'morning, noon and 4 in the afternoon. Positions are computed for 4.47° N, 75.74° W, Colombian time.',
+        'Le '+VOLN+' posé sur le terrain mesuré de ce lot —sa forme réelle du '+
+          'plan 039 et sa pente— à l\'orientation de l\'implantation, avec la course du soleil aux trois moments '+
+          'qui comptent : le solstice de juin, les équinoxes et le solstice de décembre. Les soleils marquent 8 h, '+
           'midi et 16 h. Les positions sont calculées pour 4,47° N et 75,74° O, heure de Colombie.'))+'</p>'
-    : '')+
+    : '<p class="p pie">'+(KT
+      ? TT('La casa en '+KT.nb+' bancales de este lote —'+dec(KT.L,1)+' × '+dec(KT.A,1)+' m, con un escalón de '+
+           dec(KT.escalonReal,2)+' m entre plataformas— puesta sobre el terreno medido, con su forma real del '+
+           'plano 039 y su pendiente, y encima el recorrido del sol en los tres momentos que mandan: el solsticio '+
+           'de junio, los equinoccios y el solsticio de diciembre. Los soles marcan las 8 de la mañana, el '+
+           'mediodía y las 4 de la tarde, para 4,47° N y 75,74° O, hora de Colombia.',
+           'The '+KT.nb+'-terrace house of this lot placed on the measured ground, with the sun path over it.',
+           'La maison en '+KT.nb+' bancals de ce lot posée sur le terrain mesuré, avec la course du soleil.')
+      : TT('El terreno medido de este lote —su forma real del plano 039 y su pendiente— con el recorrido del sol '+
+           'encima. Los soles marcan las 8 de la mañana, el mediodía y las 4 de la tarde.',
+           'The measured ground of this lot with the sun path over it.',
+           'Le terrain mesuré de ce lot avec la course du soleil.'))+'</p>')+
   '<div class="solGrid">'+
     '<div>'+diagramaSolar(150, ej?ej.rumbo:null)+
       '<div class="leyS">'+HITOS.map(h=>'<span><i style="background:'+h.c+'"></i>'+T(h.t)+'</span>').join("")+
@@ -2455,14 +3419,15 @@ function analisis(n){
   ((typeof RENDERS!=="undefined" && RENDERS[String(n)])
     ?
  '<h3>'+T("Cómo se vería la casa")+'</h3>'+
-      '<p class="p">'+(TT('Una imagen de la Casa 30JB puesta en este lote, con su pendiente y su orientación. '+
-          'Toque <b>Renderizar</b> abajo: la imagen entra pixelada y va enfocando, como cuando un motor de '+
-          'render calcula por pasadas.',
-        'An image of Casa 30JB placed on this lot, with its slope and its orientation. Tap <b>Render</b> '+
-          'below: the image comes in pixelated and sharpens, the way a render engine resolves it pass by pass.',
-        'Une image de la Casa 30JB posée sur ce lot, avec sa pente et son orientation. Touchez '+
-          '<b>Rendre</b> ci-dessous : l\'image arrive pixelisée et se précise, comme un moteur de rendu qui '+
-          'calcule passe après passe.'))+'</p>'+
+      '<p class="p">'+(TT('Una imagen de la <b>Casa 30JB</b>, la casa de referencia del proyecto, puesta en este lote con '+
+          'su pendiente y su orientación. <b>No es el tipo de '+TIPOS_CASA[TAM_CASA].et+'</b> que está escogido '+
+          'arriba: es la única casa de la que hay render hasta hoy. Toque <b>Renderizar</b> abajo: la imagen entra '+
+          'pixelada y va enfocando, como cuando un motor de render calcula por pasadas.',
+        'An image of <b>Casa 30JB</b>, the project\'s reference house, placed on this lot with its slope and its '+
+          'orientation. <b>It is not the '+TIPOS_CASA[TAM_CASA].et+' type</b> selected above: it is the only house '+
+          'rendered so far. Tap <b>Render</b> below.',
+        'Une image de la <b>Casa 30JB</b>, la maison de référence du projet, posée sur ce lot. '+
+          '<b>Ce n\'est pas le type de '+TIPOS_CASA[TAM_CASA].et+'</b> choisi plus haut.'))+'</p>'+
       '<div id="renHueco"></div>'
     : '')+
 
@@ -2563,7 +3528,11 @@ function tablaFachadas(casa){
 /* ---------------- abanico de sombras: varias horas en un mismo dibujo ---------- */
 function abanicoSombras(n, iFecha, W, H){
   const L=DATA.lotes.find(x=>x.n===n), A=IMPL[String(n)];
-  if(!A||!A.k) return "";
+  const HC = huellaCasa(n);
+  if(!A || !HC) return '<p class="p pie">'+(TT(
+      'No se pudo implantar un volumen en este lote con el suelo libre que queda.',
+      'No volume could be implanted on this lot with the free ground left.',
+      'Aucun volume n\'a pu être implanté sur ce lot.'))+'</p>';
   const g0=L.g.map(PX);
   let mej=0, th=0;
   for(let i=0;i<g0.length-1;i++){
@@ -2576,11 +3545,11 @@ function abanicoSombras(n, iFecha, W, H){
   const HORAS=[7,9,11,13,15,17];
   const sombras=HORAS.map(h=>{
     const p=SOL.posicion(ANIO,f.m,f.d,h,lat0,lon0);
-    return {h:h, alt:p.alt, az:p.az, s:(p.alt>3? sombraCasa(A.k.g,p.alt,p.az,ALTURA_MAX) : null)};
+    return {h:h, alt:p.alt, az:p.az, s:(p.alt>3? sombraCasa(HC.g,p.alt,p.az,HC.h) : null)};
   }).filter(x=>x.s);
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
   const met=q=>{x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);};
-  g0.map(R).forEach(met); A.k.g.map(R).forEach(met);
+  g0.map(R).forEach(met); HC.g.map(R).forEach(met);
   sombras.forEach(o=>o.s.map(R).forEach(met));
   const pad=6; x0-=pad;x1+=pad;y0-=pad;y1+=pad;
   const s=Math.min(W/(x1-x0), H/(y1-y0));
@@ -2599,7 +3568,7 @@ function abanicoSombras(n, iFecha, W, H){
     o+='<text x="'+q[0]+'" y="'+q[1]+'" font-size="9.5" font-weight="700" text-anchor="middle" '+
        'fill="#4A4E42" opacity=".9">'+(ob.h>12?ob.h-12:ob.h)+(ob.h<12?"a":"p")+'</text>';
   });
-  o+='<path d="'+d(A.k.g,1)+'" fill="var(--forest)" fill-opacity=".9" stroke="var(--forest-deep)" stroke-width="1"/>';
+  o+='<path d="'+d(HC.g,1)+'" fill="var(--forest)" fill-opacity=".9" stroke="var(--forest-deep)" stroke-width="1"/>';
   o+='<g transform="translate('+(w-24).toFixed(0)+',22) rotate('+(th*180/Math.PI).toFixed(1)+')">'+
      '<path d="M0 -11 L3.8 5 L0 2 L-3.8 5 Z" fill="var(--ink-2)"/>'+
      '<text y="17" font-size="8.5" font-weight="700" text-anchor="middle" fill="var(--ink-2)">N</text></g>';
@@ -2615,6 +3584,16 @@ function cascoConvexo(ps){
   for(let i=p.length-1;i>=0;i--){ const q=p[i];
     while(hi.length>=2&&cruz(hi[hi.length-2],hi[hi.length-1],q)<=0)hi.pop(); hi.push(q); }
   lo.pop(); hi.pop(); return lo.concat(hi);
+}
+/* La huella de la casa de este lote y su altura, venga de la implantación de
+   una sola plataforma o de la de bancales. Todo lo que proyecta sombra —la
+   planta de asoleación y el abanico— pasa por aquí, así los dos dibujos hablan
+   siempre del mismo volumen. */
+function huellaCasa(n){
+  const A=IMPL[String(n)]; if(!A) return null;
+  if(A.k && A.k.g) return {g:A.k.g, h:ALTURA_MAX, tz:false, T:null};
+  const T=implantarTerraza(n);
+  return T ? {g:T.g, h:T.alto, tz:true, T:T} : null;
 }
 function sombraCasa(g, alt, az, alturaCasa){
   if(alt<=1) return null;
@@ -2637,9 +3616,10 @@ function plantaLote(n, iFecha, hora, W, H){
   const R=p=>[p[0]*ct-p[1]*stt, p[0]*stt+p[1]*ct];
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
   const met=q=>{x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);};
-  g0.map(R).forEach(met); if(A.c)A.c.map(R).forEach(met); if(A.k)A.k.g.map(R).forEach(met);
+  const HC=huellaCasa(n);
+  g0.map(R).forEach(met); if(A.c)A.c.map(R).forEach(met); if(HC)HC.g.map(R).forEach(met);
   const f=SOL.FECHAS[iFecha], pos=SOL.posicion(ANIO,f.m,f.d,hora,lat0,lon0);
-  const som=A.k?sombraCasa(A.k.g,pos.alt,pos.az,ALTURA_MAX):null;
+  const som=HC?sombraCasa(HC.g,pos.alt,pos.az,HC.h):null;
   if(som)som.map(R).forEach(met);
   const lim=[x0-16,y0-16,x1+16,y1+16];
   DATA.via.forEach(v=>v.map(PX).map(R).forEach(q=>{
@@ -2678,13 +3658,22 @@ function plantaLote(n, iFecha, hora, W, H){
   o+='<path d="'+d(g0,1)+'" fill="none" stroke="var(--ink-2)" stroke-width="1.6"/>';
   if(A.c) o+='<path d="'+d(A.c,1)+'" fill="none" stroke="var(--gold)" stroke-width="1.3" stroke-dasharray="5 4"/>';
   if(som) o+='<path d="'+d(som,1)+'" fill="#2A2E22" fill-opacity=".26"/>';
-  if(A.k){
-    o+='<path d="'+d(A.k.g,1)+'" fill="var(--forest)" fill-opacity=".82" stroke="var(--forest-deep)" stroke-width="1"/>';
-    const c=A.k.g.slice(0,-1).reduce((a,p)=>[a[0]+p[0]/4,a[1]+p[1]/4],[0,0]);
+  if(HC){
+    o+='<path d="'+d(HC.g,1)+'" fill="var(--forest)" fill-opacity=".82" stroke="var(--forest-deep)" stroke-width="1"/>';
+    const c=HC.g.slice(0,-1).reduce((a,p)=>[a[0]+p[0]/4,a[1]+p[1]/4],[0,0]);
     const q=XY(c);
-    const rot=A.k.mod==="2p" ? Math.round(A.k.an)+" m² × 2" : Math.round(A.k.at)+" m²";
+    const rot = HC.tz ? HC.T.areaCubierta+" m² × "+HC.T.nb
+              : A.k.mod==="2p" ? Math.round(A.k.an)+" m² × 2" : Math.round(A.k.at)+" m²";
     o+='<text x="'+q[0]+'" y="'+q[1]+'" font-size="10" font-weight="700" text-anchor="middle" '+
        'dy="3.5" fill="var(--on-forest)">'+rot+'</text>';
+    /* las juntas entre bancales, para que se lea que son tres plataformas */
+    if(HC.tz && HC.T.nb>1){
+      const T=HC.T, XYt=(u,v)=>[T.o[0]+T.ux[0]*u+T.uv[0]*v, T.o[1]+T.ux[1]*u+T.uv[1]*v];
+      for(let k=1;k<T.nb;k++){
+        const u=k*T.L/T.nb;
+        o+='<path d="'+d([XYt(u,0),XYt(u,T.A)],0)+'" stroke="var(--on-forest)" stroke-opacity=".7" stroke-width="1" fill="none"/>';
+      }
+    }
   }
   /* las medidas de los lados, que es lo que se pregunta primero */
   o+=acotarLote(g0, p=>{const q=XY(p); return [+q[0], +q[1]];}, 48, 9.5);
@@ -3221,6 +4210,7 @@ function fichaPDF(n){
 
   const hojas=[hojaPortadaPDF(n,L,A,casa,V), P];
   if(casa){ hojas.push(hojaIsoPDF(n,L,A,casa,V)); hojas.push(hojaSolarPDF(n,L,A,casa,ej,V)); }
+  if(esTerraza(n)) hojas.push(hojaTerrazaPDF(n,L,V));
   hojas.push(hojaComercialPDF(n,L,V));
   hojas.push(hojaCuotasPDF(n,L,V));
   return PDFmin.archivo(hojas);
@@ -3299,6 +4289,168 @@ function mesDe(i){                       /* i = 0 -> enero de 2027 */
   const m=i%12, a=2027+Math.floor(i/12);
   const nom=TT(MESES_ES[m],MESES_EN[m],MESES_FR[m]);
   return TT(nom+" "+a, nom+" "+a, nom+" "+a);
+}
+
+/* =========================================================================
+   HOJA PDF · VIVIENDA EN TERRAZA  (sólo lotes 47 a 53)
+   El cliente se lleva el PDF, no la pantalla. Si la explicación de por qué en
+   estos lotes hay que escalonar sólo vive en el navegador, el que decide en la
+   casa con la ficha impresa no la tiene. Esta hoja lleva lo mismo: las cifras
+   medidas del lote, la comparación contra la plataforma única y los dos cortes.
+   ========================================================================= */
+function hojaTerrazaPDF(n,L,V){
+  const P=PDFmin.Hoja(595.28,841.89), M=38, W=595.28;
+  const col=(c,f)=>f?P.trazo(c[0],c[1],c[2]):P.color(c[0],c[1],c[2]);
+  const D=datosTerraza(n);
+  if(!D) return P;
+
+  col(V.forest).rect(0,0,W,66);
+  const xt = logoEnBanda(P, M, 33.0, 28);
+  col([200,214,192]).texto(xt,37,TT("Vivienda en terraza","Terraced house","Maison en terrasses"),8.4,"F1");
+  col(V.blanco).textoD(W-M,34,TT("LOTE ","LOT ")+n,20,"F2");
+  col(V.gold).rect(0,66,W,2.5);
+
+  let y=100;
+  col(V.gold).texto(M,y,TT("POR QUÉ ESTE LOTE NO SE RESUELVE CON UNA SOLA PLATAFORMA",
+                           "WHY THIS LOT CANNOT BE SOLVED WITH A SINGLE PLATFORM",
+                           "POURQUOI CE LOT NE SE RÉSOUT PAS SUR UNE SEULE PLATEFORME"),7.6,"F2",1.1);
+  y+=16;
+  col(V.ink||[40,48,38]);
+  y=envolver(P, TT(
+    "Sobre el área útil medida de este lote quedan "+ent(D.plano)+" m² por debajo del 5 % de "+
+    "pendiente y "+ent(D.escarp)+" m² por encima del 25 %. La pendiente media medida del área útil "+
+    "es del "+dec(D.pend,1)+" %. Una casa de una sola plataforma tendría que abrir un solo banco "+
+    "para toda el área, y ahí el corte se va a metros. Los dos modelos de abajo reparten ese "+
+    "desnivel en vez de pelearse con él.",
+    "On this lot\u2019s measured usable area, "+ent(D.plano)+" m² fall below 5% slope and "+
+    ent(D.escarp)+" m² exceed 25%. The measured mean slope of the usable area is "+dec(D.pend,1)+
+    "%. A single-platform house would have to open one bench for the whole area.",
+    "Sur la surface utile mesurée, "+ent(D.plano)+" m² sont sous 5 % de pente et "+ent(D.escarp)+
+    " m² dépassent 25 %. La pente moyenne mesurée est de "+dec(D.pend,1)+" %."),
+    M, y, W-2*M, 8.2, 11); y+=12;
+
+  /* ---- la comparación ---- */
+  const cx=[M, M+232, M+330, M+430], anchoT=W-2*M;
+  col(V.gold).texto(cx[0],y,TT("MANERA DE CONSTRUIR","HOW IT IS BUILT","MANIÈRE DE CONSTRUIRE"),6.8,"F2",1.0);
+  col(V.gold).texto(cx[1],y,TT("ÁREA","AREA","SURFACE"),6.8,"F2",1.0);
+  col(V.gold).texto(cx[2],y,TT("CORTE MÁX.","MAX. CUT","DÉBLAI MAX."),6.8,"F2",1.0);
+  col(V.gold).texto(cx[3],y,TT("TIERRA MOVIDA","EARTH MOVED","TERRE DÉPLACÉE"),6.8,"F2",1.0);
+  y+=6; col(V.line,1).grosor(.6).linea(M,y,W-M,y); y+=13;
+
+  const fila=(a,b,c,d,fuerte,rojo)=>{
+    col(rojo?[163,84,63]:(fuerte?V.forest:[60,70,58]));
+    P.texto(cx[0],y,a,8.2,fuerte?"F2":"F1");
+    P.texto(cx[1],y,b,8.2,"F1");
+    P.texto(cx[2],y,c,8.2,fuerte?"F2":"F1");
+    P.texto(cx[3],y,d,7.6,"F1");
+    y+=7; col(V.line,1).grosor(.4).linea(M,y,W-M,y); y+=12;
+  };
+  if(D.plana)
+    fila(TT("Una sola plataforma","Single platform","Plateforme unique"),
+         ent(D.plana.area)+" m²",
+         dec(D.pend/100*Math.sqrt(D.plana.area)/2,2)+" m",
+         ent(D.plana.co)+" m³ "+T("de corte")+" + "+ent(D.plana.ll)+" m³ "+T("de lleno"),
+         false, true);
+  else
+    fila(TT("Una sola plataforma","Single platform","Plateforme unique"),
+         TT("no cabe","does not fit","ne tient pas"), "—", "—", false, true);
+  fila("T1 · "+TT("Bancal","Bench","Banquette"), ent(D.t1.area)+" m²",
+       dec(D.t1.corte,2)+" m",
+       ent(D.t1.vol)+" m³ "+T("de corte")+" + "+ent(D.t1.vol)+" m³ "+T("de lleno"), true);
+  fila("T2 · "+TT("Mirador","Overlook","Belvédère"), ent(D.t2.area)+" m²",
+       dec(TZ.piso,2)+" m", ent(D.t2.vol)+" m³ "+T("de corte"), true);
+
+  /* ---- los dos cortes ---- */
+  const dibujo=(modo, yTop, titulo, alto, pie)=>{
+    const G=geomTerraza(n, modo);
+    col(V.gold).texto(M,yTop,titulo,7.4,"F2",1.0);
+    const y0=yTop+8, gw=W-2*M, gh=alto;
+    col([246,244,236]).rect(M,y0,gw,gh);
+    if(!G){ col(V.muted).texto(M+8,y0+gh/2,T("No se pudo dibujar el corte."),7.4,"F1"); return yTop+8+gh+8; }
+    const X=t=>M+(t-G.tA)/(G.tB-G.tA)*gw;
+    const Y=z=>y0+(G.zmax-z)/(G.zmax-G.zmin)*gh;
+    /* terreno natural, relleno y punteado */
+    const pts=G.muestras.map(([t,z])=>[X(t),Y(z)]);
+    col([225,229,213]).poli(pts.concat([[X(G.tB),y0+gh],[X(G.tA),y0+gh]]),"f",true);
+    col([60,70,58],1).grosor(1.0);
+    for(let i=0;i<pts.length-1;i+=2)
+      P.linea(pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1]);
+    /* Corte y lleno, cuerpo a cuerpo: sin esto la casa parece flotar sobre la
+       ladera y no se entiende de dónde salen los metros cúbicos de la tabla. */
+    G.cuerpos.forEach(q=>{
+      if(modo==="t2" && q.rot==="N0") return;
+      const dentro=G.muestras.filter(([t])=>t>=q.ta&&t<=q.tb);
+      if(dentro.length<2) return;
+      const banda=(arriba,c)=>{
+        const ps=[[X(dentro[0][0]),Y(q.npt)]];
+        dentro.forEach(([t,z])=> ps.push([X(t), Y(arriba?Math.max(z,q.npt):Math.min(z,q.npt))]));
+        ps.push([X(dentro[dentro.length-1][0]),Y(q.npt)]);
+        col(c).poli(ps,"f",true);
+      };
+      banda(true,[214,176,162]);       /* corte */
+      banda(false,[186,210,192]);      /* lleno */
+    });
+    /* los cuerpos de la casa */
+    G.cuerpos.forEach(q=>{
+      const xa=X(q.ta), xb=X(q.tb), yt=Y(q.npt+q.alto), yb=Y(q.npt);
+      const bajo=(modo==="t2" && q.rot==="N−1");
+      col(bajo?[196,203,186]:V.forest).rect(xa,yt,xb-xa,yb-yt);
+      col([36,48,32],1).grosor(.8).rect(xa,yt,xb-xa,yb-yt,"S");
+      if(xb-xa>22){ col(bajo?[36,48,32]:V.blanco);
+        P.texto((xa+xb)/2-6, (yt+yb)/2+3, q.rot, 6.8, "F2"); }
+    });
+    col(V.muted).texto(M+3,y0+gh-4,rumboTxt((G.az+180)%360),6.2,"F1");
+    col(V.muted).textoD(W-M-3,y0+gh-4,rumboTxt(G.az),6.2,"F1");
+    let yy=y0+gh+10;
+    col(V.muted); yy=envolver(P, pie, M, yy, W-2*M, 7.0, 9.2);
+    return yy+8;
+  };
+
+  y+=4;
+  y=dibujo("t1", y,
+    "T1 · "+TT("BANCAL","BENCH","BANQUETTE")+" — "+ent(D.t1.area)+" m² "+
+      TT("en tres plataformas","on three platforms","sur trois plateformes"),
+    150,
+    TT("Tres plataformas de "+dec(D.t1.a,1)+" × "+dec(D.t1.p,1)+" m, cada una "+dec(D.t1.esc,2)+
+       " m más abajo que la anterior. El fondo sale de la pendiente medida del lote, de manera que "+
+       "el escalón quede en el metro y medio: por eso el corte máximo es de "+dec(D.t1.corte,2)+
+       " m y el lleno el mismo, y la tierra que sale de un bancal entra en el siguiente sin salir "+
+       "del lote. La cubierta de cada bancal es la terraza del de arriba.",
+       "Three platforms of "+dec(D.t1.a,1)+" × "+dec(D.t1.p,1)+" m, each "+dec(D.t1.esc,2)+
+       " m below the previous one. Maximum cut "+dec(D.t1.corte,2)+" m, fill the same.",
+       "Trois plateformes de "+dec(D.t1.a,1)+" × "+dec(D.t1.p,1)+" m. Déblai max. "+
+       dec(D.t1.corte,2)+" m."));
+  y=dibujo("t2", y,
+    "T2 · "+TT("MIRADOR","OVERLOOK","BELVÉDÈRE")+" — "+ent(D.t2.area)+" m² "+
+      TT("en dos pisos","on two floors","sur deux niveaux"),
+    150,
+    TT("Dos niveles de "+dec(D.t2.a,1)+" × "+dec(D.t2.F,1)+" m, uno sobre otro, con "+dec(TZ.piso,2)+
+       " m entre pisos. El de arriba entra a nivel desde la vía; el de abajo va contra la ladera por "+
+       "el lado alto y sale a la luz por el bajo. El fondo de "+dec(D.t2.F,1)+" m es justamente el "+
+       "que hace falta para que eso ocurra con la pendiente medida de este lote. La losa que vuela "+
+       dec(TZ.volado,1)+" m es la terraza, "+ent(D.t2.terraza)+" m² mirando al valle. Estos siete "+
+       "lotes son los únicos del proyecto con desnivel suficiente para ese nivel inferior.",
+       "Two levels of "+dec(D.t2.a,1)+" × "+dec(D.t2.F,1)+" m, one above the other, "+dec(TZ.piso,2)+
+       " m apart. The lower one is cut into the hill uphill and opens to daylight downhill.",
+       "Deux niveaux de "+dec(D.t2.a,1)+" × "+dec(D.t2.F,1)+" m superposés."));
+
+  const py=790;
+  col(V.line,1).grosor(.5).linea(M,py-12,W-M,py-12);
+  col(V.muted);
+  envolver(P, TT(
+    "Qué está medido y qué está propuesto: el terreno de los dos cortes, la pendiente, el desnivel "+
+    "y la dirección de caída salen del levantamiento del plano 039 y del modelo de alturas. Las "+
+    "dimensiones de los dos modelos son una propuesta de arquitectura —no hay planos aprobados de "+
+    "estas dos casas— y el movimiento de tierra que se anuncia es el que resulta de posarlas sobre "+
+    "ese terreno medido. Cualquier proyecto definitivo debe pasar por estudio de suelos.",
+    "What is measured and what is proposed: the ground of both sections, the slope, the drop and "+
+    "the fall direction come from the survey of drawing 039. The dimensions of the two models are "+
+    "an architectural proposal. Any final project requires a soil study.",
+    "Ce qui est mesuré et ce qui est proposé : le terrain des deux coupes vient du levé du plan 039. "+
+    "Les dimensions des deux modèles sont une proposition architecturale."),
+    M, py, W-2*M-96, 6.6, 8.6);
+  col(V.forest).textoD(W-M,py,T("Generado el")+" "+new Date().toLocaleDateString(LOC()),6.8,"F2");
+  return P;
 }
 
 function hojaCuotasPDF(n,L,V){
@@ -3691,8 +4843,13 @@ function dibujarIsoPDF(P,V,n,L,A,x0,y0,w,h){
 
   /* suelo */
   esc.suelo.forEach(g=>{
-    const pts=g.pts.map(p=>Q(p[0],p[1],0));
-    if(g.tipo==="plataforma"){
+    const pts=g.pts.map(p=>Q(p[0],p[1],p[2]||0));
+    if(g.tipo==="terreno"){
+      const t=g.tono==null?1:g.tono;
+      col([Math.round(143*t+18), Math.round(163*t+14), Math.round(106*t+12)]).poli(pts,"f",true);
+    } else if(g.tipo==="lindero"){
+      col([125,107,62],1).grosor(1.1).raya(null); P.poli(pts,"S",true);
+    } else if(g.tipo==="plataforma"){
       col([244,243,235]).poli(pts,"f",true);
       col([191,189,174],1).grosor(.8).raya(null); P.poli(pts,"S",true);
     } else if(g.tipo==="antejardin"){
@@ -3787,13 +4944,16 @@ function hojaIsoPDF(n,L,A,casa,V){
     "COURSE DU SOLEIL AU-DESSUS DE LA MAISON"),7.6,"F2",1.1);
   y+=16;
   col(V.muted);
-  y=envolver(P, TT("La Casa 30JB puesta en este lote, con su orientación real, y encima el recorrido del sol en los tres "+
+  y=envolver(P, TT("El volumen del tipo de "+TIPOS_CASA[TAM_CASA].et+" puesto sobre el terreno medido de este lote "+
+      "—su forma real y su pendiente, del plano 039— con la orientación de la implantación, y encima el recorrido del sol en los tres "+
       "momentos que mandan el año: el solsticio de junio, los equinoccios y el solsticio de diciembre. Los soles "+
       "marcan las 8 de la mañana, el mediodía y las 4 de la tarde.",
-    "Casa 30JB placed on this lot at its real orientation, with the path of the sun on the three dates that rule "+
-      "the year: the June solstice, the equinoxes and the December solstice. The suns mark 8 in the morning, noon "+
-      "and 4 in the afternoon.",
-    "La Casa 30JB posée sur ce lot à son orientation réelle, avec la course du soleil aux trois moments qui "+
+    "The "+TIPOS_CASA[TAM_CASA].et+" type volume placed on this lot's measured ground —its real shape and slope "+
+      "from plan 039— at the orientation of the implantation, with the path of the sun on the three dates that "+
+      "rule the year: the June solstice, the equinoxes and the December solstice. The suns mark 8 in the morning, "+
+      "noon and 4 in the afternoon.",
+    "Le volume du type de "+TIPOS_CASA[TAM_CASA].et+" posé sur le terrain mesuré de ce lot —sa forme réelle et sa "+
+      "pente, du plan 039— à l'orientation de l'implantation, avec la course du soleil aux trois moments qui "+
       "rythment l'année : le solstice de juin, les équinoxes et le solstice de décembre. Les soleils marquent "+
       "8 h, midi et 16 h."), M, y, 595.28-2*M, 8.4, 11);
   y+=8;
@@ -4185,9 +5345,10 @@ function abrirAnalisis(n){
   mb.querySelector(".close").onclick=cerrarAnalisis;
   const fe=mb.querySelector("#asoFecha"), ho=mb.querySelector("#asoHora"), hv=mb.querySelector("#asoHoraV");
   const redibujar=()=>{
-    mb.querySelector("#asoLienzo").innerHTML=plantaLote(asoEstado.n,asoEstado.f,asoEstado.h,760,300);
+    const AWa=anchoDib();
+    mb.querySelector("#asoLienzo").innerHTML=plantaLote(asoEstado.n,asoEstado.f,asoEstado.h,AWa,altoDib(AWa,300));
     const ab=mb.querySelector("#abanico");
-    if(ab) ab.innerHTML=abanicoSombras(asoEstado.n,asoEstado.f,760,300);
+    if(ab) ab.innerHTML=abanicoSombras(asoEstado.n,asoEstado.f,AWa,altoDib(AWa,300));
     hv.textContent=hhmm(asoEstado.h);
     if(R3D.activo()) R3D.sol(asoEstado.f,asoEstado.h);
   };
@@ -4207,9 +5368,10 @@ function abrirAnalisis(n){
       abrirAnalisis(n);
       try{ if(R3D.activo()){ R3D.casa(n,null,null); R3D.refrescar(); } }catch(e){}
       const A2 = IMPL[String(n)], k2 = A2 && A2.k;
-      if(k2) toast(TT("Casa de "+ent(k2.ac||k2.an)+" m²: "+k2.co+" m³ de corte y "+
+      const ti2=TIPOS_CASA[b.dataset.t];
+      if(k2) toast(TT("Casa de "+(ti2?ti2.et:ent(k2.ac||k2.an)+" m²")+": "+k2.co+" m³ de corte y "+
                       (k2.ll||0)+" m³ de lleno.",
-                      "House of "+ent(k2.ac||k2.an)+" m²: "+k2.co+" m³ cut and "+
+                      "House of "+(ti2?ti2.et:ent(k2.ac||k2.an)+" m²")+": "+k2.co+" m³ cut and "+
                       (k2.ll||0)+" m³ fill."));
     };
   });
@@ -4219,16 +5381,37 @@ function abrirAnalisis(n){
     if(!R3D.activo()) document.getElementById("b3d").click();
     R3D.casa(n, asoEstado.f, asoEstado.h);
     setTimeout(()=>R3D.irA(n), 80);
-    toast(TT("Volumen de prueba sobre el lote ","Test volume on lot ")+n+
-      TT(". Arrastre para girar alrededor.",". Drag to orbit around it."));
+    /* Honestidad sobre qué se está viendo: en el 3D del plano el volumen sigue
+       siendo la Casa 30JB —la única de la que hay geometría— escalada a la
+       envolvente del tipo escogido. El isométrico del informe sí levanta la
+       envolvente del tipo. Se dice, no se deja creer otra cosa. */
+    toast(TT("Casa 30JB escalada a la envolvente del tipo de "+TIPOS_CASA[TAM_CASA].et+" en el lote "+n+
+             ". Arrastre para girar alrededor.",
+             "Casa 30JB scaled to the "+TIPOS_CASA[TAM_CASA].et+" envelope on lot "+n+". Drag to orbit.",
+             "Casa 30JB à l'échelle de l'enveloppe du type de "+TIPOS_CASA[TAM_CASA].et+" sur le lot "+n+"."));
   };
   mb.querySelector("#anlPdf").onclick=()=>{ toast(T("Preparando la ficha…")); bajarPDF(n); };
   const bRen=mb.querySelector("#anlRen");
   if(bRen) bRen.onclick=()=>abrirRender(n);
+  /* El tour se calcula al entrar, no al abrir la hoja: rasterizar el lote y
+     probar nueve cosas en ocho orientaciones cuesta bastante y no tiene sentido
+     pagarlo en cada lote que alguien abra de paso. */
+  const bTour=mb.querySelector("#btnTour");
+  if(bTour) bTour.onclick=()=>{
+    const h=mb.querySelector("#huecoTour");
+    if(!h) return;
+    bTour.disabled=true; bTour.textContent=T("Midiendo el lote…");
+    setTimeout(()=>{
+      try{ h.innerHTML=contenidoTour(n); }
+      catch(e){ console.error(e); h.innerHTML='<p class="p pie">'+T("No se pudo medir este lote.")+'</p>'; }
+      bTour.style.display="none";
+    }, 30);
+  };
   /* el isométrico se dibuja un tic después: así la hoja aparece de una vez
      y el dibujo entra ya con la ficha en pantalla */
   const hueco=mb.querySelector("#isoHueco");
-  if(hueco) setTimeout(()=>{ try{ hueco.innerHTML=diagramaIso(n,860,470); }catch(e){ console.error(e); } },30);
+  if(hueco) setTimeout(()=>{ try{ const AWi=anchoDib();
+      hueco.innerHTML=diagramaIso(n, AWi, altoDib(AWi,470)); }catch(e){ console.error(e); } },30);
   modal.hidden=false;
 }
 function cerrarAnalisis(){ modal.hidden=true; mb.classList.remove("ancha"); }
