@@ -6,7 +6,7 @@
 <title>Laureles Campestre · Mapa de ventas</title>
 <meta name="description" content="Mapa de ventas de la parcelación Laureles Campestre, El Caimo, Armenia (Quindío).">
 <meta name="theme-color" content="#32402F">
-<meta name="build" content="20260910b">
+<meta name="build" content="2026-09-12 · hoja4">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
@@ -99,6 +99,8 @@ input[type=range]{width:100%;accent-color:var(--forest)}
 .cuenta b{font-family:var(--serif);font-size:16px}
 
 /* ---------- ficha ---------- */
+.ficha .asa{display:none;position:absolute;top:7px;left:50%;transform:translateX(-50%);
+  width:44px;height:4px;border-radius:99px;background:rgba(255,255,255,.40)}
 .ficha{position:absolute;right:14px;top:14px;bottom:14px;width:352px;max-width:calc(100vw - 28px);
   z-index:6;display:none;flex-direction:column;background:var(--surface);
   border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sombra);overflow:hidden}
@@ -213,11 +215,23 @@ input[type=range]{width:100%;accent-color:var(--forest)}
   .rail{left:0;right:0;top:auto;bottom:0;width:auto;max-height:62dvh;border-radius:var(--r) var(--r) 0 0;
     transform:translateY(101%);transition:transform .26s cubic-bezier(.2,.7,.2,1)}
   .rail.abierto{transform:none}
-  /* La hoja ocupaba el 78 % del alto y no dejaba ver el lote que uno acababa de
-     tocar. Con 64 % queda una franja de mapa de verdad arriba y la hoja sigue
-     mostrando precio, área y botones sin desplazar. */
-  .ficha{left:0;right:0;top:auto;bottom:0;width:auto;max-width:none;max-height:64dvh;
-    border-radius:var(--r) var(--r) 0 0}
+  /* LA HOJA DEL LOTE SE ARRASTRA.
+     Ocupaba una altura fija —78 % primero, 64 % después— y en las dos tapaba
+     justo lo que uno acaba de tocar: el lote y su volumetría. Ahora abre a la
+     mitad del alto y se sube o se baja con el dedo por la cabecera, con tres
+     posiciones sobre el alto REAL de la ventana (visualViewport, no 100vh, que
+     en el celular miente mientras está la barra del navegador): 30 %, 50 % y
+     92 %. En la más baja se esconde el cuerpo y quedan la cabecera y el pie con
+     el precio y los botones, que es lo que hace falta ver siempre. */
+  .ficha{left:0;right:0;top:auto;bottom:0;width:auto;max-width:none;
+    height:var(--fichaH,50dvh);max-height:94dvh;min-height:92px;
+    border-radius:var(--r) var(--r) 0 0;
+    transition:height .24s cubic-bezier(.2,.7,.2,1)}
+  .ficha.arrastrando{transition:none}
+  .ficha .fh{padding-top:20px;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
+  .ficha.arrastrando .fh{cursor:grabbing}
+  .ficha .asa{display:block}
+  .ficha.min .fb{display:none}
   /* la barra de fondos sube por encima de la escala y de la atribución */
   .fondos{bottom:44px}
   /* con el relieve encendido son tres barras en el mismo rincón: cada una en su
@@ -272,6 +286,14 @@ input[type=range]{width:100%;accent-color:var(--forest)}
   .wel .fine{margin-top:12px}
   .ficha{max-height:96dvh}
   .rail{max-height:92dvh}
+  /* En horizontal sólo hay 390 px de alto. El pie medía 160 y la cabecera 96:
+     entre los dos se comían el 66 % de la pantalla y no quedaba mapa. Se
+     compacta el pie y se dejan los dos botones que importan —WhatsApp y el
+     análisis—; imprimir y volar al lote siguen estando en vertical. */
+  .ficha .fh{padding-top:16px;padding-bottom:9px}
+  .ficha .fh h2{font-size:28px}
+  .ficha .ff{padding:9px 16px;gap:6px}
+  .ficha .ff .gh{display:none}
   .anlH{padding:10px 16px 8px}
   .anlH h2{font-size:24px}
   .anlH .anlLogo{height:26px}
@@ -576,7 +598,12 @@ body.baseClara .rotCota{color:#6B5C38;
 
 <div class="intro" id="intro">
   <div class="fallback"><img src="medios/logo.png" alt="Laureles Campestre"></div>
-  <video id="introVid" playsinline preload="auto" src="medios/intro.mp4"></video>
+  <!-- El primer fotograma del video traía cocido el damero gris de la
+       transparencia del logo: en el celular la intro arrancaba con ese
+       cuadriculado. Se quitó ese fotograma del archivo y, además, el poster
+       pinta el logo sobre el crema de la marca mientras el video carga, que
+       es lo que se ve primero en una conexión lenta. -->
+  <video id="introVid" playsinline preload="auto" poster="medios/intro_poster.jpg" src="medios/intro.mp4"></video>
   <button class="skip" id="skipBtn">Saltar intro</button>
 </div>
 
@@ -1402,20 +1429,12 @@ function abrirLote(n){
   const p=LOTES.features.find(f=>f.properties.lote===n).properties;
   volarA(p.centro, Math.max(mapa.getZoom(), 17.4));
 }
-/* Con el relieve encendido, MapLibre recalcula la cámara al cambiar de centro y el
-   zoom se queda corto. Se corrige fijándolo cuando el movimiento termina. */
-function volarA(centro, zoom){
-  /* VOLAR A UN LOTE.
-     Dos cosas se cruzaban aquí y las dos están MEDIDAS en navegador:
-     1) maxBounds pelea con la cámara inclinada. Pidiendo zoom 17,4 con 38° de
-        inclinación, MapLibre recortaba a 15,16 y dejaba el lote a más de 800 px
-        fuera de la pantalla: el botón "Volar al lote" no llevaba al lote.
-        Se levanta el límite durante el vuelo y se devuelve al aterrizar; el
-        usuario no puede irse del predio igual, porque vuelve enseguida.
-     2) En celular la ficha es una hoja que sube desde abajo y tapa hasta el
-        78 % del alto. El lote tiene que caer en la franja libre de arriba, no
-        en el centro geométrico del mapa. */
-  sanearCamara();
+/* Cuánto hay que correr la cámara para que el lote NO quede debajo de la ficha.
+   En pantalla ancha la ficha está a la derecha y se corre en x; en celular es
+   una hoja que sube desde abajo y se corre en y, hasta la mitad de la franja
+   que queda libre encima de ella. Se lee la posición REAL de la hoja en cada
+   llamada, así que al arrastrarla el encuadre se recalcula con su alto nuevo. */
+function desfaseFicha(){
   const m = document.querySelector("main") || document.body;
   const rm = m.getBoundingClientRect();
   const f = document.getElementById("ficha");
@@ -1433,6 +1452,30 @@ function volarA(centro, zoom){
     let dy = Math.round(medioLibre - (rm.top + rm.bottom)/2);
     off = [0, Math.max(-tope, Math.min(tope, dy))];
   }
+  return off;
+}
+/* Con el relieve encendido, MapLibre recalcula la cámara al cambiar de centro y el
+   zoom se queda corto. Se corrige fijándolo cuando el movimiento termina. */
+let vueloTurno = 0;
+function volarA(centro, zoom){
+  /* VOLAR A UN LOTE.
+     Dos cosas se cruzaban aquí y las dos están MEDIDAS en navegador:
+     1) maxBounds pelea con la cámara inclinada. Pidiendo zoom 17,4 con 38° de
+        inclinación, MapLibre recortaba a 15,16 y dejaba el lote a más de 800 px
+        fuera de la pantalla: el botón "Volar al lote" no llevaba al lote.
+        Se levanta el límite durante el vuelo y se devuelve al aterrizar; el
+        usuario no puede irse del predio igual, porque vuelve enseguida.
+     2) En celular la ficha es una hoja que sube desde abajo y tapa hasta el
+        78 % del alto. El lote tiene que caer en la franja libre de arriba, no
+        en el centro geométrico del mapa. */
+  sanearCamara();
+  /* Un vuelo anterior puede seguir vivo: tiene reintentos a 700 ms. Si empieza
+     otro encuadre encima, las dos animaciones se pelean la cámara y MapLibre
+     la deja en un estado del que no vuelve a pintar —MEDIDO: el estilo entero
+     cargado y 0 elementos dibujados—. El turno corta al viejo en seco. */
+  const miVuelo = ++vueloTurno;
+  const vigente = () => vueloTurno === miVuelo;
+  let off = desfaseFicha();
   tocado = true;                          /* ir a un lote es una decisión, no un arranque */
   const limite = mapa.getMaxBounds();
   if(limite) mapa.setMaxBounds(null);
@@ -1463,7 +1506,7 @@ function volarA(centro, zoom){
     return [c.top + 40, (rg && rg.top < c.bottom - 8) ? rg.top - 10 : c.bottom - 40];
   };
   const comprobar = (quedan)=>{
-    if(quedan <= 0) return;
+    if(quedan <= 0 || !vigente()) return;
     let pt; try{ pt = mapa.project(centro); }catch(e){ return; }
     const c = mapa.getContainer().getBoundingClientRect();
     const [a, z2] = franja();
@@ -1479,12 +1522,14 @@ function volarA(centro, zoom){
      vez allí se corre la cámara lo que haga falta para dejarlo sobre la ficha.
      Comprobado a 360, 390 y 412. */
   const correr = ()=>{
+    if(!vigente()) return;
     if(off[0]===0 && off[1]===0){ devolver(); return; }
     mapa.easeTo({center:centro, zoom:zoom, duration:320, essential:true, offset:off});
     mapa.once("moveend", ()=>{ devolver(); setTimeout(()=>comprobar(2), 700); });
   };
   mapa.flyTo({center:centro, zoom:zoom, duration:900, essential:true});
   mapa.once("moveend", ()=>{
+    if(!vigente()) return;
     if(Math.abs(mapa.getZoom()-zoom) > 0.3){
       mapa.easeTo({center:centro, zoom:zoom, duration:300, essential:true});
       mapa.once("moveend", correr);
@@ -1494,6 +1539,152 @@ function volarA(centro, zoom){
 function cerrarFicha(){
   S.sel=null; document.getElementById("ficha").classList.remove("on"); refrescar();
 }
+/* ---------------------------------------------------------------------------
+   LA HOJA DEL LOTE, ARRASTRABLE.
+   El problema, dicho como se vio en el teléfono: uno toca un lote, la hoja sube
+   y tapa el mapa entero; el lote que se acaba de tocar deja de verse justo
+   cuando uno quiere mirarlo. Ahora la hoja abre a la mitad del alto y se sube o
+   se baja con el dedo por la cabecera. Tres posiciones, y en cada cambio se
+   vuelve a correr la cámara con el alto NUEVO de la hoja, para que el lote
+   siempre caiga en la franja libre de arriba.
+   El alto se mide con visualViewport cuando existe: en el celular la barra del
+   navegador entra y sale y 100vh no cambia, así que una hoja "al 50 %" acababa
+   siendo el 58 % real.
+   --------------------------------------------------------------------------- */
+const SNAPS = [0.30, 0.50, 0.92];
+let snapFicha = 1;
+const hojaMovil = () => innerWidth <= 900;
+const altoVentana = () => Math.round((window.visualViewport && visualViewport.height) || innerHeight);
+/* lo que miden de verdad la cabecera y el pie de ESTA ficha, ahora mismo: el
+   pie cambia de alto según el lote (algunos llevan un botón más) y la cabecera
+   según el ancho, así que no sirve un porcentaje fijo */
+function medidasHoja(f){
+  const fh = f.querySelector(".fh"), ff = f.querySelector(".ff");
+  return { cab: fh ? fh.offsetHeight : 110, pie: ff ? ff.offsetHeight : 150 };
+}
+function ponerAltoHoja(px){
+  const f = document.getElementById("ficha"); if(!f) return;
+  const H = altoVentana();
+  const v = Math.round(Math.max(0.16*H, Math.min(0.94*H, px)));
+  f.style.setProperty("--fichaH", v+"px");
+  /* el cuerpo se esconde cuando no le queda sitio: por debajo de 56 px no se
+     lee nada y en cambio empuja el pie —precio y botones— fuera de la pantalla.
+     MEDIDO en horizontal, 844 x 390: cabecera 96 + pie 160 = 256 px contra una
+     hoja de 195, y el botón de WhatsApp quedaba debajo del borde. */
+  const m = medidasHoja(f);
+  f.classList.toggle("min", (v - m.cab - m.pie) < 56);
+  return v;
+}
+function recolocarLote(){
+  if(S.sel == null || !mapa) return;
+  const ft = LOTES.features.find(x=>x.properties.lote===S.sel);
+  if(!ft) return;
+  const centro = ft.properties.centro;
+  /* Se corta cualquier vuelo en marcha antes de mover: dos animaciones sobre la
+     misma cámara con el relieve puesto dejaban el mapa en blanco —MEDIDO: el
+     estilo entero cargado y 0 elementos dibujados—. */
+  const mio = ++vueloTurno;
+  try{ mapa.stop(); }catch(e){}
+  if(!sanearCamara()) return;
+  const zoom = mapa.getZoom();
+  const vigente = () => vueloTurno === mio;
+
+  /* EN DOS TIEMPOS, IGUAL QUE EL VUELO.
+     easeTo con 'offset' partiendo de una cámara que YA venía corrida y con el
+     relieve puesto no aterriza donde dice: MEDIDO a 390 x 844, pidiendo −113 px
+     el lote acababa 1.214 px por debajo de la pantalla. Primero se centra —eso
+     sí lo hace bien siempre— y desde ahí se corre. Y si aun así se sale, se
+     deja CENTRADO, que es peor encuadre pero se ve el lote; quedarse fuera de
+     la pantalla no es una opción. */
+  const franja = ()=>{
+    const c = mapa.getContainer().getBoundingClientRect();
+    const f = document.getElementById("ficha");
+    const rf = (f && f.classList.contains("on")) ? f.getBoundingClientRect() : null;
+    return [c, c.top + 40, (rf && rf.top < c.bottom - 8) ? rf.top - 10 : c.bottom - 40];
+  };
+  const dentro = ()=>{
+    try{
+      if(!camaraSana()) return false;
+      const [c, alto, bajo] = franja();
+      const pt = mapa.project(centro), y = c.top + pt.y, x = c.left + pt.x;
+      return y > alto && y < bajo && x > c.left && x < c.right;
+    }catch(e){ return false; }
+  };
+  const centrar = (dur)=>{ try{ mapa.easeTo({center:centro, zoom:zoom,
+                                 duration:dur, essential:true}); }catch(e){} };
+  centrar(220);
+  mapa.once("moveend", ()=>{
+    if(!vigente()) return;
+    const off = desfaseFicha();
+    if(off[0]===0 && off[1]===0) return;
+    try{ mapa.easeTo({center:centro, zoom:zoom, offset:off,
+                      duration:240, essential:true}); }catch(e){ return; }
+    mapa.once("moveend", ()=>setTimeout(()=>{
+      if(!vigente()) return;
+      if(dentro()) return;
+      centrar(220);                      /* se salió: vuelve al centro y ahí queda */
+    }, 240));
+  });
+}
+function snapHoja(i, recolocar){
+  snapFicha = Math.max(0, Math.min(SNAPS.length-1, i));
+  const f = document.getElementById("ficha");
+  const H = altoVentana();
+  let px = SNAPS[snapFicha]*H;
+  if(f){
+    /* Ninguna posición puede cortar el pie: el precio y los botones se ven
+       siempre, que es para lo que sirve la hoja. MEDIDO a 390 x 844: cabecera
+       113 px + pie 160 px = 273, y con el 30 % fijo quedaban 253 y el botón de
+       WhatsApp se salía de la pantalla. Se toma lo que de verdad miden. */
+    const m = medidasHoja(f);
+    px = Math.min(0.94*H, Math.max(px, m.cab + m.pie + 2));
+  }
+  ponerAltoHoja(px);
+  if(recolocar!==false) setTimeout(recolocarLote, 270);
+}
+function hojaArrastrable(f){
+  const h = f.querySelector(".fh"); if(!h) return;
+  let y0=0, h0=0, activo=false, idp=null;
+  h.addEventListener("pointerdown", e=>{
+    if(!hojaMovil()) return;
+    if(e.target.closest("button, a, input, select")) return;
+    activo=true; idp=e.pointerId; y0=e.clientY;
+    h0=f.getBoundingClientRect().height;
+    f.classList.add("arrastrando");
+    try{ h.setPointerCapture(idp); }catch(err){}
+  });
+  h.addEventListener("pointermove", e=>{
+    if(!activo || e.pointerId!==idp) return;
+    e.preventDefault();
+    ponerAltoHoja(h0 - (e.clientY - y0));
+  });
+  const soltar = e=>{
+    if(!activo || (e && e.pointerId!=null && e.pointerId!==idp)) return;
+    activo=false; f.classList.remove("arrastrando");
+    try{ h.releasePointerCapture(idp); }catch(err){}
+    const fr = f.getBoundingClientRect().height / altoVentana();
+    let mejor=0, d=9;
+    SNAPS.forEach((v,i)=>{ const dd=Math.abs(v-fr); if(dd<d){ d=dd; mejor=i; } });
+    snapHoja(mejor);
+  };
+  h.addEventListener("pointerup", soltar);
+  h.addEventListener("pointercancel", soltar);
+  /* un toque limpio en la cabecera alterna entre media y completa */
+  h.addEventListener("dblclick", e=>{
+    if(!hojaMovil() || e.target.closest("button")) return;
+    snapHoja(snapFicha>=2 ? 1 : 2);
+  });
+}
+/* si la ventana cambia de alto —girar el teléfono, la barra del navegador— la
+   posición se vuelve a calcular sobre el alto nuevo, no sobre el viejo en px */
+addEventListener("resize", ()=>{
+  const f=document.getElementById("ficha");
+  if(f && f.classList.contains("on") && hojaMovil()) snapHoja(snapFicha, false);
+});
+if(window.visualViewport) visualViewport.addEventListener("resize", ()=>{
+  const f=document.getElementById("ficha");
+  if(f && f.classList.contains("on") && hojaMovil()) snapHoja(snapFicha, false);
+});
 function pintarFicha(n){
   const f=LOTES.features.find(x=>x.properties.lote===n); if(!f)return;
   const p=f.properties, E=ESTADOS[p.estado], et=ETAPAS[S.etapa-1], v=precio(p,S.etapa);
@@ -1508,6 +1699,7 @@ function pintarFicha(n){
   const ficha=document.getElementById("ficha");
   ficha.innerHTML =
   '<div class="fh">'+
+    '<div class="asa" aria-hidden="true"></div>'+
     '<button class="cerrar" aria-label="Cerrar">×</button>'+
     '<div class="lb">Lote</div><h2>'+p.lote+'</h2>'+
     '<span class="badge b-'+E.k+'"><i class="pt"></i>'+E.t+'</span>'+
@@ -1569,6 +1761,10 @@ function pintarFicha(n){
     '<div class="gh"><button id="bImp">Imprimir ficha</button><button id="bVer">Volar al lote</button></div>'+
   '</div>';
   ficha.classList.add("on");
+  /* la hoja se rehace entera en cada lote, así que el arrastre se vuelve a
+     enganchar y la posición vuelve a la de en medio */
+  if(hojaMovil()){ snapHoja(1, false); hojaArrastrable(ficha); }
+  else ficha.style.removeProperty("--fichaH");
   ficha.querySelector(".cerrar").onclick=cerrarFicha;
   ficha.querySelector("#bWa").onclick=()=>whatsapp(p,v,et);
   ficha.querySelector("#bImp").onclick=()=>print();
@@ -1968,6 +2164,12 @@ function avisar(t,ms){ const a=document.getElementById("aviso");
 const velo=document.getElementById("velo");
 function abrirAjustes(){
   document.getElementById("hojaTit").textContent="Ajustes";
+  /* El sello de versión: con esto se sabe de un vistazo si lo que se está
+     viendo es lo último publicado o una copia guardada del navegador. Era la
+     pregunta que no se podía responder desde la propia página. */
+  const sello = BUILD +
+    (navigator.serviceWorker && navigator.serviceWorker.controller
+      ? " · copia guardada" : " · desde la red");
   document.getElementById("hojaCuerpo").innerHTML =
     '<label>Número de WhatsApp de ventas</label>'+
     '<input type="text" id="aTel" value="'+CFG.telefono+'" placeholder="573001234567">'+
@@ -1981,7 +2183,7 @@ function abrirAjustes(){
         '<input type="text" id="aKey" value="'+(CFG.supabaseKey||"")+'" placeholder="sb_publishable_...">'
       : '')+
     '<div class="pista" style="margin-top:18px;padding-top:12px;border-top:1px solid var(--line-soft)">'+
-    'Versión publicada: <b>'+BUILD+'</b></div>'+
+    'Versión publicada: <b>'+sello+'</b></div>'+
     '<div class="pista">Sin Supabase el mapa funciona igual, pero los cambios de estado se quedan '+
     'en el dispositivo de cada asesor. El archivo <b>supabase.sql</b> del repositorio crea la tabla.</div>'+
     '<div class="pista" style="margin-top:10px">Entrando ahora como <b>'+
@@ -2032,9 +2234,29 @@ ROL.pintar();
 velo.onclick=e=>{ if(e.target===velo) velo.classList.remove("on"); };
 addEventListener("keydown",e=>{ if(e.key==="Escape"){ velo.classList.remove("on"); cerrarFicha(); } });
 
-/* ---------------------------------- PWA ------------------------------------- */
-if("serviceWorker" in navigator)
-  addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+/* ---------------------------------- PWA -------------------------------------
+   EL PROBLEMA DE "SIGO VIENDO LA VERSIÓN VIEJA".
+   El service worker ya se instala de una y toma el control sin esperar, pero la
+   pestaña que estaba abierta en el momento del cambio se queda con el código
+   anterior cargado en memoria hasta que alguien la recargue a mano. Aquí se
+   recarga sola, una sola vez, en cuanto el nuevo toma el mando. Así publicar y
+   abrir el sitio basta: no hay que borrar caché ni entrar de incógnito.        */
+if("serviceWorker" in navigator){
+  addEventListener("load",()=>{
+    navigator.serviceWorker.register("sw.js").then(reg=>{
+      try{ reg.update(); }catch(e){}
+      /* y se vuelve a preguntar cada vez que se vuelve a la pestaña */
+      document.addEventListener("visibilitychange",()=>{
+        if(!document.hidden) try{ reg.update(); }catch(e){}
+      });
+    }).catch(()=>{});
+    let recargando = false;
+    navigator.serviceWorker.addEventListener("controllerchange",()=>{
+      if(recargando) return; recargando = true;
+      location.reload();
+    });
+  });
+}
 if(SB.activo()) addEventListener("load",()=>SB.traer());
 
 /* ------------- puente para el armazón (intro, nav, POI, idioma) ------------ */

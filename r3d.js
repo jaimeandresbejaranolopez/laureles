@@ -518,7 +518,20 @@ const R3D = (()=>{
     BANQ=null;
     if(loteCasa==null){ if(banqAntes) rehacerMalla(); return; }
     const A=(typeof IMPL!=="undefined")?IMPL[String(loteCasa)]:null;
-    if(!A||!A.k||!A.k.o){ return; }
+    if(!A){ if(banqAntes) rehacerMalla(); return; }
+    if(!A.k||!A.k.o){
+      /* Cinco lotes del predio —48, 65, 83, 84 y 86— no admiten una sola
+         plataforma: la casa se implanta en bancales. Hasta ahora aquí se
+         devolvía sin dibujar nada y en el 3D del mapa esos lotes salían sin
+         casa. La geometría la calcula el mismo módulo que dibuja el informe
+         (window.__IMPLANTAR_TERRAZA), para que mapa e informe no cuenten dos
+         historias distintas del mismo lote. */
+      const KT=(typeof window.__IMPLANTAR_TERRAZA==="function")
+             ? window.__IMPLANTAR_TERRAZA(+loteCasa) : null;
+      if(KT) malloTerraza(KT);
+      if(banqAntes) rehacerMalla();
+      return;
+    }
     const K=A.k;
     const dosNiveles=(K.mod==="2p" && K.zm!=null);
     /* la piscina y el deck salieron del modelo: el volumen es sólo la casa */
@@ -668,6 +681,84 @@ const R3D = (()=>{
       }
     }
   }
+  /* ---------- la casa en bancales ----------
+     Mismo lenguaje que el volumen de una sola plataforma: un prisma de tierra
+     por bancal —su plataforma y el muro que la sostiene—, encima el cuerpo de
+     la casa y su parapeto, y la sombra proyectada sobre el terreno real. Las
+     cotas de piso (npt) salen del MDT bancal por bancal; no se promedian. */
+  function malloTerraza(K){
+    const o=K.o, ux=K.ux, uv=K.uv;
+    const XY=(u,v)=>[o[0]+ux[0]*u+uv[0]*v, o[1]+ux[1]*u+uv[1]*v];
+    const Zp=z=>(z-ZMID)*ve, H=m=>m*ve;
+    const V=[],N=[],I=[];
+    const mete=(x,y,z,nx,ny,nz)=>{V.push(x-CX,-(y-CY),z);N.push(nx,ny,nz);return V.length/3-1;};
+    function prisma(qd,za,zc,tapa){
+      const arr=qd.map(p=>mete(p[0],p[1],zc,0,0,1));
+      if(tapa!==false) for(let i=1;i<arr.length-1;i++) I.push(arr[0],arr[i],arr[i+1]);
+      for(let i=0;i<qd.length;i++){
+        const a=qd[i], b=qd[(i+1)%qd.length];
+        const dx=b[0]-a[0], dy=-(b[1]-a[1]), L=Math.hypot(dx,dy)||1;
+        const nx=dy/L, ny=-dx/L;
+        const p1=mete(a[0],a[1],za,nx,ny,0), p2=mete(b[0],b[1],za,nx,ny,0);
+        const p3=mete(b[0],b[1],zc,nx,ny,0), p4=mete(a[0],a[1],zc,nx,ny,0);
+        I.push(p1,p2,p3, p1,p3,p4);
+      }
+    }
+    const reset=()=>{V.length=0;N.length=0;I.length=0;};
+    const cerrar=c=>{ if(I.length) piezas.push({b:subir(V.slice(),N.slice(),I.slice()),c:c}); reset(); };
+    const quad=(u0,v0,u1,v1)=>[XY(u0,v0),XY(u1,v0),XY(u1,v1),XY(u0,v1)];
+
+    const niv = K.niveles||[];
+    if(!niv.length) return;
+    const alto = K.alto || 3.0, PAR = 0.35;
+
+    /* 1. los bancales: plataforma y muro de contención hasta el terreno */
+    niv.forEach(nv=>{
+      let zmin=1e9;
+      for(let u=nv.u0; u<=nv.u1+1e-6; u+=1.0)
+        for(let v=0; v<=K.A+1e-6; v+=1.0){
+          const p=XY(u,v), hh=alturaEn(p[0],p[1]);
+          if(!isNaN(hh)) zmin=Math.min(zmin,(hh-ZMID)*ve);
+        }
+      const top=Zp(nv.npt);
+      if(!isFinite(zmin)) zmin=top-H(1.5);
+      prisma(quad(nv.u0,0,nv.u1,K.A), Math.min(zmin-0.45, top-H(0.40)), top-H(0.12), true);
+    });
+    cerrar([0.66,0.58,0.45,1.0]);
+
+    /* 2. el cuerpo de cada bancal */
+    niv.forEach(nv=>{
+      const top=Zp(nv.npt);
+      prisma(quad(nv.u0,0,nv.u1,K.A), top-H(0.12), top+H(alto), true);
+    });
+    cerrar([0.93,0.90,0.83,1.0]);
+
+    /* 3. el parapeto de la cubierta plana de cada nivel */
+    niv.forEach(nv=>{
+      const top=Zp(nv.npt)+H(alto), e=0.30;
+      [[nv.u0,0,nv.u1,e],[nv.u0,K.A-e,nv.u1,K.A],
+       [nv.u0,0,nv.u0+e,K.A],[nv.u1-e,0,nv.u1,K.A]].forEach(q=>
+        prisma(quad(q[0],q[1],q[2],q[3]), top, top+H(PAR), true));
+    });
+    cerrar([0.97,0.95,0.90,1.0]);
+
+    /* 4. la sombra sobre el terreno */
+    const altS=SOLPOS?SOLPOS.alt:60, azm=SOLPOS?SOLPOS.az:120;
+    if(altS>2){
+      const Lp=(alto+PAR)/Math.tan(altS*Math.PI/180);
+      if(Lp<300){
+        const A2=azm*Math.PI/180, dx=-Lp*Math.sin(A2), dy=Lp*Math.cos(A2);
+        const base=quad(0,0,K.L,K.A);
+        const casco=convexo(base.concat(base.map(q=>[q[0]+dx,q[1]+dy])));
+        const V2=[],N2=[],I2=[];
+        casco.forEach(q=>{ const hh=alturaEn(q[0],q[1]);
+          V2.push(q[0]-CX, -(q[1]-CY), ((isNaN(hh)?K.z:hh)-ZMID)*ve+0.35); N2.push(0,0,1); });
+        for(let i=1;i<casco.length-1;i++) I2.push(0,i,i+1);
+        if(I2.length) somB=subir(V2,N2,I2);
+      }
+    }
+  }
+
   function convexo(ps){
     const p=ps.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
     const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
@@ -703,10 +794,15 @@ const R3D = (()=>{
   const RADIO_DOMO = 78;                 /* metros: la bóveda encierra la casa con holgura */
   function centroCasa(){
     const A=(typeof IMPL!=="undefined")?IMPL[String(loteCasa)]:null;
-    if(!A||!A.k) return null;
-    const g=A.k.g.slice(0,-1);
+    if(!A) return null;
+    /* en los lotes de bancales el centro sale de la implantación en terrazas */
+    const B = (A.k && A.k.o) ? A.k
+            : ((typeof window.__IMPLANTAR_TERRAZA==="function")
+                 ? window.__IMPLANTAR_TERRAZA(+loteCasa) : null);
+    if(!B||!B.g) return null;
+    const g=B.g.slice(0,-1);
     const cx=g.reduce((a,p)=>a+p[0],0)/g.length, cy=g.reduce((a,p)=>a+p[1],0)/g.length;
-    return {x:cx-CX, y:-(cy-CY), z:(A.k.z-ZMID)*ve, cota:A.k.z};
+    return {x:cx-CX, y:-(cy-CY), z:(B.z-ZMID)*ve, cota:B.z};
   }
   const puntoCielo=(c,alt,az,R)=>{
     const A=alt*Math.PI/180, Z=az*Math.PI/180;
