@@ -472,12 +472,22 @@ function lienzos(){
   if(DATA.lind){ camino(DATA.lind,aMask,bMask); g.stroke(); }
   g.globalCompositeOperation="source-over";
 
+  /* OJO CON flipY. Three.js voltea verticalmente toda textura de lienzo al
+     subirla a la GPU (CanvasTexture nace con flipY = true). El lienzo se pinta
+     con bMask, que manda el norte a la fila 0; al voltearlo, el norte acababa
+     abajo y TODO el plano dibujado —vías, linderos y fajas de protección—
+     quedaba espejado de norte a sur sobre el terreno. Los árboles, que son
+     geometría de verdad y no textura, se quedaban en su sitio: de ahí que la
+     arborización se viera cruzada contra el plano. Se apaga el volteo y las dos
+     capas vuelven a caer donde manda el DXF. */
   texMask=new THREE.CanvasTexture(cvMask);
+  texMask.flipY=false;
   texMask.colorSpace=THREE.NoColorSpace;
   texMask.anisotropy=4; texMask.needsUpdate=true;
 
   cvLote=document.createElement("canvas"); cvLote.width=cvLote.height=LOTE_T;
   texLote=new THREE.CanvasTexture(cvLote);
+  texLote.flipY=false;
   texLote.colorSpace=THREE.SRGBColorSpace;
   pintarLotes();
 }
