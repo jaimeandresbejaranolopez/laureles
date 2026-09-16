@@ -211,7 +211,7 @@ const DIC_FR = {
 "pend.Suave":"Doux",
 "pend.Medio":"Moyen",
 "pend.Fuerte":"Fort",
-"pend.Escarpado":"Escarpé",
+"pend.Muy pendiente":"Très pentu",
 "menos de 5 %":"moins de 5 %",
 "5 – 10 %":"5 – 10 %",
 "10 – 15 %":"10 – 15 %",
@@ -544,7 +544,7 @@ const DIC = {
 "pend.Suave":"Gentle",
 "pend.Medio":"Moderate",
 "pend.Fuerte":"Steep",
-"pend.Escarpado":"Very steep",
+"pend.Muy pendiente":"Very steep",
 "menos de 5 %":"under 5%",
 "5 – 10 %":"5 – 10%",
 "10 – 15 %":"10 – 15%",
@@ -820,14 +820,45 @@ const rumboTxt=b=>{
    proyecto. Estaba en 5,0 m —la de la casa de estudio 30JB— y con eso la
    sombra del informe salía un 25 % más larga que el volumen que se dibuja. */
 const ALTURA_MAX=ALTO_TIPO, ENTRE_NIVELES=3.0;
+
+/* ---------------------------------------------------------------------------
+   CÓMO SE NOMBRA EL TERRENO EN LA FICHA, IGUAL EN LOS 86 LOTES.
+   Antes el bloque TERRENO cambiaba de forma según el lote: unos mostraban
+   "Cota" y otros "Área levantada", y donde no había topografía salía un guion
+   que no le dice nada a nadie. Dos fichas no se podían comparar lado a lado.
+   Ahora las cuatro filas van siempre, en el mismo orden, y donde no hay dato
+   medido se dice con palabras qué hay en su lugar. En los seis lotes sin
+   levantamiento completo —65 a 70— el dato es de campo: la gerencia técnica
+   los conoce y los sitúa por encima del 25 % de pendiente.
+   --------------------------------------------------------------------------- */
+function pendTxt(A, corto){
+  if(A && A.pend){
+    const p = (LANG==="es") ? A.pend : String(A.pend).replace(/,/g,".");
+    /* en las celdas estrechas sobra el ángulo entre paréntesis */
+    return corto ? p.replace(/\s*\(.*\)\s*$/,"") : p;
+  }
+  /* la coletilla "dato de campo" no cabe en una celda de un cuarto de hoja:
+     ahí va sólo el rango, y la explicación completa vive en el bloque TERRENO */
+  if(corto) return TT("Más del 25 %","Over 25%","Plus de 25 %");
+  return TT("Más del 25 % · dato de campo",
+            "Over 25% · field data",
+            "Plus de 25 % · donnée de terrain");
+}
+function cotaTxt(A){
+  if(A && A.cota){
+    const mc = String(A.cota).match(/(\d+)\D+(\d+)/);
+    return mc ? ent(+mc[1])+"–"+ent(+mc[2])+SNM() : A.cota;
+  }
+  return TT("Sin levantamiento topográfico","Not surveyed","Sans levé topographique");
+}
 const CLASES=[["Plano","menos de 5 %","#4C8862"],["Suave","5 – 10 %","#7BA36B"],
               ["Medio","10 – 15 %","#C4B45A"],["Fuerte","15 – 25 %","#C48A2A"],
-              ["Escarpado","más de 25 %","#A3543F"]];
+              ["Muy pendiente","más de 25 %","#A3543F"]];
 /* La sexta "clase": el terreno que quedó fuera del levantamiento.
    No hay curvas de nivel ahí, así que no hay pendiente MEDIDA. Lo que hay es una
    pendiente DECLARADA: la gerencia técnica del proyecto conoce el predio en campo
-   y la fija en el rango fuerte (15–25 %). No es lo mismo que un dato de topografía
-   y en ninguna figura se mezcla con él: se pinta del color del rango fuerte —para
+   y la fija en el rango de MÁS del 25 %. No es lo mismo que un dato de topografía
+   y en ninguna figura se mezcla con él: se pinta del color del de "muy pendiente" —para
    que nadie lea esa franja como terreno plano, que era el error— pero siempre
    rayada, y cada cifra que sale de ahí dice de dónde viene. */
 const DECL_CLASE = 3;                              /* "Fuerte · 15 – 25 %" */
@@ -879,7 +910,7 @@ const MDT = (()=>{
 
      donde B es el nodo levantado MÁS CERCANO a P. La cota de arranque y la
      posición del borde son dato del levantamiento; lo único declarado es el
-     20 % —el centro del rango fuerte, 15–25 %— y el que la ladera siga cayendo
+     20 % —el centro del clase "muy pendiente", más del 25 %— y el que la ladera siga cayendo
      al alejarse de lo medido, que es la forma del predio: lo levantado es la
      parte de arriba, contra la vía, y lo que falta es la de atrás.
 
@@ -887,7 +918,7 @@ const MDT = (()=>{
      NaN ahí, las barras del informe no se mueven y cada dibujo que usa esta
      superficie sale rayado y rotulado como declarado.
      --------------------------------------------------------------------- */
-  const PEND_DECLARADA = 0.20;
+  const PEND_DECLARADA = 0.28;
   function declarar(){
     if(HD) return HD;
     cargar();
@@ -1011,7 +1042,7 @@ function avisoLevantamiento(n){
              "Une partie de ce lot n\u0027est pas levée.")+'</b> '+
     TT("Sólo el "+pct+" % de su superficie está dentro del área con curvas de nivel. Los "+
        fmtA(falta)+" restantes van <b>rayados</b> en los dibujos y se representan con "+
-       "<b>pendiente fuerte (15 – 25 %), declarada en campo por la gerencia técnica del "+
+       "<b>pendiente de más del 25 %, declarada en campo por la gerencia técnica del "+
        "proyecto</b> —no medida con topografía—: es la parte de atrás del lote, la que cae. "+
        "Las cifras de pendiente, el corte del terreno y la implantación de la casa se calculan "+
        "sólo sobre lo levantado, y así se dicen. Antes de escriturar hay que levantar esa franja "+
@@ -1292,7 +1323,7 @@ function mapaPendientes(n, W, H){
   }
 
   /* Las curvas de la franja declarada: mismo intervalo de lectura, pero
-     punteadas y en el tono del rango fuerte, y sólo donde NO hay levantamiento.
+     punteadas y en el tono del clase "muy pendiente", y sólo donde NO hay levantamiento.
      Es lo que le permite al cliente ver que la ladera sigue bajando después del
      borde del levantamiento, sin confundirlas con las medidas. */
   if(A0 && A0.cob!=null && A0.cob<0.98){
@@ -3064,7 +3095,7 @@ function analisis(n){
      'Cada celda son 2 m del modelo del terreno, pintada con el color de su rango de pendiente. '+
      'La línea dorada punteada es el área construible y el contorno blanco, la casa. '+
      'Lo que sale <b>rayado</b> —en la planta y en el volumen— es la franja sin curvas de nivel: '+
-     'va del color del rango fuerte porque así la declara en campo la gerencia técnica, pero la '+
+     'va del color del "muy pendiente" porque así la declara en campo la gerencia técnica, pero la '+
      'raya está para recordar que ahí no hay topografía. El volumen la dibuja a nivel por falta '+
      'de cotas, no porque sea plana: la pendiente que vale en esa franja es la declarada, no la '+
      'silueta del bloque.',
@@ -3324,7 +3355,7 @@ function analisis(n){
        'a donc pas de plateforme à dessiner.'))+
      ((A.cob!=null && A.cob<0.98) ? ' '+TT(
        'La parte rayada del corte no está levantada: es la ladera declarada al 20 %, que es el '+
-       'centro del rango fuerte. Arranca en la última cota medida y de ahí baja, sin pasar nunca '+
+       'centro del clase "muy pendiente". Arranca en la última cota medida y de ahí baja, sin pasar nunca '+
        'por debajo del punto más bajo que el levantamiento midió en el predio.',
        'The hatched part of the section is not surveyed: it is the slope declared at 20%, the middle '+
        'of the steep range. It starts at the last measured elevation and falls from there, never '+
@@ -3969,7 +4000,7 @@ function hojaPortadaPDF(n,L,A,casa,V){
   const celdas=[
     [T("Área total"), fmtA(L.at)],
     [T("Área útil"),  fmtA(L.ut)],
-    [T("Pendiente media"), A&&A.pend ? (LANG==="es"?A.pend:String(A.pend).replace(/,/g,".")) : "—"],
+    [T("Pendiente media"), pendTxt(A,1)],
     [T("Precio")+" "+ET.l, fmtCOP(val)]
   ];
   const cw=(W-2*M)/4;
@@ -3977,7 +4008,11 @@ function hojaPortadaPDF(n,L,A,casa,V){
     const x=M+i*cw;
     if(i) { col(V.line,1).grosor(.5); P.linea(x-8,y-4,x-8,y+26); }
     col(V.muted).texto(x,y,cd[0],7.4,"F1",.6);
-    col(V.ink).texto(x,y+20,cd[1],i===3?12:13,"F2");
+    /* MEDIDO: "Más del 25 %" a 13 pt mide más que el cuarto de hoja y se montaba
+       encima del precio. El cuerpo baja hasta que la cifra quepa en su celda. */
+    let tam = i===3 ? 12 : 13;
+    while(tam > 7.5 && PDFmin.ancho(cd[1], tam, "F2") > cw - 16) tam -= 0.5;
+    col(V.ink).texto(x,y+20,cd[1],tam,"F2");
   });
   y+=40;
   col(V.muted).texto(M,y,T(ET.d),7.8,"F1");
@@ -4085,14 +4120,13 @@ function fichaPDF(n){
   dy+=6; col(V.gold).texto(dx,dy,T("TERRENO"),7.6,"F2",1.1); dy+=14;
   /* si el lote no está levantado entero hay que decirlo aquí, que es la hoja
      que se entrega, y no dejarlo sólo en la pantalla */
-  if(A.cob!=null && A.cob<0.98){
-    fila(T("Área levantada"), ent(A.am2||0)+" m² "+TT("de","of")+" "+ent(L.at)+" m² ("+
-         Math.round(A.cob*100)+" %)", 1);
-  }
-  if(A.cota){ const mc=String(A.cota).match(/(\d+)\D+(\d+)/);
-    fila(T("Cota"), mc ? ent(+mc[1])+"–"+ent(+mc[2])+SNM() : A.cota); }
-  fila(T("Pendiente media"), A.pend
-    ? (LANG==="es" ? A.pend : String(A.pend).replace(/,/g,".")) : "—");
+  /* las mismas cuatro filas en los 86 lotes y en el mismo orden, para que dos
+     fichas se puedan poner una al lado de la otra y comparar renglón a renglón */
+  fila(T("Cota"), cotaTxt(A));
+  fila(T("Pendiente media"), pendTxt(A));
+  fila(T("Área levantada"),
+       ent(A.am2!=null?A.am2:L.at)+" m² "+TT("de","of")+" "+ent(L.at)+" m² ("+
+       Math.round((A.cob!=null?A.cob:1)*100)+" %)", (A.cob!=null && A.cob<0.98)?1:0);
   fila(T("Área construible"),A.cm2?ent(A.cm2)+" m²":"—",1);
   if(casa){
     dy+=6; col(V.gold).texto(dx,dy,T("VOLUMEN DE PRUEBA"),7.6,"F2",1.1); dy+=14;
@@ -4114,14 +4148,17 @@ function fichaPDF(n){
     (parcial ? TT("  ·  SÓLO SOBRE LOS "+ent(A.am2||0)+" M² LEVANTADOS",
                   "  ·  OVER THE "+ent(A.am2||0)+" M² SURVEYED ONLY",
                   "  ·  SUR LES "+ent(A.am2||0)+" M² LEVÉS SEULEMENT") : ""),7.6,"F2",1.1); y+=16;
-  const bw=595.28-2*M-238;
+  /* "Muy pendiente" es más ancha que "Escarpado": la columna del nombre pasa de
+     58 a 78 pt y la barra arranca 22 pt más allá. Con los 58 de antes el nombre
+     se montaba encima del rango y salía "Muy pendientemás de 25 %". */
+  const bw=595.28-2*M-260;
   CLASES.forEach((c,i)=>{
     const p=A.r[i]?A.r[i][0]:0, m2v=A.r[i]?A.r[i][1]:0;
     col(V.ink).texto(M,y+7,TP(c[0]),8.6,"F2");
-    col(V.muted).texto(M+58,y+7,T(c[1]),8,"F1");
-    col([232,230,220]).rect(M+120,y+1,bw,8);
+    col(V.muted).texto(M+78,y+7,T(c[1]),8,"F1");
+    col([232,230,220]).rect(M+142,y+1,bw,8);
     const cc=c[2].replace("#",""), rr=parseInt(cc.slice(0,2),16),gg=parseInt(cc.slice(2,4),16),bb=parseInt(cc.slice(4,6),16);
-    col([rr,gg,bb]).rect(M+120,y+1,Math.max(1,bw*p/100),8);
+    col([rr,gg,bb]).rect(M+142,y+1,Math.max(1,bw*p/100),8);
     col(V.ink).textoD(595.28-M,y+7.5,dec(p,1)+" %  ·  "+ent(m2v)+" m²",8.6,"F1");
     y+=14;
   });
@@ -4130,7 +4167,7 @@ function fichaPDF(n){
     const m2Decl = Math.max(0, L.at-(A.am2||0));
     y+=3; col(V.line,1).grosor(.5).raya(2,2).linea(M,y,595.28-M,y); P.raya(0); y+=6;
     col(V.ink).texto(M,y+7,T("Sin levantar"),8.6,"F2");
-    col(V.muted).texto(M+58,y+7,TT("15 – 25 % decl.","15–25% decl.","15 – 25 % décl."),8,"F1");
+    col(V.muted).texto(M+78,y+7,TT("15 – 25 % decl.","15–25% decl.","15 – 25 % décl."),8,"F1");
     col([248,240,224]).rect(M+120,y+1,bw,8);
     col([196,138,42],1).grosor(1.1);
     for(let xr=M+120; xr<M+120+bw; xr+=3.4){
@@ -4149,7 +4186,7 @@ function fichaPDF(n){
     col([140,96,34]);
     y = envolver(P, TT(
       "Los "+ent(L.at-(A.am2||0))+" m² restantes no tienen curvas de nivel: van rayados en la planta, con "+
-      "pendiente fuerte (15–25 %) declarada en campo por la gerencia técnica, no medida con topografía. No "+
+      "pendiente de más del 25 % declarada en campo por la gerencia técnica, no medida con topografía. No "+
       "entran en los porcentajes de arriba; hay que levantar esa franja antes de escriturar.",
       "The remaining "+ent(L.at-(A.am2||0))+" m² have no contours: they show hatched on the plan, as steep "+
       "ground (15–25%) declared on site by technical management, not measured by survey. They are excluded "+
@@ -4213,6 +4250,7 @@ function fichaPDF(n){
   if(esTerraza(n)) hojas.push(hojaTerrazaPDF(n,L,V));
   hojas.push(hojaComercialPDF(n,L,V));
   hojas.push(hojaCuotasPDF(n,L,V));
+  hojas.push(hojaSalvedadPDF(n,L,V));   /* la salvedad cierra siempre */
   return PDFmin.archivo(hojas);
 }
 
@@ -4450,6 +4488,47 @@ function hojaTerrazaPDF(n,L,V){
     "Les dimensions des deux modèles sont une proposition architecturale."),
     M, py, W-2*M-96, 6.6, 8.6);
   col(V.forest).textoD(W-M,py,T("Generado el")+" "+new Date().toLocaleDateString(LOC()),6.8,"F2");
+  return P;
+}
+
+
+/* -----------------------------------------------------------------------------
+   LA SALVEDAD, EN SU PROPIA HOJA.
+   Va al final de toda ficha que salga del proyecto. Se intentó primero como pie
+   de la hoja de cuotas y se montaba encima de las cifras del plan de pagos: un
+   texto legal pisado por un número es peor que no tenerlo. Aquí tiene su hoja,
+   se lee entero y nadie puede decir que no estaba.
+   --------------------------------------------------------------------------- */
+function hojaSalvedadPDF(n,L,V){
+  const P=PDFmin.Hoja(595.28,841.89), M=38;
+  const col=(c,f)=>f?P.trazo(c[0],c[1],c[2]):P.color(c[0],c[1],c[2]);
+  col(V.forest).rect(0,0,595.28,66);
+  const xt = logoEnBanda(P, M, 33.0, 28);
+  col([200,214,192]).texto(xt,37,T("Alcance de la información"),8.4,"F1");
+  col(V.blanco).textoD(595.28-M,34,TT("LOTE ","LOT ")+n,20,"F2");
+  col(V.gold).rect(0,66,595.28,2.5);
+
+  let y=120;
+  col(V.gold).texto(M,y,T("SALVEDAD Y ALCANCE DE LA INFORMACIÓN"),8,"F2",1.3); y+=26;
+  col(V.ink).texto(M,y,T("Lote")+" "+n+" · "+fmtA(L.at),13,"F2"); y+=26;
+  col([243,234,216]).rect(M,y-8,595.28-2*M,2);
+  y+=16;
+  col(V.muted);
+  TT("Las \u00e1reas, cotas, pendientes, vol\u00famenes, movimientos de tierra y cualquier otra medida de esta ficha son VALORES T\u00c9CNICOS APROXIMADOS. Se obtienen de modelos digitales del terreno construidos con las curvas de nivel del levantamiento topogr\u00e1fico, que en algunos lotes cubre s\u00f3lo una parte de su superficie, y llevan las tolerancias propias de ese origen. Donde no hay levantamiento, la pendiente que se publica es un dato declarado en campo por la gerencia t\u00e9cnica del proyecto, no una medici\u00f3n de topograf\u00eda, y as\u00ed se indica en cada lote.\n\nEsta informaci\u00f3n se entrega con fines informativos y de estudio preliminar. NO constituye oferta comercial, NO reemplaza los estudios topogr\u00e1ficos, geot\u00e9cnicos, estructurales ni de dise\u00f1o que cada proyecto requiera, y NO VINCULA NI COMPROMETE a los desarrolladores de Laureles Campestre, ni a sus asesores comerciales, a ning\u00fan resultado, obligaci\u00f3n, garant\u00eda ni responsabilidad derivada de su uso o interpretaci\u00f3n.\n\nAntes de cualquier decisi\u00f3n de compra, de dise\u00f1o o de construcci\u00f3n, el interesado debe verificar en campo las condiciones reales del lote y contratar los estudios de detalle correspondientes. Toda negociaci\u00f3n se formaliza \u00fanicamente en la promesa de compraventa y en la escritura p\u00fablica, documentos que prevalecen sobre cualquier cifra contenida en esta ficha.", "The areas, elevations, slopes, volumes, earthworks and any other measurement in this sheet are APPROXIMATE TECHNICAL VALUES derived from digital terrain models built with the survey contour lines, which on some lots cover only part of the area, and they carry the tolerances inherent to that origin. Where there is no survey, the published slope is a value declared in the field by the project's technical management, not a topographic measurement, and each lot says so.\n\nThis information is provided for information and preliminary study. It is NOT a commercial offer, it does NOT replace the topographic, geotechnical, structural or design studies each project requires, and it does NOT BIND OR COMMIT the developers of Laureles Campestre, or their sales agents, to any result, obligation, warranty or liability arising from its use or interpretation.\n\nBefore any purchase, design or construction decision, the interested party must verify the actual lot conditions on site and commission the corresponding detailed studies. Any transaction is formalised solely in the promise of sale and the public deed, which prevail over any figure in this sheet.", "Les surfaces, altitudes, pentes, volumes et terrassements de cette fiche sont des VALEURS TECHNIQUES APPROXIMATIVES issues de mod\u00e8les num\u00e9riques de terrain, dont le lev\u00e9 ne couvre qu'une partie de certains lots.\n\nCes informations sont fournies \u00e0 titre informatif et d'\u00e9tude pr\u00e9liminaire. Elles ne constituent pas une offre commerciale, ne remplacent aucune \u00e9tude de d\u00e9tail et N'ENGAGENT NI NE LIENT les promoteurs de Laureles Campestre \u00e0 aucun r\u00e9sultat, obligation ou responsabilit\u00e9.\n\nAvant toute d\u00e9cision, l'int\u00e9ress\u00e9 doit v\u00e9rifier sur place les conditions r\u00e9elles du lot.").split("\n\n").forEach(p=>{
+    y = envolver(P, p, M, y, 595.28-2*M, 8.4, 12.6) + 12;
+  });
+
+  y += 10;
+  col(V.line,1).grosor(.5).linea(M,y,595.28-M,y); y+=16;
+  col(V.muted).texto(M,y,
+    T("Geometría del plano 039 (09-09-2026) · MAGNA-SIRGAS / Origen Nacional CTM12"),7.4,"F1");
+  y+=12;
+  col(V.muted).texto(M,y, T("Generado el")+" "+new Date().toLocaleDateString(LOC()),7.4,"F1");
+
+  const py=806;
+  col(V.forest).rect(0,py-26,595.28,841.89-(py-26));
+  col(V.blanco).texto(M,py-4,T("LAURELES CAMPESTRE"),10,"F2",1.4);
+  col([200,214,192]).texto(M,py+10,T("El Caimo · Armenia · Quindío · Parcelación campestre"),7,"F1");
   return P;
 }
 
@@ -5263,7 +5342,7 @@ function dibujarPlantaPDF(P,V,L,A,casa,px0,py0,pw,ph){
              [[198,216,193],T("Faja de protección")]];
   if(A.c)leg.push([[201,170,110],T("Área construible (aislamientos y antejardín)")]);
   const rayado = (A.cob!=null && A.cob<0.98);
-  if(rayado) leg.push([null,T("Sin levantar · pendiente fuerte declarada en campo")]);
+  if(rayado) leg.push([null,T("Sin levantar · pendiente de más del 25 % declarada en campo")]);
   if(rayado) ly-=10;
   leg.forEach(([c,t])=>{
     if(c){ col(c); P.rect(px0+14,ly-5,7,7); }
