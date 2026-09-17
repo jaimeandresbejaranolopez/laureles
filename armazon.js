@@ -302,7 +302,27 @@ else{
     b.textContent="▶  Ver intro"; b.style.left="24px"; b.style.right="auto";
     b.onclick=ev=>{ev.stopPropagation(); b.remove(); play(true);};
     intro.appendChild(b); };
+  iv.volume = 1;
   play(true);
+  /* EL SONIDO, SIN QUE HAYA QUE ACTIVARLO.
+     El navegador no deja arrancar un video con audio si el usuario todavía no ha
+     tocado nada: es política de Chrome, Safari y Firefox, y no hay manera de
+     saltársela. Lo que sí se puede es no obligar a buscar un botón: el PRIMER
+     toque, clic o tecla en cualquier parte de la página —aunque sea para saltar
+     la intro— suelta el audio solo. El botón "Activar sonido" queda de reserva
+     para quien no toque nada. */
+  const soltarAudio = ()=>{
+    ["pointerdown","touchstart","keydown","click"].forEach(ev=>
+      removeEventListener(ev, soltarAudio, true));
+    if(introDone) return;
+    if(iv.muted){
+      iv.muted = false; iv.volume = 1;
+      const p = iv.play(); if(p && p.catch) p.catch(()=>{});
+    }
+    quitar("sonBtn");
+  };
+  ["pointerdown","touchstart","keydown","click"].forEach(ev=>
+    addEventListener(ev, soltarAudio, {capture:true, passive:true}));
   setTimeout(()=>{ if(!introDone && iv.currentTime<0.1) mostrarPlay(); },1500);
   iv.addEventListener("playing",()=>{intro.classList.remove("nofilm");
     const b=document.getElementById("playBtn"); if(b)b.remove();});

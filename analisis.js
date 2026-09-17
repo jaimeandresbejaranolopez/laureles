@@ -831,6 +831,22 @@ const ALTURA_MAX=ALTO_TIPO, ENTRE_NIVELES=3.0;
    levantamiento completo —65 a 70— el dato es de campo: la gerencia técnica
    los conoce y los sitúa por encima del 25 % de pendiente.
    --------------------------------------------------------------------------- */
+
+/* el render de la casa de referencia: el paquete web lo publica en MEDIOS y el
+   plano vivo lo trae incrustado; si no está ninguno, se cae a la ruta suelta */
+function VOLUMEN_CASA(){
+  try{
+    if(typeof MEDIOS!=="undefined" && MEDIOS.casa_volumen) return MEDIOS.casa_volumen;
+  }catch(e){}
+  return "medios/casa_volumen.jpg";
+}
+function RENDER_CASA(){
+  try{
+    if(typeof MEDIOS!=="undefined" && MEDIOS.casa_render) return MEDIOS.casa_render;
+    if(typeof window.__REN_CASA==="string") return window.__REN_CASA;
+  }catch(e){}
+  return "medios/casa_render.jpg";
+}
 function pendTxt(A, corto){
   if(A && A.pend){
     const p = (LANG==="es") ? A.pend : String(A.pend).replace(/,/g,".");
@@ -3462,6 +3478,38 @@ function analisis(n){
       '<div id="renHueco"></div>'
     : '')+
 
+  /* ------------------------------------------------------------------
+     SIMULADOR DE DISEÑO DE LA VIVIENDA.
+     El cliente ve su lote de verdad con el volumen encima —el mismo esquema
+     que sale en el 3D del mapa— y arrastrando la cortina lo cambia por el
+     render de la casa terminada. No es un fotomontaje sobre este lote: es el
+     render del tipo, y así va dicho debajo. Lo que sí es de este lote es el
+     volumen: sale de la implantación medida sobre su terreno.
+     ------------------------------------------------------------------ */
+  '<h3>'+TT("Simulador de diseño de la vivienda",
+            "House design simulator",
+            "Simulateur de conception de la maison")+'</h3>'+
+  '<div class="simCort" id="simCort" style="--cx:72%">'+
+    '<div class="capa vol"><img src="'+VOLUMEN_CASA()+'" alt="" draggable="false"></div>'+
+    '<div class="capa ren"><img src="'+RENDER_CASA()+'" alt="" draggable="false"></div>'+
+    '<div class="tira"></div><div class="asa">\u21C4</div>'+
+    '<div class="etq etqI">'+TT("Esquema volumétrico","Volumetric scheme","Schéma volumétrique")+'</div>'+
+    '<div class="etq etqD">'+TT("Cómo se vería","How it would look","Rendu final")+'</div>'+
+  '</div>'+
+  '<p class="p pie">'+TT(
+     'Arrastra la cortina con el mouse o con el dedo. Es la misma casa desde el mismo punto de '+
+     'vista: a la izquierda el volumen en maqueta, a la derecha la <b>Casa 30JB</b> terminada. El '+
+     'volumen está dibujado con la cámara del render —310° de giro y 26° de altura— para que al '+
+     'arrastrar la cortina las dos imágenes se monten una sobre la otra. El render es del modelo de referencia del proyecto, no un '+
+     'fotomontaje sobre este lote: lo que sí corresponde a este lote es la implantación del volumen, '+
+     'su orientación y su movimiento de tierra.',
+     'Drag the curtain with the mouse or your finger. On the left, the house volume placed on the '+
+     'real ground of this lot. On the right, the finished <b>Casa 30JB</b>. The render shows the '+
+     'project\u2019s reference model, not a photomontage of this lot.',
+     'Faites glisser le rideau. À gauche, le volume de la maison posé sur le terrain réel de ce lot ; '+
+     'à droite, la <b>Casa 30JB</b> terminée. Le rendu montre le modèle de référence, pas un '+
+     'photomontage de ce lot.')+'</p>'+
+
   '<h3>'+T("Asoleación a lo largo del día")+'</h3>'+
   '<div class="asoCtl">'+
     '<div class="seg" id="asoFecha">'+SOL.FECHAS.map((f,i)=>
@@ -5435,6 +5483,32 @@ function abrirAnalisis(n){
     fe.querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));
     asoEstado.f=+b.dataset.i; redibujar(); });
   ho.oninput=()=>{ asoEstado.h=+ho.value; redibujar(); };
+
+  /* LA CORTINA DEL SIMULADOR DE DISEÑO.
+     Se mueve con el puntero, sea mouse o dedo. Sólo cambia una variable CSS,
+     así que no repinta el SVG ni recarga la imagen: el arrastre va suelto
+     incluso en un teléfono. Con pointer capture no se pierde el arrastre
+     aunque el dedo se salga de la caja. */
+  const sc = mb.querySelector("#simCort");
+  if(sc){
+    let arrastrando = false;
+    const poner = e=>{
+      const r = sc.getBoundingClientRect();
+      if(!r.width) return;
+      const x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+      sc.style.setProperty("--cx", (x*100).toFixed(1)+"%");
+    };
+    sc.addEventListener("pointerdown", e=>{
+      arrastrando = true;
+      try{ sc.setPointerCapture(e.pointerId); }catch(err){}
+      poner(e); e.preventDefault();
+    });
+    sc.addEventListener("pointermove", e=>{ if(arrastrando){ poner(e); e.preventDefault(); } });
+    ["pointerup","pointercancel"].forEach(ev=>
+      sc.addEventListener(ev, e=>{ arrastrando=false;
+        try{ sc.releasePointerCapture(e.pointerId); }catch(err){} }));
+    sc.addEventListener("dragstart", e=>e.preventDefault());
+  }
   redibujar();
   /* cambiar de tamaño rehace la hoja entera: la planta, el corte, el bloque 3D
      y las cifras salen todas del mismo registro, así que basta con volver a

@@ -217,3 +217,37 @@
 #anlModal .anlB input[type=range]{height:36px}
 #anlModal .anl .close, #anlModal .sheet .close, #anlModal .anlH .close{width:40px;height:40px}
 }
+
+/* ---------------------------------------------------------------------------
+   SIMULADOR DE DISEÑO DE LA VIVIENDA
+   Dos capas en la misma caja: abajo el esquema volumétrico del lote real —el
+   mismo dibujo del bloque 3D— y encima el render de la casa terminada. La
+   cortina se arrastra con el mouse o con el dedo y va destapando una sobre la
+   otra. La capa de abajo es la que manda el alto; la de arriba va absoluta y
+   recortada con clip-path, que es lo único que no obliga a repintar nada.
+   --------------------------------------------------------------------------- */
+.simCort{position:relative;width:100%;overflow:hidden;border-radius:10px;
+  border:1px solid var(--line);background:var(--surface-2);
+  cursor:ew-resize;touch-action:none;
+  -webkit-user-select:none;user-select:none;margin-top:4px}
+.simCort .capa{position:absolute;inset:0}
+.simCort .vol{position:relative;inset:auto}
+.simCort .vol svg{display:block;width:100%;height:auto}
+.simCort .ren{clip-path:inset(0 0 0 var(--cx,72%))}
+.simCort .ren img{width:100%;height:100%;display:block;object-fit:cover}
+.simCort .tira{position:absolute;top:0;bottom:0;left:var(--cx,72%);width:2px;
+  background:#F4F2EA;box-shadow:0 0 0 1px rgba(0,0,0,.20);pointer-events:none}
+.simCort .asa{position:absolute;top:50%;left:var(--cx,72%);
+  transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;
+  background:#F4F2EA;color:var(--forest);display:flex;align-items:center;
+  justify-content:center;font-size:18px;font-weight:700;letter-spacing:-1px;
+  box-shadow:0 2px 12px rgba(0,0,0,.30);pointer-events:none}
+.simCort .etq{position:absolute;top:10px;font-size:10px;letter-spacing:.09em;
+  text-transform:uppercase;font-weight:700;padding:5px 10px;border-radius:999px;
+  background:rgba(50,64,47,.86);color:#F4F2EA;pointer-events:none;white-space:nowrap}
+.simCort .etqI{left:10px}
+.simCort .etqD{right:10px}
+@media (max-width:440px){
+  .simCort .etq{font-size:9px;padding:4px 8px}
+  .simCort .asa{width:38px;height:38px;font-size:16px}
+}

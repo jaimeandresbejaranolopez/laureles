@@ -6,7 +6,7 @@
 <title>Laureles Campestre · Mapa de ventas</title>
 <meta name="description" content="Mapa de ventas de la parcelación Laureles Campestre, El Caimo, Armenia (Quindío).">
 <meta name="theme-color" content="#32402F">
-<meta name="build" content="2026-09-12 · hoja4">
+<meta name="build" content="2026-09-16 · simcasa1">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
@@ -286,7 +286,14 @@ input[type=range]{width:100%;accent-color:var(--forest)}
   .wel .fine{margin-top:12px}
   .ficha{max-height:96dvh}
   .rail{max-height:92dvh}
-  .ficha .fh{padding-top:16px}
+  /* En horizontal sólo hay 390 px de alto. El pie medía 160 y la cabecera 96:
+     entre los dos se comían el 66 % de la pantalla y no quedaba mapa. Se
+     compacta el pie y se dejan los dos botones que importan —WhatsApp y el
+     análisis—; imprimir y volar al lote siguen estando en vertical. */
+  .ficha .fh{padding-top:16px;padding-bottom:9px}
+  .ficha .fh h2{font-size:28px}
+  .ficha .ff{padding:9px 16px;gap:6px}
+  .ficha .ff .gh{display:none}
   .anlH{padding:10px 16px 8px}
   .anlH h2{font-size:24px}
   .anlH .anlLogo{height:26px}
@@ -1548,14 +1555,24 @@ const SNAPS = [0.30, 0.50, 0.92];
 let snapFicha = 1;
 const hojaMovil = () => innerWidth <= 900;
 const altoVentana = () => Math.round((window.visualViewport && visualViewport.height) || innerHeight);
+/* lo que miden de verdad la cabecera y el pie de ESTA ficha, ahora mismo: el
+   pie cambia de alto según el lote (algunos llevan un botón más) y la cabecera
+   según el ancho, así que no sirve un porcentaje fijo */
+function medidasHoja(f){
+  const fh = f.querySelector(".fh"), ff = f.querySelector(".ff");
+  return { cab: fh ? fh.offsetHeight : 110, pie: ff ? ff.offsetHeight : 150 };
+}
 function ponerAltoHoja(px){
   const f = document.getElementById("ficha"); if(!f) return;
   const H = altoVentana();
   const v = Math.round(Math.max(0.16*H, Math.min(0.94*H, px)));
   f.style.setProperty("--fichaH", v+"px");
-  /* por debajo del 38 % no cabe el cuerpo: se esconde y quedan la cabecera y el
-     pie con el precio y los botones, que es lo que tiene que verse siempre */
-  f.classList.toggle("min", v < 0.38*H);
+  /* el cuerpo se esconde cuando no le queda sitio: por debajo de 56 px no se
+     lee nada y en cambio empuja el pie —precio y botones— fuera de la pantalla.
+     MEDIDO en horizontal, 844 x 390: cabecera 96 + pie 160 = 256 px contra una
+     hoja de 195, y el botón de WhatsApp quedaba debajo del borde. */
+  const m = medidasHoja(f);
+  f.classList.toggle("min", (v - m.cab - m.pie) < 56);
   return v;
 }
 function recolocarLote(){
@@ -1563,46 +1580,64 @@ function recolocarLote(){
   const ft = LOTES.features.find(x=>x.properties.lote===S.sel);
   if(!ft) return;
   const centro = ft.properties.centro;
-  /* se corta cualquier vuelo en marcha antes de mover: dos animaciones sobre la
-     misma cámara con el relieve puesto dejaban el mapa en blanco */
+  /* Se corta cualquier vuelo en marcha antes de mover: dos animaciones sobre la
+     misma cámara con el relieve puesto dejaban el mapa en blanco —MEDIDO: el
+     estilo entero cargado y 0 elementos dibujados—. */
   const mio = ++vueloTurno;
   try{ mapa.stop(); }catch(e){}
   if(!sanearCamara()) return;
   const zoom = mapa.getZoom();
-  const mover = ()=>{ try{ mapa.easeTo({center:centro, zoom:zoom,
-    offset:desfaseFicha(), duration:280, essential:true}); }catch(e){} };
-  mover();
-  /* y se comprueba dónde quedó. Si se salió de la franja libre sobre la hoja,
-     se repite UNA vez; a la segunda se deja como esté antes que bailar. */
-  mapa.once("moveend", ()=>setTimeout(()=>{
-    if(vueloTurno!==mio) return;
+  const vigente = () => vueloTurno === mio;
+
+  /* EN DOS TIEMPOS, IGUAL QUE EL VUELO.
+     easeTo con 'offset' partiendo de una cámara que YA venía corrida y con el
+     relieve puesto no aterriza donde dice: MEDIDO a 390 x 844, pidiendo −113 px
+     el lote acababa 1.214 px por debajo de la pantalla. Primero se centra —eso
+     sí lo hace bien siempre— y desde ahí se corre. Y si aun así se sale, se
+     deja CENTRADO, que es peor encuadre pero se ve el lote; quedarse fuera de
+     la pantalla no es una opción. */
+  const franja = ()=>{
+    const c = mapa.getContainer().getBoundingClientRect();
+    const f = document.getElementById("ficha");
+    const rf = (f && f.classList.contains("on")) ? f.getBoundingClientRect() : null;
+    return [c, c.top + 40, (rf && rf.top < c.bottom - 8) ? rf.top - 10 : c.bottom - 40];
+  };
+  const dentro = ()=>{
     try{
-      if(!camaraSana()){ sanearCamara(); return; }
-      const c = mapa.getContainer().getBoundingClientRect();
-      const f = document.getElementById("ficha");
-      const rf = (f && f.classList.contains("on")) ? f.getBoundingClientRect() : null;
-      const alto = c.top + 40;
-      const bajo = (rf && rf.top < c.bottom - 8) ? rf.top - 10 : c.bottom - 40;
+      if(!camaraSana()) return false;
+      const [c, alto, bajo] = franja();
       const pt = mapa.project(centro), y = c.top + pt.y, x = c.left + pt.x;
-      if(y > alto && y < bajo && x > c.left && x < c.right) return;
-      mover();
-    }catch(e){}
-  }, 280));
+      return y > alto && y < bajo && x > c.left && x < c.right;
+    }catch(e){ return false; }
+  };
+  const centrar = (dur)=>{ try{ mapa.easeTo({center:centro, zoom:zoom,
+                                 duration:dur, essential:true}); }catch(e){} };
+  centrar(220);
+  mapa.once("moveend", ()=>{
+    if(!vigente()) return;
+    const off = desfaseFicha();
+    if(off[0]===0 && off[1]===0) return;
+    try{ mapa.easeTo({center:centro, zoom:zoom, offset:off,
+                      duration:240, essential:true}); }catch(e){ return; }
+    mapa.once("moveend", ()=>setTimeout(()=>{
+      if(!vigente()) return;
+      if(dentro()) return;
+      centrar(220);                      /* se salió: vuelve al centro y ahí queda */
+    }, 240));
+  });
 }
 function snapHoja(i, recolocar){
   snapFicha = Math.max(0, Math.min(SNAPS.length-1, i));
   const f = document.getElementById("ficha");
   const H = altoVentana();
   let px = SNAPS[snapFicha]*H;
-  if(snapFicha===0 && f){
-    /* La posición baja NO puede cortar el pie: el precio y los dos botones se
-       ven siempre, que es para lo que sirve estar abajo. MEDIDO a 390 x 844:
-       cabecera 113 px + pie 160 px = 273, y con el 30 % fijo quedaban 253 y el
-       botón de WhatsApp se salía de la pantalla. Se toma lo que de verdad
-       miden, no un porcentaje inventado. */
-    const fh = f.querySelector(".fh"), ff = f.querySelector(".ff");
-    const nec = (fh ? fh.offsetHeight : 110) + (ff ? ff.offsetHeight : 150) + 2;
-    px = Math.min(0.55*H, Math.max(px, nec));
+  if(f){
+    /* Ninguna posición puede cortar el pie: el precio y los botones se ven
+       siempre, que es para lo que sirve la hoja. MEDIDO a 390 x 844: cabecera
+       113 px + pie 160 px = 273, y con el 30 % fijo quedaban 253 y el botón de
+       WhatsApp se salía de la pantalla. Se toma lo que de verdad miden. */
+    const m = medidasHoja(f);
+    px = Math.min(0.94*H, Math.max(px, m.cab + m.pie + 2));
   }
   ponerAltoHoja(px);
   if(recolocar!==false) setTimeout(recolocarLote, 270);
@@ -2250,7 +2285,7 @@ window.seleccionarLote = n => {
 
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
-<script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png"};</script>
+<script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png"};</script>
 <script src="datos-analisis.js"></script>
 <script src="datos-terreno.js"></script>
 <script src="datos-logo.js"></script>
