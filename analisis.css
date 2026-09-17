@@ -226,13 +226,14 @@
    otra. La capa de abajo es la que manda el alto; la de arriba va absoluta y
    recortada con clip-path, que es lo único que no obliga a repintar nada.
    --------------------------------------------------------------------------- */
-.simCort{position:relative;width:100%;overflow:hidden;border-radius:10px;
+.simCort{position:relative;width:100%;max-width:720px;overflow:hidden;border-radius:10px;
   border:1px solid var(--line);background:var(--surface-2);
   cursor:ew-resize;touch-action:none;
-  -webkit-user-select:none;user-select:none;margin-top:4px}
+  -webkit-user-select:none;user-select:none;margin:4px auto 0}
 .simCort .capa{position:absolute;inset:0}
 .simCort .vol{position:relative;inset:auto}
 .simCort .vol svg{display:block;width:100%;height:auto}
+.simCort .vol img{display:block;width:100%;height:auto}
 .simCort .ren{clip-path:inset(0 0 0 var(--cx,72%))}
 .simCort .ren img{width:100%;height:100%;display:block;object-fit:cover}
 .simCort .tira{position:absolute;top:0;bottom:0;left:var(--cx,72%);width:2px;
