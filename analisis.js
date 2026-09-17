@@ -3087,6 +3087,41 @@ function analisis(n){
      'Tout le lotissement en gris ; en doré, le lot '+n+'. Surface totale '+fmtA(L.at)+
      (L.pr?', dont '+fmtA(L.pr)+' de bande de protection':', sans bande de protection')+'.')+'</p>'+
 
+  /* ------------------------------------------------------------------
+     SIMULADOR DE DISEÑO DE LA VIVIENDA.
+     El cliente ve su lote de verdad con el volumen encima —el mismo esquema
+     que sale en el 3D del mapa— y arrastrando la cortina lo cambia por el
+     render de la casa terminada. No es un fotomontaje sobre este lote: es el
+     render del tipo, y así va dicho debajo. Lo que sí es de este lote es el
+     volumen: sale de la implantación medida sobre su terreno.
+     ------------------------------------------------------------------ */
+  '<h3>'+TT("Simulador de diseño de la vivienda",
+            "House design simulator",
+            "Simulateur de conception de la maison")+'</h3>'+
+  '<div class="simCort" id="simCort" style="--cx:72%">'+
+    '<div class="capa vol"><img src="'+VOLUMEN_CASA()+'" alt="" draggable="false"></div>'+
+    '<div class="capa ren"><img src="'+RENDER_CASA()+'" alt="" draggable="false"></div>'+
+    '<div class="tira"></div><div class="asa">\u21C4</div>'+
+    '<div class="etq etqI">'+TT("Esquema volumétrico","Volumetric scheme","Schéma volumétrique")+'</div>'+
+    '<div class="etq etqD">'+TT("Cómo se vería","How it would look","Rendu final")+'</div>'+
+  '</div>'+
+  '<p class="p pie">'+TT(
+     'Arrastra la cortina con el mouse o con el dedo. Es la misma casa desde el mismo punto de '+
+     'vista: a la izquierda el volumen en maqueta, a la derecha la <b>Casa 30JB</b> terminada. El '+
+     'volumen está dibujado con la cámara del render —310° de giro y 26° de altura— para que al '+
+     'arrastrar la cortina las dos imágenes se monten una sobre la otra. Las dos son de la <b>Casa 30JB</b>, '+
+     'la vivienda de referencia del proyecto: la maqueta está a escala real —22,4 × 28,4 m— y el render '+
+     'es su imagen, no un fotomontaje sobre este lote. La implantación medida sobre el terreno de ESTE '+
+     'lote —dónde cae la casa, cómo queda orientada y cuánta tierra se mueve— está más abajo, en '+
+     '«Cómo es el terreno» y «Dónde cabe la casa».',
+     'Drag the curtain with the mouse or your finger. Same house, same viewpoint: the massing on the '+
+     'left, the finished <b>Casa 30JB</b> on the right, both drawn with the render\u2019s camera. Both '+
+     'show the project\u2019s reference house at real scale (22.4 × 28.4 m); the render is not a '+
+     'photomontage of this lot. The implantation measured on THIS lot is further down.',
+     'Faites glisser le rideau. Même maison, même point de vue : la maquette à gauche, la <b>Casa 30JB</b> '+
+     'terminée à droite. Les deux montrent la maison de référence à l\u2019échelle réelle ; le rendu '+
+     'n\u2019est pas un photomontage de ce lot. L\u2019implantation mesurée sur CE lot est plus bas.')+'</p>'+
+
   '<h3>'+T("Cómo es el terreno")+'</h3>'+
 
   /* el mismo lote pintado por rango de pendiente: dónde está lo plano */
@@ -3477,38 +3512,6 @@ function analisis(n){
           '<b>Ce n\'est pas le type de '+TIPOS_CASA[TAM_CASA].et+'</b> choisi plus haut.'))+'</p>'+
       '<div id="renHueco"></div>'
     : '')+
-
-  /* ------------------------------------------------------------------
-     SIMULADOR DE DISEÑO DE LA VIVIENDA.
-     El cliente ve su lote de verdad con el volumen encima —el mismo esquema
-     que sale en el 3D del mapa— y arrastrando la cortina lo cambia por el
-     render de la casa terminada. No es un fotomontaje sobre este lote: es el
-     render del tipo, y así va dicho debajo. Lo que sí es de este lote es el
-     volumen: sale de la implantación medida sobre su terreno.
-     ------------------------------------------------------------------ */
-  '<h3>'+TT("Simulador de diseño de la vivienda",
-            "House design simulator",
-            "Simulateur de conception de la maison")+'</h3>'+
-  '<div class="simCort" id="simCort" style="--cx:72%">'+
-    '<div class="capa vol"><img src="'+VOLUMEN_CASA()+'" alt="" draggable="false"></div>'+
-    '<div class="capa ren"><img src="'+RENDER_CASA()+'" alt="" draggable="false"></div>'+
-    '<div class="tira"></div><div class="asa">\u21C4</div>'+
-    '<div class="etq etqI">'+TT("Esquema volumétrico","Volumetric scheme","Schéma volumétrique")+'</div>'+
-    '<div class="etq etqD">'+TT("Cómo se vería","How it would look","Rendu final")+'</div>'+
-  '</div>'+
-  '<p class="p pie">'+TT(
-     'Arrastra la cortina con el mouse o con el dedo. Es la misma casa desde el mismo punto de '+
-     'vista: a la izquierda el volumen en maqueta, a la derecha la <b>Casa 30JB</b> terminada. El '+
-     'volumen está dibujado con la cámara del render —310° de giro y 26° de altura— para que al '+
-     'arrastrar la cortina las dos imágenes se monten una sobre la otra. El render es del modelo de referencia del proyecto, no un '+
-     'fotomontaje sobre este lote: lo que sí corresponde a este lote es la implantación del volumen, '+
-     'su orientación y su movimiento de tierra.',
-     'Drag the curtain with the mouse or your finger. On the left, the house volume placed on the '+
-     'real ground of this lot. On the right, the finished <b>Casa 30JB</b>. The render shows the '+
-     'project\u2019s reference model, not a photomontage of this lot.',
-     'Faites glisser le rideau. À gauche, le volume de la maison posé sur le terrain réel de ce lot ; '+
-     'à droite, la <b>Casa 30JB</b> terminée. Le rendu montre le modèle de référence, pas un '+
-     'photomontage de ce lot.')+'</p>'+
 
   '<h3>'+T("Asoleación a lo largo del día")+'</h3>'+
   '<div class="asoCtl">'+

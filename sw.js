@@ -11,7 +11,7 @@
                 conexión mala eso se ve exactamente igual que "el satélite no
                 funciona". Las teselas no cambian nunca, así que se quedan.
    ============================================================================= */
-const VERSION = "laureles-20260917a-persp1";
+const VERSION = "laureles-20260917b-sim-arriba";
 const APP     = VERSION;
 const TESELAS = "laureles-teselas-1";
 const PROPIO = [
