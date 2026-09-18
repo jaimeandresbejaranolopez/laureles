@@ -252,6 +252,7 @@ const DIC_FR = {
 "Pendiente media":"Pente moyenne",
 "Área construible":"Surface constructible",
 "Frente sobre vía":"Façade sur voie",
+"Otro frente sobre vía":"Autre façade sur voie",
 "Fondo":"Profondeur",
 "ÁREAS Y MEDIDAS":"SURFACES ET MESURES",
 "TERRENO":"TERRAIN",
@@ -586,6 +587,7 @@ const DIC = {
 "Pendiente media":"Average slope",
 "Área construible":"Buildable area",
 "Frente sobre vía":"Frontage on road",
+"Otro frente sobre vía":"Other frontage on road",
 "Fondo":"Depth",
 "ÁREAS Y MEDIDAS":"AREAS AND DIMENSIONS",
 "TERRENO":"LAND",
@@ -4167,6 +4169,12 @@ function fichaPDF(n){
   fila(T("Área útil"),fmtA(L.ut),1);
   fila(T("Área de protección"),fmtA(L.pr));
   fila(T("Frente sobre vía"),(A.fr!=null?dec(A.fr,1):"—")+" m");
+  /* Un lote puede tener lindero sobre vía en más de un tramo —esquinero o
+     pasante—. Publicar sólo el tramo mayor deja por fuera frente que existe,
+     así que los demás van en su propio renglón, con el mismo criterio en los
+     86 lotes. */
+  if(A.frx && A.frx.length)
+    fila(T("Otro frente sobre vía"), A.frx.map(v=>dec(v,1)).join(" + ")+" m");
   fila(T("Fondo"),(A.fo!=null?dec(A.fo,1):"—")+" m");
   dy+=6; col(V.gold).texto(dx,dy,T("TERRENO"),7.6,"F2",1.1); dy+=14;
   /* si el lote no está levantado entero hay que decirlo aquí, que es la hoja

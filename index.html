@@ -6,7 +6,7 @@
 <title>Laureles Campestre · Mapa de ventas</title>
 <meta name="description" content="Mapa de ventas de la parcelación Laureles Campestre, El Caimo, Armenia (Quindío).">
 <meta name="theme-color" content="#32402F">
-<meta name="build" content="2026-09-17 · sim-compacto">
+<meta name="build" content="2026-09-18 · frentes-corregidos">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
@@ -727,6 +727,9 @@ LOTES.features.forEach(f=>{ const c=S.cambios[f.properties.lote]; if(c) f.proper
 const precio  = (p,e)=> p.precios[String(e)];
 const cop     = v => "$" + Math.round(v).toLocaleString("es-CO");
 const m2      = v => Math.round(v).toLocaleString("es-CO") + " m²";
+/* metros con un decimal siempre: 30 y 30,0 no pueden verse distinto en la
+   misma columna cuando el cliente compara dos lotes lado a lado */
+const un      = v => (v==null ? "—" : Number(v).toFixed(1).replace(".",","));
 const pasa    = p => S.estados.has(p.estado) && p.area_util_m2 >= S.minArea &&
                      precio(p,S.etapa) <= S.maxPrec*1e6;
 
@@ -1727,8 +1730,12 @@ function pintarFicha(n){
       '<tr><td>Área total</td><td>'+m2(p.area_m2)+'</td></tr>'+
       '<tr><td>Área útil</td><td>'+m2(p.area_util_m2)+'</td></tr>'+
       '<tr><td>Área de protección</td><td>'+m2(p.area_proteccion_m2)+'</td></tr>'+
-      '<tr><td>Frente sobre vía</td><td>'+String(p.frente_m).replace(".",",")+' m</td></tr>'+
-      '<tr><td>Fondo</td><td>'+String(p.fondo_m).replace(".",",")+' m</td></tr>'+
+      '<tr><td>Frente sobre vía</td><td>'+un(p.frente_m)+' m</td></tr>'+
+      ((p.frentes_extra_m&&p.frentes_extra_m.length)
+        ? '<tr><td>Otro frente sobre vía</td><td>'+
+            p.frentes_extra_m.map(un).join(" + ")+' m</td></tr>'
+        : '')+
+      '<tr><td>Fondo</td><td>'+un(p.fondo_m)+' m</td></tr>'+
       topo+
     '</table>'+
     '<div class="barra">'+
@@ -1820,7 +1827,7 @@ function whatsapp(p,v,et){
     " de Laureles Campestre (El Caimo, Armenia).\n\n"+
     "• Área total: "+m2(p.area_m2)+"\n"+
     "• Área útil: "+m2(p.area_util_m2)+"\n"+
-    "• Frente: "+String(p.frente_m).replace(".",",")+" m · Fondo: "+String(p.fondo_m).replace(".",",")+" m\n"+
+    "• Frente: "+un(p.frente_m)+" m"+((p.frentes_extra_m&&p.frentes_extra_m.length)?" (+ "+p.frentes_extra_m.map(un).join(" + ")+" m sobre otra vía)":"")+" · Fondo: "+un(p.fondo_m)+" m\n"+
     (p.topo_ok?"• Pendiente media: "+String(p.pendiente_pct).replace(".",",")+" %\n":"")+
     "• Precio "+et.l+" ("+et.d+"): "+cop(v)+"\n"+
     "• Lista "+et.l+": "+cop(PRECIO_UTIL[S.etapa])+"/m² útil · "+cop(PRECIO_PROT[S.etapa])+"/m² protección\n"+
