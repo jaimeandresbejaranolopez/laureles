@@ -6,16 +6,16 @@
 <title>Laureles Campestre · Mapa de ventas</title>
 <meta name="description" content="Mapa de ventas de la parcelación Laureles Campestre, El Caimo, Armenia (Quindío).">
 <meta name="theme-color" content="#32402F">
-<meta name="build" content="2026-09-18 · frentes-corregidos">
+<meta name="build" content="2026-09-18 · seleccion">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css">
+<link rel="stylesheet" href="maplibre-gl.css?v=20260918b">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css">
-<link rel="stylesheet" href="analisis.css">
+<link rel="stylesheet" href="armazon.css?v=20260918b">
+<link rel="stylesheet" href="analisis.css?v=20260918b">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -615,7 +615,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js"></script>
+<script src="maplibre-gl.js?v=20260918b"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -637,7 +637,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js"></script>
+<script src="lotes.js?v=20260918b"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -1030,6 +1030,9 @@ mapa.on("load", ()=>{
   mapa.on("move", pedirRotulos);
   mapa.on("rotate", pedirRotulos);
   mapa.on("pitch", pedirRotulos);
+  /* van pegadas al lote en todo momento, no sólo cuando el mapa se queda quieto */
+  mapa.on("move", pedirMedidas);
+  mapa.on("zoom", pedirMedidas);
   visibilidadRotulos();
   mapa.on("moveend", pedirCotas);
   mapa.on("zoomend", pedirCotas);
@@ -1043,17 +1046,47 @@ mapa.on("load", ()=>{
      por capa y otro general— para que el orden entre abrir y cerrar la ficha
      no dependa de en qué orden los registró MapLibre. */
   const TOL = 6;
+  /* Punto dentro del polígono, contra la geometría de verdad y no contra lo que
+     esté pintado. queryRenderedFeatures depende de que el cuadro ya esté
+     dibujado: con el relieve puesto, y sobre todo mientras la cámara se mueve,
+     devuelve vacío aunque el dedo esté encima del lote. Ese vacío se leía como
+     "tocó fuera" y CERRABA la ficha: es lo que se veía como que la selección se
+     corta sola. Esta segunda vuelta no se equivoca porque no mira la pantalla,
+     mira el plano. */
+  function dentroDe(anillo, p){
+    let d=false;
+    for(let i=0, j=anillo.length-1; i<anillo.length; j=i++){
+      const xi=anillo[i][0], yi=anillo[i][1], xj=anillo[j][0], yj=anillo[j][1];
+      if(((yi>p[1])!==(yj>p[1])) && (p[0] < (xj-xi)*(p[1]-yi)/(yj-yi)+xi)) d=!d;
+    }
+    return d;
+  }
+  function loteGeometrico(pt){
+    let ll; try{ ll = mapa.unproject(pt); }catch(e){ return null; }
+    const p=[ll.lng, ll.lat];
+    for(const f of LOTES.features){
+      let a=f.geometry.coordinates[0];
+      if(a && a.length && Array.isArray(a[0][0])) a=a[0];
+      if(a && a.length>2 && dentroDe(a,p)) return f;
+    }
+    return null;
+  }
   function loteEnPunto(pt){
     let f = mapa.queryRenderedFeatures(pt, {layers:["lotes-f"]});
     if(f.length) return f[0];
     f = mapa.queryRenderedFeatures(
       [[pt.x-TOL, pt.y-TOL],[pt.x+TOL, pt.y+TOL]], {layers:["lotes-f"]});
-    return f.length ? f[0] : null;
+    if(f.length) return f[0];
+    return loteGeometrico(pt);
   }
   mapa.on("click", e=>{
     const f = loteEnPunto(e.point);
-    if(f && f.properties && f.properties.lote!=null) abrirLote(f.properties.lote);
-    else cerrarFicha();
+    if(f && f.properties && f.properties.lote!=null){ abrirLote(f.properties.lote); return; }
+    /* Un clic que falla MIENTRAS la cámara se mueve no es "cerrar": es que el
+       lote se corrió debajo del dedo. Cerrar ahí es justo lo que hacía que la
+       selección se perdiera sola. Sólo se cierra con el mapa quieto. */
+    if(mapa.isMoving && mapa.isMoving()) return;
+    cerrarFicha();
   });
   mapa.on("mouseenter","lotes-f",()=>mapa.getCanvas().style.cursor="pointer");
   mapa.on("mouseleave","lotes-f",()=>mapa.getCanvas().style.cursor="");
@@ -1070,6 +1103,19 @@ mapa.on("error", e=>{ if(e && e.error && /terreno/.test(String(e.error.url||""))
    -------------------------------------------------------------------------- */
 const MEDIDA_Z = 16.6;
 const medPool = [];
+/* Los rótulos de medida sólo se recalculaban desde el vigía de 260 ms, y ese
+   vigía se salta el turno mientras el mapa se mueve. Al cambiar de lote la
+   cámara vuela dos segundos largos, así que durante todo el vuelo quedaban en
+   pantalla las medidas del lote ANTERIOR, flotando encima de otros lotes.
+   MEDIDO: dos segundos después de pedir el lote 30 seguían leyéndose los lados
+   del 9 —112,5 / 31,6 / 102,8 m—. Ahora se apagan en el acto al cambiar de
+   selección y se vuelven a pintar en cada cuadro del movimiento. */
+function apagarMedidas(){ medPool.forEach(m=>m.getElement().style.display="none"); }
+let rafMed = 0;
+function pedirMedidas(){
+  if(rafMed) return;
+  rafMed = requestAnimationFrame(()=>{ rafMed=0; try{ pintarMedidas(); }catch(e){} });
+}
 function pintarMedidas(){
   const z = mapa.getZoom();
   const f = (S.sel!=null) ? LOTES.features.find(x=>x.properties.lote===S.sel) : null;
@@ -1427,10 +1473,57 @@ function refrescar(){
 const kpi=(v,k)=>'<div class="kpi"><div class="v">'+v+'</div><div class="k">'+k+'</div></div>';
 
 /* ---------------------------------- ficha ---------------------------------- */
-function abrirLote(n){
-  S.sel=n; pintarFicha(n); refrescar();
+/* Escoger un lote no cambia ni los filtros ni los totales, así que no hace
+   falta recorrer los 86 ni repintar la ficha dos veces —refrescar() la pintaba
+   otra vez al final—. Sólo cambian de estado el lote que sale y el que entra. */
+function marcarSel(antes, ahora){
+  [antes, ahora].forEach(k=>{
+    if(k==null) return;
+    const f=LOTES.features.find(x=>x.properties.lote===k);
+    if(!f) return;
+    mapa.setFeatureState({source:"lotes", id:k}, {oculto:!pasa(f.properties), sel:S.sel===k});
+  });
+}
+/* volar: "auto" mira si hace falta; true lo fuerza (buscador y botón Volar). */
+function abrirLote(n, volar){
+  const antes = S.sel;
+  S.sel=n; pintarFicha(n); marcarSel(antes, n);
+  /* que no se queden en pantalla las medidas del lote anterior */
+  if(antes !== n){ apagarMedidas(); cotaFirma=""; }
+  pedirMedidas(); pedirRotulos();
   const p=LOTES.features.find(f=>f.properties.lote===n).properties;
-  volarA(p.centro, Math.max(mapa.getZoom(), 17.4));
+  /* NO MOVER LA CÁMARA SI NO HACE FALTA.
+     La cadena flyTo + easeTo + comprobaciones deja la cámara en movimiento más
+     de dos segundos, y durante ese rato el lote al que el usuario apunta se le
+     corre debajo del dedo: por eso la selección se sentía lenta y a veces se
+     perdía. Si el lote ya está en la franja de mapa que la ficha deja libre y
+     el zoom alcanza para verlo, se escoge y ya: la cámara se queda quieta. */
+  const cerca = mapa.getZoom() >= 16.6 && aLaVista(p.centro);
+  if(volar === true || !cerca) volarA(p.centro, Math.max(mapa.getZoom(), 17.4));
+}
+/* ¿El punto cae dentro de la franja de mapa que la ficha deja libre?
+   La ficha es dos cosas distintas según el ancho: en computador es un panel a
+   la derecha —quita ancho, no alto— y en celular es una hoja que sube desde
+   abajo —quita alto, no ancho—. Mezclar los dos casos daba siempre "no está a
+   la vista", y entonces volvía a volar aunque el lote estuviera en el centro de
+   la pantalla: MEDIDO, el lote 12 aterrizaba en zoom 17,40 y aun así se
+   repetía el vuelo entero. */
+function aLaVista(centro){
+  let pt; try{ pt = mapa.project(centro); }catch(e){ return false; }
+  const c = mapa.getContainer().getBoundingClientRect();
+  const g = document.getElementById("ficha");
+  const rg = (g && g.classList.contains("on")) ? g.getBoundingClientRect() : null;
+  /* La franja de arriba se descarta a propósito: con la cámara inclinada, lo que
+     se proyecta cerca del horizonte está lejísimos y la proyección deja de ser
+     de fiar. MEDIDO sobre 430 comprobaciones en cinco encuadres: con 40 px de
+     margen había un falso positivo —el lote 83 a 84 px del borde, donde el mapa
+     dibujaba en realidad el 48—; con 90 px no queda ninguno. */
+  let arriba = 90, abajo = c.height - 40, izq = 20, der = c.width - 20;
+  if(rg){
+    if(innerWidth > 900) der = Math.min(der, rg.left - c.left - 10);
+    else                 abajo = Math.min(abajo, rg.top - c.top - 10);
+  }
+  return pt.y > arriba && pt.y < abajo && pt.x > izq && pt.x < der;
 }
 /* Cuánto hay que correr la cámara para que el lote NO quede debajo de la ficha.
    En pantalla ancha la ficha está a la derecha y se corre en x; en celular es
@@ -2058,7 +2151,7 @@ fP.oninput=()=>{ S.maxPrec=+fP.value;
 
 const q=document.getElementById("q");
 const buscar=()=>{ const n=parseInt(q.value,10);
-  if(LOTES.features.some(f=>f.properties.lote===n)){ abrirLote(n); if(innerWidth<=900) rail.classList.remove("abierto"); }
+  if(LOTES.features.some(f=>f.properties.lote===n)){ abrirLote(n, true); if(innerWidth<=900) rail.classList.remove("abierto"); }
   else avisar("No existe el lote "+(q.value||"—")+"."); };
 document.getElementById("bq").onclick=buscar;
 q.onkeydown=e=>{ if(e.key==="Enter")buscar(); };
@@ -2293,14 +2386,14 @@ window.seleccionarLote = n => {
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png"};</script>
-<script src="datos-analisis.js"></script>
-<script src="datos-terreno.js"></script>
-<script src="datos-logo.js"></script>
-<script src="adaptador.js"></script>
-<script src="analisis.js"></script>
-<script src="datos-via.js"></script>
-<script src="r3d.js"></script>
-<script src="armazon.js"></script>
+<script src="datos-analisis.js?v=20260918b"></script>
+<script src="datos-terreno.js?v=20260918b"></script>
+<script src="datos-logo.js?v=20260918b"></script>
+<script src="adaptador.js?v=20260918b"></script>
+<script src="analisis.js?v=20260918b"></script>
+<script src="datos-via.js?v=20260918b"></script>
+<script src="r3d.js?v=20260918b"></script>
+<script src="armazon.js?v=20260918b"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");
