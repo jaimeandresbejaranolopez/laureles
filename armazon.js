@@ -40,6 +40,12 @@ const CONT_ES=()=>({
  ubicacion:`<h2 class="serif">Ubicación y entorno</h2>
    <p class="lead">El predio está georreferenciado en MAGNA-SIRGAS / Origen Nacional CTM12. Centro aproximado:
    4°28′27″ N, 75°44′20″ W.</p>
+   <div class="llegar"><h3 class="serif">Cómo llegar</h3>
+   <p class="hint">Portería del proyecto, por la vía de la vereda Marmato. El punto está tomado del plano 039 (portería, 53 m²), no de una dirección aproximada.</p>
+   <p class="botones"><a class="pri" href="https://www.google.com/maps/dir/?api=1&destination=4.470819,-75.741392&travelmode=driving" target="_blank" rel="noopener">Abrir en Google Maps</a>
+   <a class="sec" href="https://waze.com/ul?ll=4.470819,-75.741392&navigate=yes" target="_blank" rel="noopener">Abrir en Waze</a>
+   <button class="sec" onclick="navigator.clipboard&&navigator.clipboard.writeText('4.470819, -75.741392').then(()=>this.textContent='✓')">Copiar coordenadas</button></p>
+   <p class="hint">4.470819, -75.741392 · WGS84</p></div>
    <table class="tbl"><tr><th>Punto de interés</th><th>Tiempo</th></tr>
    ${POIS.map(([n,d,m])=>`<tr><td>${n}<div class="hint">${d}</div></td><td>${m}</td></tr>`).join("")}
    </table>
@@ -104,6 +110,12 @@ const CONT_EN=()=>({
  ubicacion:`<h2 class="serif">Location and surroundings</h2>
    <p class="lead">The property is georeferenced in MAGNA-SIRGAS / Origen Nacional CTM12. Approximate centre:
    4°28′27″ N, 75°44′20″ W.</p>
+   <div class="llegar"><h3 class="serif">How to get there</h3>
+   <p class="hint">Project gatehouse, via the Vereda Marmato road. The point comes from drawing 039 (gatehouse, 53 m²), not from an approximate address.</p>
+   <p class="botones"><a class="pri" href="https://www.google.com/maps/dir/?api=1&destination=4.470819,-75.741392&travelmode=driving" target="_blank" rel="noopener">Open in Google Maps</a>
+   <a class="sec" href="https://waze.com/ul?ll=4.470819,-75.741392&navigate=yes" target="_blank" rel="noopener">Open in Waze</a>
+   <button class="sec" onclick="navigator.clipboard&&navigator.clipboard.writeText('4.470819, -75.741392').then(()=>this.textContent='✓')">Copy coordinates</button></p>
+   <p class="hint">4.470819, -75.741392 · WGS84</p></div>
    <table class="tbl"><tr><th>Point of interest</th><th>Time</th></tr>
    ${POIS.map(([n,d,m])=>`<tr><td>${T(n)}<div class="hint">${T(d)}</div></td><td>${T(m)}</td></tr>`).join("")}
    </table>
@@ -166,6 +178,12 @@ const CONT_FR=()=>({
  ubicacion:`<h2 class="serif">Situation et environs</h2>
    <p class="lead">Le terrain est géoréférencé en MAGNA-SIRGAS / Origen Nacional CTM12. Centre approximatif :
    4°28′27″ N, 75°44′20″ O.</p>
+   <div class="llegar"><h3 class="serif">Comment s'y rendre</h3>
+   <p class="hint">Loge d'entrée du projet, par la route de la vereda Marmato. Le point vient du plan 039 (loge, 53 m²), pas d'une adresse approximative.</p>
+   <p class="botones"><a class="pri" href="https://www.google.com/maps/dir/?api=1&destination=4.470819,-75.741392&travelmode=driving" target="_blank" rel="noopener">Ouvrir dans Google Maps</a>
+   <a class="sec" href="https://waze.com/ul?ll=4.470819,-75.741392&navigate=yes" target="_blank" rel="noopener">Ouvrir dans Waze</a>
+   <button class="sec" onclick="navigator.clipboard&&navigator.clipboard.writeText('4.470819, -75.741392').then(()=>this.textContent='✓')">Copier les coordonnées</button></p>
+   <p class="hint">4.470819, -75.741392 · WGS84</p></div>
    <table class="tbl"><tr><th>Point d'intérêt</th><th>Temps</th></tr>
    ${POIS.map(([n,d,m])=>`<tr><td>${T(n)}<div class="hint">${T(d)}</div></td><td>${T(m)}</td></tr>`).join("")}
    </table>

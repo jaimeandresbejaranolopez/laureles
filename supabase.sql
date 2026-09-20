@@ -139,3 +139,51 @@ create policy laureles_prospectos_insercion on public.laureles_prospectos
 drop policy if exists laureles_prospectos_update on public.laureles_prospectos;
 create policy laureles_prospectos_update on public.laureles_prospectos
   for update to authenticated using (true) with check (true);
+
+-- =============================================================================
+-- VISITANTES Y VISITAS   (aplicado el 20-09-2026 como migración
+-- "laureles_visitantes_y_visitas")
+--
+-- laureles_visitantes: nombre, correo y teléfono de quien entra como visitante,
+--   con su autorización de tratamiento de datos (Ley 1581 de 2012). El rol anon
+--   sólo puede INSERTAR y sólo con acepta_politica = true (lo exige la RLS, no
+--   sólo el formulario); leer exige sesión de administrador.
+-- laureles_visitas: solicitud de visita presencial (fecha y franja). Mismo
+--   esquema: el visitante inserta, la administración lee y gestiona.
+-- La cuenta de administrador se crea en Supabase: Authentication -> Users ->
+-- Add user (correo + contraseña, Auto Confirm). "Olvidé mi contraseña" usa el
+-- correo de recuperación de Supabase Auth; el Site URL del proyecto debe ser
+-- https://www.laurelescampestre.co para que el enlace vuelva a la página.
+-- =============================================================================
+create table if not exists public.laureles_visitantes (
+  id bigserial primary key,
+  nombre text not null check (char_length(nombre) between 2 and 120),
+  correo text not null check (correo ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$'),
+  telefono text check (telefono is null or char_length(telefono) between 7 and 20),
+  acepta_politica boolean not null,
+  version_politica text not null default '2026-09-20',
+  idioma text, origen text not null default 'web', navegador text,
+  creado timestamptz not null default now(),
+  constraint laureles_visitantes_acepta check (acepta_politica = true)
+);
+alter table public.laureles_visitantes enable row level security;
+create policy laureles_visitantes_insercion on public.laureles_visitantes
+  for insert to anon, authenticated with check (acepta_politica = true);
+create policy laureles_visitantes_lectura on public.laureles_visitantes
+  for select to authenticated using (true);
+
+create table if not exists public.laureles_visitas (
+  id bigserial primary key,
+  nombre text not null, correo text not null, telefono text,
+  lote integer check (lote is null or lote between 1 and 88),
+  fecha date not null check (fecha >= current_date),
+  franja text not null check (franja in ('manana','tarde')),
+  notas text, estado text not null default 'solicitada'
+    check (estado in ('solicitada','confirmada','realizada','cancelada')),
+  atendida_por uuid references auth.users(id),
+  creado timestamptz not null default now()
+);
+alter table public.laureles_visitas enable row level security;
+create policy laureles_visitas_insercion on public.laureles_visitas for insert to anon, authenticated with check (true);
+create policy laureles_visitas_lectura   on public.laureles_visitas for select to authenticated using (true);
+create policy laureles_visitas_gestion   on public.laureles_visitas for update to authenticated using (true) with check (true);

@@ -159,3 +159,9 @@ nav button{padding:8px 8px;font-size:11px}
 .anlAcc .btn{flex:1;min-width:170px}
 .anlAcc .btn.pri{background:var(--forest);color:var(--on-forest);border-color:var(--forest)}
 .anlAcc .btn.pri:hover{background:var(--forest-soft)}
+
+/* "Cómo llegar" en Ubicación: enlaces de navegación */
+.sheet .llegar{margin:14px 0 18px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2)}
+.sheet .llegar h3{margin:0 0 4px;font-size:18px}
+.sheet .llegar .botones{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px}
+.sheet .llegar .botones a,.sheet .llegar .botones button{text-decoration:none;font-size:13px;display:inline-block}

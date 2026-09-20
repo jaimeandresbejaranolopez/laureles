@@ -6,16 +6,16 @@
 <title>Laureles Campestre · Mapa de ventas</title>
 <meta name="description" content="Mapa de ventas de la parcelación Laureles Campestre, El Caimo, Armenia (Quindío).">
 <meta name="theme-color" content="#32402F">
-<meta name="build" content="2026-09-18 · seleccion">
+<meta name="build" content="2026-09-20 · acceso">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20260918b">
+<link rel="stylesheet" href="maplibre-gl.css?v=20260920a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20260918b">
-<link rel="stylesheet" href="analisis.css?v=20260918b">
+<link rel="stylesheet" href="armazon.css?v=20260920a">
+<link rel="stylesheet" href="analisis.css?v=20260920a">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -164,6 +164,21 @@ input[type=range]{width:100%;accent-color:var(--forest)}
 .hoja label{display:block;font-size:12px;font-weight:600;color:var(--ink);margin:14px 0 5px}
 .hoja input[type=text]{width:100%;border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 11px;font-size:13px}
 .hoja .pista{font-size:11.5px;color:var(--muted);margin-top:4px}
+/* puerta de entrada y formularios de acceso */
+.hoja input[type=password],.hoja input[type=date],.hoja select{width:100%;border:1px solid var(--line);
+  border-radius:var(--r-sm);padding:9px 11px;font-size:13px;background:var(--surface)}
+.hoja .puerta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.hoja .puerta .opc{text-align:left;border:1px solid var(--line);background:var(--surface-2);border-radius:var(--r);
+  padding:16px 16px 14px;cursor:pointer;display:flex;flex-direction:column;gap:6px;color:var(--ink-2)}
+.hoja .puerta .opc b{font-family:var(--serif);font-size:18px;font-weight:600;color:var(--ink)}
+.hoja .puerta .opc span{font-size:12.5px;line-height:1.45}
+.hoja .puerta .opc:hover{border-color:var(--forest);background:var(--surface)}
+.hoja .chk{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;line-height:1.5;color:var(--ink-2);margin-top:16px;font-weight:400}
+.hoja .chk input{margin-top:4px;flex-shrink:0;width:16px;height:16px}
+.hoja .chk a{color:var(--forest);font-weight:600}
+.hoja .dos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hoja iframe.agenda{width:100%;height:min(70vh,640px);border:1px solid var(--line);border-radius:var(--r-sm);background:#fff}
+@media (max-width:520px){ .hoja .puerta,.hoja .dos{grid-template-columns:1fr} }
 .pri{border:1px solid var(--forest);background:var(--forest);color:var(--on-forest);
   border-radius:var(--r-sm);padding:9px 16px;cursor:pointer;font-weight:600}
 .sec{border:1px solid var(--line);background:var(--surface);border-radius:var(--r-sm);
@@ -464,6 +479,7 @@ body.baseClara .rotCota{color:#6B5C38;
       <button data-m="video">Video</button>
       <button data-m="unidades">Unidades</button>
       <button data-m="gps">Dónde estoy</button>
+      <button id="bVisita" title="Agendar una visita presencial al proyecto">Agendar visita</button>
     </nav>
     <div class="spacer"></div>
     <div class="idioma" id="idioma">
@@ -615,7 +631,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20260918b"></script>
+<script src="maplibre-gl.js?v=20260920a"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -637,7 +653,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20260918b"></script>
+<script src="lotes.js?v=20260920a"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -656,7 +672,10 @@ const POR_DEFECTO = {
      no es esconderla sino la RLS de la tabla laureles_lotes —lectura para
      cualquiera, escritura sólo con sesión iniciada—. Ver supabase.sql. */
   supabaseUrl: "https://athegivjcickawibbduo.supabase.co",
-  supabaseKey: "sb_publishable_fX4xPH2lE3YSknuBvsw6Eg_030yb4CS"
+  supabaseKey: "sb_publishable_fX4xPH2lE3YSknuBvsw6Eg_030yb4CS",
+  /* Página de citas de Google Calendar para "Agendar visita". Mientras esté
+     vacía, el botón guarda la solicitud en Supabase y abre WhatsApp. */
+  agendaUrl: ""
 };
 const CFG = Object.assign({}, POR_DEFECTO, leer("laureles.cfg", {}));
 function leer(k, d){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
@@ -1849,7 +1868,7 @@ function pintarFicha(n){
       : '<div class="soloLectura">Está viendo el plano como <b>visitante</b>: puede recorrerlo entero, '+
         'abrir el análisis del terreno y descargar la ficha, pero el estado de los lotes y los datos '+
         'no se pueden modificar desde aquí.'+
-        '<br><button id="bEntrarVentas">Soy del equipo de ventas</button></div>')+
+        '<br><button id="bEntrarVentas">Soy administrador</button></div>')+
     '<div class="imprimir-pie">Laureles Campestre · El Caimo, Armenia (Quindío) · '+
       'Áreas tomadas del plano 039 georreferenciado en MAGNA-SIRGAS / Origen Nacional CTM12. '+
       'Precios sujetos a cambio sin previo aviso; este documento no constituye oferta comercial.</div>'+
@@ -1987,13 +2006,13 @@ const ROL = (()=>{
     if(!esVentas()) return null;
     if(tok && Date.now() < tokExp) return tok;
     try { return await pedirToken({refresh_token:ses.ref}, "refresh_token"); }
-    catch(e){ salir(true); avisar("La sesión de ventas venció. Vuelva a entrar.", 5000); return null; }
+    catch(e){ salir(true); avisar("La sesión de administración venció. Vuelva a entrar.", 5000); return null; }
   }
 
   async function entrar(email, clave){
     if(!base() || !CFG.supabaseKey) throw new Error("Falta configurar Supabase en Ajustes.");
     await pedirToken({email:email, password:clave}, "password");
-    pintar(); avisar("Sesión de ventas iniciada: "+correo());
+    pintar(); avisar("Sesión de administración iniciada: "+correo());
     if(SB.activo()) SB.traer();
   }
 
@@ -2011,7 +2030,7 @@ const ROL = (()=>{
 
   function pintar(){
     const b = document.getElementById("bRol");
-    if(b){ b.textContent = esVentas() ? "Ventas" : "Visitante";
+    if(b){ b.textContent = esVentas() ? "Administrador" : "Visitante";
            b.classList.toggle("ventas", esVentas());
            b.title = esVentas() ? ("Sesión de "+correo()+" — puede cambiar estados y guardar prospectos")
                                 : "Modo consulta: nada de lo que toque se guarda"; }
@@ -2039,18 +2058,18 @@ const ROL = (()=>{
         '<p><b>Visitante.</b> Es como está ahora. Puede recorrer el plano, abrir cualquier lote, '+
         'ver el análisis del terreno, el 3D, el asoleamiento y descargar la ficha en PDF. '+
         'Lo único que no puede es modificar nada: ni el estado de un lote ni ningún dato.</p>'+
-        '<p><b>Ventas.</b> Además de todo lo anterior, cambia el estado de los lotes —disponible, '+
+        '<p><b>Administrador.</b> Además de todo lo anterior, cambia el estado de los lotes —disponible, '+
         'separado, vendido— y envía los datos de un prospecto a la base de datos del equipo.</p>'+
         '<label>Correo del asesor</label>'+
-        '<input type="text" id="rEmail" autocomplete="username" placeholder="asesor@century21.com.co">'+
+        '<input type="text" id="rEmail" autocomplete="username" placeholder="gerencia@…">'+
         '<label>Contraseña</label>'+
         '<input type="password" id="rClave" autocomplete="current-password" placeholder="••••••••">'+
         '<div class="pista" id="rErr" style="color:#A3543F"></div>'+
-        '<div class="pista" style="margin-top:14px">Las cuentas de ventas las crea la gerencia en '+
-        'Supabase. No hay ninguna contraseña guardada en esta página ni en el repositorio.</div>';
+        '<div class="pista" style="margin-top:14px"><a href="#" id="rOlvide">Olvidé mi contraseña</a></div>'+
+        '<div class="pista">No hay ninguna contraseña guardada en esta página ni en el repositorio.</div>';
       document.getElementById("hojaPie").innerHTML =
         '<button class="sec" id="bCancel">Seguir como visitante</button>'+
-        '<button class="pri" id="bEntrar">Entrar como ventas</button>';
+        '<button class="pri" id="bEntrar">Entrar como administrador</button>';
       const err = document.getElementById("rErr");
       const ir = async ()=>{
         const e=document.getElementById("rEmail").value.trim(),
@@ -2061,10 +2080,12 @@ const ROL = (()=>{
         try{ await entrar(e,c); velo.classList.remove("on"); }
         catch(ex){ err.textContent = /Invalid login/i.test(ex.message)
                      ? "Correo o contraseña incorrectos." : ex.message;
-                   bt.disabled=false; bt.textContent="Entrar como ventas"; }
+                   bt.disabled=false; bt.textContent="Entrar como administrador"; }
       };
       document.getElementById("bEntrar").onclick=ir;
       document.getElementById("rClave").onkeydown=ev=>{ if(ev.key==="Enter") ir(); };
+      const ol=document.getElementById("rOlvide");
+      if(ol) ol.onclick=ev=>{ ev.preventDefault(); if(window.ACCESO) ACCESO.formAdmin(null); setTimeout(()=>{ const a=document.getElementById("aOlvide"); if(a) a.click(); },0); };
     }
     velo.classList.add("on");
     document.getElementById("bCancel").onclick=()=>velo.classList.remove("on");
@@ -2280,7 +2301,9 @@ function abrirAjustes(){
       ? '<label>Supabase — URL del proyecto</label>'+
         '<input type="text" id="aUrl" value="'+(CFG.supabaseUrl||"")+'" placeholder="https://xxxx.supabase.co">'+
         '<label>Supabase — llave publicable (anon)</label>'+
-        '<input type="text" id="aKey" value="'+(CFG.supabaseKey||"")+'" placeholder="sb_publishable_...">'
+        '<input type="text" id="aKey" value="'+(CFG.supabaseKey||"")+'" placeholder="sb_publishable_...">'+
+        '<label>Agenda de visitas (página de citas de Google Calendar)</label>'+
+        '<input type="text" id="aAgenda" value="'+(CFG.agendaUrl||"")+'" placeholder="https://calendar.app.google/...">'
       : '')+
     '<div class="pista" style="margin-top:18px;padding-top:12px;border-top:1px solid var(--line-soft)">'+
     'Versión publicada: <b>'+sello+'</b></div>'+
@@ -2301,6 +2324,7 @@ function abrirAjustes(){
     const iU=document.getElementById("aUrl"), iK=document.getElementById("aKey");
     if(iU) CFG.supabaseUrl=iU.value.trim();
     if(iK) CFG.supabaseKey=iK.value.trim();
+    const iA=document.getElementById("aAgenda"); if(iA) CFG.agendaUrl=iA.value.trim();
     guardar("laureles.cfg",CFG); velo.classList.remove("on");
     avisar("Ajustes guardados."); if(SB.activo())SB.traer();
   };
@@ -2386,14 +2410,15 @@ window.seleccionarLote = n => {
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png"};</script>
-<script src="datos-analisis.js?v=20260918b"></script>
-<script src="datos-terreno.js?v=20260918b"></script>
-<script src="datos-logo.js?v=20260918b"></script>
-<script src="adaptador.js?v=20260918b"></script>
-<script src="analisis.js?v=20260918b"></script>
-<script src="datos-via.js?v=20260918b"></script>
-<script src="r3d.js?v=20260918b"></script>
-<script src="armazon.js?v=20260918b"></script>
+<script src="datos-analisis.js?v=20260920a"></script>
+<script src="datos-terreno.js?v=20260920a"></script>
+<script src="datos-logo.js?v=20260920a"></script>
+<script src="adaptador.js?v=20260920a"></script>
+<script src="analisis.js?v=20260920a"></script>
+<script src="datos-via.js?v=20260920a"></script>
+<script src="r3d.js?v=20260920a"></script>
+<script src="armazon.js?v=20260920a"></script>
+<script src="acceso.js?v=20260920a"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

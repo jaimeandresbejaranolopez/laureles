@@ -37,6 +37,13 @@ const TT = (es,en,fr) => {
 };
 const dec = (v,n) => Number(v).toLocaleString(LOC(),{minimumFractionDigits:n,maximumFractionDigits:n});
 const ent = v => Math.round(v).toLocaleString(LOC());
+/* ÁREA CONSTRUIBLE.
+   El tope del proyecto es el 30 % del área útil de cada lote. No sale de la
+   geometría: es la norma con la que se vende la parcelación, y por eso se
+   calcula aquí y no viene en los datos. No confundir con el suelo que queda
+   tras los aislamientos —A.cm2—, que es dónde puede pararse la casa y es del
+   orden del doble. */
+const OCUP30 = L => Math.round(0.30 * (L && L.ut != null ? L.ut : 0));
 const TP = s => LANG==="es" ? s : T("pend."+s);   /* clases de pendiente: "Plano" del menú es otra cosa */
 let modalActual = null;
 
@@ -250,7 +257,8 @@ const DIC_FR = {
 "Corte y lleno":"Déblai et remblai",
 "Cota":"Altitude",
 "Pendiente media":"Pente moyenne",
-"Área construible":"Surface constructible",
+"Área construible (30 % del área útil)":"Surface constructible (30 % de la surface utile)",
+"Suelo tras aislamientos":"Sol après retraits",
 "Frente sobre vía":"Façade sur voie",
 "Otro frente sobre vía":"Autre façade sur voie",
 "Fondo":"Profondeur",
@@ -263,7 +271,7 @@ const DIC_FR = {
 "Orientación":"Orientation",
 "Esquinero":"En angle",
 "Faja de protección":"Bande de protection",
-"Área construible (aislamientos y antejardín)":"Surface constructible (retraits et marge avant)",
+"Suelo donde puede ir la casa (aislamientos y antejardín)":"Sol où la maison peut se poser (retraits et marge avant)",
 "Generado el":"Généré le",
 "El Caimo · Armenia · Quindío · Parcelación campestre":"El Caimo · Armenia · Quindío · Lotissement de campagne",
 "Latitud 4,47° norte — el sol pasa casi por el cenit":"Latitude 4,47° nord — le soleil passe presque au zénith",
@@ -585,7 +593,8 @@ const DIC = {
 "Corte y lleno":"Cut and fill",
 "Cota":"Elevation",
 "Pendiente media":"Average slope",
-"Área construible":"Buildable area",
+"Área construible (30 % del área útil)":"Buildable area (30% of the usable area)",
+"Suelo tras aislamientos":"Ground after setbacks",
 "Frente sobre vía":"Frontage on road",
 "Otro frente sobre vía":"Other frontage on road",
 "Fondo":"Depth",
@@ -598,7 +607,7 @@ const DIC = {
 "Orientación":"Orientation",
 "Esquinero":"Corner lot",
 "Faja de protección":"Protection strip",
-"Área construible (aislamientos y antejardín)":"Buildable area (setbacks and front yard)",
+"Suelo donde puede ir la casa (aislamientos y antejardín)":"Ground where the house can sit (setbacks and front yard)",
 "Generado el":"Generated on",
 "El Caimo · Armenia · Quindío · Parcelación campestre":"El Caimo · Armenia · Quindío · Country subdivision",
 "Latitud 4,47° norte — el sol pasa casi por el cenit":"Latitude 4.47° north — the sun passes almost overhead",
@@ -2576,7 +2585,7 @@ function bloqueTerraza(n){
   '<div class="avisoDato" style="border-color:#8A5F14">'+TT(
     'Este es uno de los siete lotes de la ladera. En todo el lote hay '+ent(D.planoTot)+
     ' m² por debajo del 5 % de pendiente, pero fuera de la faja de protección —que es lo único '+
-    'construible— quedan '+ent(D.plano)+' m² ('+dec(pctPlano,1)+' % del área útil). '+
+    'utilizable— quedan '+ent(D.plano)+' m² ('+dec(pctPlano,1)+' % del área útil). '+
     ent(D.escarp)+' m² ('+dec(pctEsc,1)+' %) pasan del 25 %, y la pendiente media medida del área '+
     'útil es del '+dec(D.pend,1)+' %. Aquí la casa no se posa: se escalona.',
     'This is one of the seven hillside lots. Over the measured usable area, only '+
@@ -2954,11 +2963,11 @@ function contenidoTour(n){
            'Avec la maison de '+ti.et+' posée, il reste <b>'+ent(S.m2)+' m² libres</b>.')
       : TT('En este lote la casa tipo no cabe, así que lo que sigue es sobre el lote entero: '+
            'descontando los 3 m de aislamiento a cada vecino, los 10 m de antejardín sobre la vía y '+
-           'las fajas de protección, quedan <b>'+ent(S.m2)+' m² construibles</b>. Para la vivienda, '+
+           'las fajas de protección, quedan <b>'+ent(S.m2)+' m² de suelo libre</b>. Para la vivienda, '+
            'mire los dos modelos en terraza de más arriba.',
            'The standard house does not fit on this lot, so what follows covers the whole lot: '+
-           '<b>'+ent(S.m2)+' m² are buildable</b> after setbacks and protection strips.',
-           'La maison type ne tient pas sur ce lot : il reste <b>'+ent(S.m2)+' m² constructibles</b>.'))+'</p>'+
+           '<b>'+ent(S.m2)+' m² of free ground</b> remain after setbacks and protection strips.',
+           'La maison type ne tient pas sur ce lot : il reste <b>'+ent(S.m2)+' m² de sol libre</b>.'))+'</p>'+
     (isNaN(S.pend) ? '' :
       '<p class="p">'+TT(
         'Ese suelo libre tiene una pendiente media del <b>'+dec(S.pend,1)+' %</b> y llega al '+
@@ -2975,7 +2984,7 @@ function contenidoTour(n){
       '<tbody>'+filas+'</tbody></table>'+
     '<p class="p pie">'+TT(
       'Cada cosa se probó girándola en ocho orientaciones sobre el suelo libre, rasterizado a 1 m. '+
-      '"Cabe" quiere decir que el rectángulo entra entero dentro de lo construible, no que el '+
+      '"Cabe" quiere decir que el rectángulo entra entero dentro de ese suelo libre, no que el '+
       'terreno esté plano ahí: para eso están el mapa de pendientes y el corte de más arriba. '+
       'Las canchas llevan la medida de reglamento; el deck, el kiosco, la piscina, el jacuzzi y la '+
       'huerta llevan una medida corriente, que se puede cambiar.',
@@ -3146,7 +3155,7 @@ function analisis(n){
      'se lise ; les faces latérales sont la coupe de terre, pas un mur.')+'</p>'+
   '<p class="p pie">'+TT(
      'Cada celda son 2 m del modelo del terreno, pintada con el color de su rango de pendiente. '+
-     'La línea dorada punteada es el área construible y el contorno blanco, la casa. '+
+     'La línea dorada punteada es el suelo tras aislamientos y el contorno blanco, la casa. '+
      'Lo que sale <b>rayado</b> —en la planta y en el volumen— es la franja sin curvas de nivel: '+
      'va del color del "muy pendiente" porque así la declara en campo la gerencia técnica, pero la '+
      'raya está para recordar que ahí no hay topografía. El volumen la dibuja a nivel por falta '+
@@ -3225,11 +3234,14 @@ function analisis(n){
     : '')+
   (A.cm2>0
     ? '<p class="p">'+(TT('Descontando <b>3 m de aislamiento</b> a cada vecino, <b>10 m de antejardín</b> sobre la vía y '+
-          'las fajas de protección, quedan <b>'+ent(A.cm2)+' m² construibles</b>.',
+          'las fajas de protección, queda un suelo de <b>'+ent(A.cm2)+' m²</b> donde puede pararse la casa. '+
+          'Eso es dónde, no cuánto: lo que se puede construir son <b>'+ent(OCUP30(L))+' m²</b>, el 30 % del área útil.',
     'After taking out <b>3 m of setback</b> to each neighbour, <b>10 m of front yard</b> along the road and '+
-          'the protection strips, <b>'+ent(A.cm2)+' m² are buildable</b>.',
+          'the protection strips, <b>'+ent(A.cm2)+' m²</b> of ground remain where the house may sit. That is '+
+          'where, not how much: the buildable area is <b>'+ent(OCUP30(L))+' m²</b>, 30% of the usable area.',
     'En retirant <b>3 m de retrait</b> de chaque côté, <b>10 m de marge avant</b> sur la voie et les bandes '+
-          'de protection, il reste <b>'+ent(A.cm2)+' m² constructibles</b>.'))+'</p>'+
+          'de protection, il reste un sol de <b>'+ent(A.cm2)+' m²</b> où la maison peut se poser. La surface '+
+          'constructible, elle, est de <b>'+ent(OCUP30(L))+' m²</b>, 30 % de la surface utile.'))+'</p>'+
       /* Ese metraje es geometría —retiros y fajas—, no topografía: vale igual
          sobre la zona sin levantar. Pero dónde se puede parar la casa dentro
          de él sí depende de la pendiente, y esa no está medida en todo el lote. */
@@ -4186,12 +4198,29 @@ function fichaPDF(n){
   fila(T("Área levantada"),
        ent(A.am2!=null?A.am2:L.at)+" m² "+TT("de","of")+" "+ent(L.at)+" m² ("+
        Math.round((A.cob!=null?A.cob:1)*100)+" %)", (A.cob!=null && A.cob<0.98)?1:0);
-  fila(T("Área construible"),A.cm2?ent(A.cm2)+" m²":"—",1);
+  /* DOS COSAS DISTINTAS, Y ANTES SE PUBLICABA UNA CON EL NOMBRE DE LA OTRA.
+     · Área construible: el tope normativo del proyecto, 30 % del área útil.
+       Es lo que el comprador puede construir.
+     · Suelo tras aislamientos: el polígono que queda al descontar 3 m a cada
+       vecino, 10 m de antejardín y las fajas. Es dónde puede pararse la casa,
+       no cuánto puede construir, y es del orden del doble del anterior.
+     Publicar el segundo con el nombre del primero prometía más de lo que la
+     norma permite: en el lote 44 decía 2.025 m² cuando el tope son 948 m². */
+  fila(T("Área construible (30 % del área útil)"), ent(OCUP30(L))+" m²", 1);
+  fila(T("Suelo tras aislamientos"), A.cm2?ent(A.cm2)+" m²":"—");
   if(casa){
     dy+=6; col(V.gold).texto(dx,dy,T("VOLUMEN DE PRUEBA"),7.6,"F2",1.1); dy+=14;
     fila(T("Modelo"), T(casa.mod==="2p" ? "Dos niveles (uno semienterrado)" : "Un solo piso"), 1);
     fila(T("Huella"), dec(casa.L,1)+" × "+dec(casa.A,1)+" m"+
                    (casa.mod==="2p" ? "  ·  "+ent(casa.an)+" m² × 2" : "  ·  "+ent(casa.at)+" m²"));
+    /* red de seguridad: si el volumen de prueba se pasara del tope del 30 %,
+       la ficha lo tiene que decir y no dejarlo implícito. Hoy no se dispara en
+       ninguno de los 86, y por eso mismo conviene que quede puesto. */
+    if(casa.at > OCUP30(L))
+      fila(TT("Atención","Note","Attention"),
+           TT("la huella pasa del 30 % del área útil ("+ent(OCUP30(L))+" m²)",
+              "footprint exceeds 30% of the usable area ("+ent(OCUP30(L))+" m²)",
+              "l'emprise dépasse 30 % de la surface utile ("+ent(OCUP30(L))+" m²)"), 1);
     fila(T("Nivel de acceso"),dec(casa.z,2)+" m");
     if(casa.mod==="2p") fila(T("Nivel −1"),dec(casa.zm,2)+" m");
     fila(T("Altura sobre el acceso"),dec(5,1)+" m");
@@ -4258,39 +4287,13 @@ function fichaPDF(n){
   }
 
   /* ---------- sol ---------- */
-  /* en los lotes con aviso la hoja va más apretada: el bloque del sol cede unos
-     puntos para que la leyenda no se le monte al pie */
-  y += parcial ? 4 : 20;
-  col(V.gold).texto(M,y,T("EL SOL SOBRE EL LOTE"),7.6,"F2",1.1); y+=12;
-  dibujarSolPDF(P,V,M,y,parcial?108:132,ej?ej.rumbo:null);
-  const sx=M+158, sw=595.28-M-sx;
-  let sy=y+16;
-  col(V.ink).texto(sx,sy,T("Latitud 4,47° norte — el sol pasa casi por el cenit"),9,"F2"); sy+=16;
-  const th=[["",T("Sale"),T("Mediodía"),T("Se pone")]];
-  HITOS.forEach(h=>th.push([
-    LANG==="es" ? h.t.replace("Solsticio de ","").replace("Equinoccios","equinoccio")
-                : T(h.t).replace(" solstice","").replace("Equinoxes","equinox")
-                        .replace("Solstice de ","").replace("Équinoxes","équinoxe"),
-    h.salida.az.toFixed(0)+"°",
-    h.mediodia.alt.toFixed(0)+TT("° al ","° to the ")+rumboTxt(h.mediodia.az),
-    h.puesta.az.toFixed(0)+"°"]));
-  const cw=[sw*0.30,sw*0.16,sw*0.36,sw*0.18];
-  th.forEach((r,i)=>{
-    let x=sx;
-    r.forEach((t,j)=>{ col(i?V.ink:V.muted).texto(x,sy,t,i?8.4:7.6,i?"F1":"F2"); x+=cw[j]; });
-    sy+=6; col(V.line,1).grosor(.4).linea(sx,sy,sx+sw,sy); sy+=10;
-  });
-  sy+=4;
-  if(ver){
-    col(V.ink).texto(sx,sy,ver.n,9,"F2"); sy+=13;
-    col(V.muted); envolver(P,ver.t,sx,sy,sw,8.2,10.5);
-  }
-
-  /* ---------- pie ---------- */
-  const py=790;
-  col(V.line,1).grosor(.5).linea(M,py-12,595.28-M,py-12);
-  col(V.muted);
-  let fy=envolver(P, TT(
+  /* EL PIE SE RESERVA ANTES DE PINTAR NADA ENCIMA.
+     Antes el bloque del sol se dibujaba a tamaño fijo y el pie se pintaba
+     después, en un y fijo: cuando el pie creció a cuatro líneas, la leyenda de
+     la rosa y el pie se escribían uno encima del otro. Ahora se mide cuánto
+     ocupa el pie, se sabe dónde empieza, y la rosa se dibuja del tamaño que
+     quepa por encima. */
+  const TXT_PIE = TT(
       "Geometría del plano 039 (09-09-2026), MAGNA-SIRGAS / Origen Nacional CTM12. Pendientes y cotas del modelo "+
       "digital del terreno hecho con las curvas cada 1 m del levantamiento. El volumen de prueba es un ejercicio de "+
       "escala, no un diseño: respeta 3 m de aislamiento, 10 m de antejardín, las fajas de protección y 5 m de altura. "+
@@ -4300,11 +4303,50 @@ function fichaPDF(n){
       "from the digital terrain model built with the 1 m contours of the survey. The test volume is an exercise in "+
       "scale, not a design: it respects 3 m setbacks, a 10 m front yard, the protection strips and a 5 m height "+
       "limit. On lots that start on a slope it goes on two levels, the lower one buried against the hillside, so "+
-      "that a single storey reads from the road. Working prices; this is not a commercial offer."),
-    M, py, 595.28-2*M-96, 6.6, 8.6);
+      "that a single storey reads from the road. Working prices; this is not a commercial offer.");
+  const W_PIE = 595.28-2*M-96;
+  const ALTO_PIE = lineasEnvolver(TXT_PIE, W_PIE, 6.6) * 8.6;
+  const PIE_Y = 841.89 - 26 - ALTO_PIE;      /* que el pie termine 26 pt sobre el borde */
+
+  /* ¿Cabe el bloque del sol en lo que queda de esta hoja?
+     La rosa mínima legible son 74 pt, más 37 de leyenda y 12 del título; la
+     columna de la derecha necesita unos 110. En los seis lotes sin levantar la
+     hoja lleva una fila y un aviso de más y ya no cabe: MEDIDO en el lote 66,
+     el texto del veredicto caía sobre la raya del pie. Cuando no cabe, el sol
+     se va a su propia hoja en vez de encimarse. */
+  const TOPE_SOL = PIE_Y - 16;
+  const NECESITA_SOL = 12 + 74 + 37 + 8 + 20;
+  const solAparte = (TOPE_SOL - y) < NECESITA_SOL;
+  if(!solAparte) bloqueSolPDF(P,V,M,y,PIE_Y,ej,ver,parcial);
+
+  /* ---------- pie ---------- */
+  const py=PIE_Y;
+  col(V.line,1).grosor(.5).linea(M,py-12,595.28-M,py-12);
+  col(V.muted);
+  envolver(P, TXT_PIE, M, py, W_PIE, 6.6, 8.6);
   col(V.forest).textoD(595.28-M,py,T("Generado el")+" "+new Date().toLocaleDateString(LOC()),6.8,"F2");
 
+  /* la hoja del sol, sólo cuando no cupo arriba */
+  let HOJA_SOL=null;
+  if(solAparte){
+    HOJA_SOL=PDFmin.Hoja(595.28,841.89);
+    const c2=(c,f)=>f?HOJA_SOL.trazo(c[0],c[1],c[2]):HOJA_SOL.color(c[0],c[1],c[2]);
+    c2(V.forest).rect(0,0,595.28,56);
+    const xt2=logoEnBanda(HOJA_SOL,M,28.0,24);
+    c2([200,214,192]).texto(xt2,32,TT("El sol sobre el lote","The sun over the lot",
+      "Le soleil sur le lot"),8.4,"F1");
+    c2(V.blanco).textoD(595.28-M,34,(TT("LOTE ","LOT "))+n,20,"F2");
+    c2(V.gold).rect(0,56,595.28,2.5);
+    bloqueSolPDF(HOJA_SOL,V,M,74,800,ej,ver,false);
+    c2(V.line,1).grosor(.5).linea(M,806,595.28-M,806);
+    c2(V.muted).texto(M,818,TT(
+      "El recorrido del sol sale de la latitud del predio, 4,47° norte. En esta hoja va aparte porque en la ficha no cabía.",
+      "The sun path comes from the site latitude, 4.47° north. It sits on its own page because it did not fit on the data sheet.",
+      "La course du soleil vient de la latitude du site, 4,47° nord."),6.6,"F1");
+  }
+
   const hojas=[hojaPortadaPDF(n,L,A,casa,V), P];
+  if(HOJA_SOL) hojas.push(HOJA_SOL);
   if(casa){ hojas.push(hojaIsoPDF(n,L,A,casa,V)); hojas.push(hojaSolarPDF(n,L,A,casa,ej,V)); }
   if(esTerraza(n)) hojas.push(hojaTerrazaPDF(n,L,V));
   hojas.push(hojaComercialPDF(n,L,V));
@@ -4895,30 +4937,34 @@ function hojaComercialPDF(n,L,V){
     M, y, 595.28-2*M, 6.8, 9.2); y+=6;
 
   /* ---- barras de comparación ---- */
-  y+=10;
-  col(V.gold).texto(M,y,T("CÓMO SE MUEVE EL PRECIO"),7.6,"F2",1.1); y+=18;
+  /* Esta hoja iba apretada de más: la nota de precios y la salvedad legal
+     acababan DEBAJO del borde de la página —MEDIDO: la última línea caía en
+     y=878 de una hoja de 841,9— y no se imprimían. Se recupera alto aquí, en
+     las barras y en los interlineados, que es donde sobraba aire. */
+  y+=4;
+  col(V.gold).texto(M,y,T("CÓMO SE MUEVE EL PRECIO"),7.6,"F2",1.1); y+=16;
   const maxV=Math.max(...ETAPAS.map(E=>precio(L,E.n)));
-  const bw=(595.28-2*M-5*10)/6, base=y+70;
+  const bw=(595.28-2*M-5*10)/6, base=y+58;
   ETAPAS.forEach((E,i)=>{
-    const v=precio(L,E.n), h=Math.max(4,(v/maxV)*62), x=M+i*(bw+10);
+    const v=precio(L,E.n), h=Math.max(4,(v/maxV)*52), x=M+i*(bw+10);
     const actual=(E.n===state.etapa);
     col(actual?V.forest:[176,190,168]).rect(x,base-h,bw,h);
     col(V.muted).texto(x,base+11,E.l,7.4,"F2");
     col(actual?V.forest:V.muted).texto(x,base-h-5,"$"+dec(v/1e6,0)+"M",7,"F2");
   });
-  y=base+30;
+  y=base+22;
 
   /* ---- qué más entra en el precio ---- */
-  col(V.line,1).grosor(.5).linea(M,y,595.28-M,y); y+=20;
-  col(V.gold).texto(M,y,T("QUÉ MÁS ENTRA EN EL PRECIO"),7.6,"F2",1.1); y+=16;
+  col(V.line,1).grosor(.5).linea(M,y,595.28-M,y); y+=14;
+  col(V.gold).texto(M,y,T("QUÉ MÁS ENTRA EN EL PRECIO"),7.6,"F2",1.1); y+=13;
   const mitad=(595.28-2*M)/2-14;
   let ya=y;
   const filaC=(x,w,k,v)=>{
     col(V.muted).texto(x,ya,k,7.8,"F1");
     col(V.ink).textoD(x+w,ya,v,8.2,"F2");
-    ya+=6; col(V.line,1).grosor(.35).linea(x,ya,x+w,ya); ya+=11;
+    ya+=5; col(V.line,1).grosor(.35).linea(x,ya,x+w,ya); ya+=9;
   };
-  col(V.ink).texto(M,ya,T("Áreas comunes del conjunto"),8.4,"F2"); ya+=14;
+  col(V.ink).texto(M,ya,T("Áreas comunes del conjunto"),8.4,"F2"); ya+=12;
   filaC(M,mitad,T("Zonas sociales"),"10.057 m²");
   filaC(M,mitad,T("Áreas de protección"),"28.696 m²");
   filaC(M,mitad,T("Andenes y vías"),"30.775 m²");
@@ -4926,12 +4972,14 @@ function hojaComercialPDF(n,L,V){
   const yfin=ya;
   ya=y;
   const x2=M+mitad+28;
-  col(V.ink).texto(x2,ya,T("Desde el predio"),8.4,"F2"); ya+=14;
+  col(V.ink).texto(x2,ya,T("Desde el predio"),8.4,"F2"); ya+=12;
   POIS.slice(0,4).forEach(([nm,,md])=>filaC(x2,mitad,T(nm),T(md)));
-  y=Math.max(yfin,ya)+10;
+  y=Math.max(yfin,ya)+6;
 
-  col(V.line,1).grosor(.5).linea(M,y,595.28-M,y); y+=18;
-  y=envolver(P, TT(
+  col(V.line,1).grosor(.5).linea(M,y,595.28-M,y); y+=10;
+  /* las dos notas se ajustan para terminar SOBRE la banda del pie, nunca
+     debajo: la banda arranca en 841,89−46 y por debajo de ahí no se imprime. */
+  const NOTA1 = TT(
       "Los precios salen de la lista de trabajo del proyecto: "+fmtCOP(PR[state.etapa])+" por m² de área "+
       "protegida y "+fmtCOP(PV[state.etapa])+" por m² de área útil en la etapa "+ETAPAS[state.etapa-1].l+", "+
       "aplicados sobre las áreas del cuadro del plano 039. El área protegida se paga distinto porque no se "+
@@ -4943,11 +4991,8 @@ function hojaComercialPDF(n,L,V){
       "Les prix viennent de la liste de travail du projet : "+fmtCOP(PR[state.etapa])+" par m² de surface "+
       "protégée et "+fmtCOP(PV[state.etapa])+" par m² de surface utile à la phase "+ETAPAS[state.etapa-1].l+", "+
       "appliqués aux surfaces du tableau du plan 039. La surface protégée est valorisée différemment parce "+
-      "qu'on ne peut ni y construire ni y couper, mais elle fait partie du lot et de sa valeur de paysage."),
-    M, y, 595.28-2*M, 7.4, 10);
-
-  y+=8;
-  y=envolver(P, TT(
+      "qu'on ne peut ni y construire ni y couper, mais elle fait partie du lot et de sa valeur de paysage.");
+  const NOTA2 = TT(
       "Este documento es informativo y no constituye oferta comercial. Los precios están sujetos a cambio sin "+
       "previo aviso y no incluyen gastos de escrituración, impuestos ni el valor de la construcción. El estado "+
       "del lote se confirma con el asesor antes de cualquier separación.",
@@ -4956,13 +5001,24 @@ function hojaComercialPDF(n,L,V){
       "the lot is confirmed with the sales agent before any reservation.",
       "Ce document est informatif et ne constitue pas une offre commerciale. Les prix peuvent changer sans "+
       "préavis et n'incluent ni les frais d'acte, ni les taxes, ni le coût de la construction. L'état du lot "+
-      "est confirmé avec le conseiller avant toute réservation."),
-    M, y, 595.28-2*M, 7.0, 9.6);
+      "est confirmé avec le conseiller avant toute réservation.");
+  const TOPE_NOTAS = 841.89 - 34 - 6;
+  let t1=7.4, l1=10, t2=7.0, l2=9.6;
+  /* alto real: envolver() deja el cursor una interlínea bajo la última línea,
+     así que el borde de abajo del texto es una interlínea menos, más el rabo. */
+  const alto = () => lineasEnvolver(NOTA1,595.28-2*M,t1)*l1 + 5 +
+                     (lineasEnvolver(NOTA2,595.28-2*M,t2)-1)*l2 + 3;
+  while(t1>5.8 && y + alto() > TOPE_NOTAS){ t1-=0.3; l1-=0.4; t2-=0.3; l2-=0.4; }
+  y=envolver(P, NOTA1, M, y, 595.28-2*M, t1, l1);
+  y+=5;
+  y=envolver(P, NOTA2, M, y, 595.28-2*M, t2, l2);
 
-  col(V.forest).rect(0,841.89-46,595.28,46);
-  col(V.blanco).texto(M,841.89-26,"LAURELES CAMPESTRE",10,"F2",1.3);
-  col([200,214,192]).texto(M,841.89-14,T("El Caimo · Armenia · Quindío · Parcelación campestre"),7,"F1");
-  col([200,214,192]).textoD(595.28-M,841.89-20,T("Generado el")+" "+new Date().toLocaleDateString(LOC()),7,"F1");
+  /* la banda baja de 46 a 34 pt: con 46 se comía la última línea de la nota
+     legal, y con 34 sigue leyéndose igual de bien */
+  col(V.forest).rect(0,841.89-34,595.28,34);
+  col(V.blanco).texto(M,841.89-20,"LAURELES CAMPESTRE",9.4,"F2",1.3);
+  col([200,214,192]).texto(M,841.89-9,T("El Caimo · Armenia · Quindío · Parcelación campestre"),6.6,"F1");
+  col([200,214,192]).textoD(595.28-M,841.89-14,T("Generado el")+" "+new Date().toLocaleDateString(LOC()),6.8,"F1");
   return P;
 }
 
@@ -5246,6 +5302,19 @@ function dibujarAbanicoPDF(P,V,L,A,casa,px0,py0,pw,ph,iFecha){
   col([60,70,56]); P.poli([[0,-9],[3.2,4],[0,1.6],[-3.2,4]].map(gn),"f");
   const e=gn([0,13]); P.textoC(e[0],e[1]+2.5,"N",7,"F2");
 }
+/* Cuántas líneas ocupa un texto al envolverlo, sin dibujarlo. Se necesita
+   para saber dónde empieza el pie ANTES de pintar lo que va encima: el pie de
+   la ficha creció a cuatro líneas y se le montaba encima la leyenda de la rosa
+   solar —MEDIDO en el lote 44: la leyenda caía en y=792 y el pie ocupaba de
+   784 a 817—. */
+function lineasEnvolver(txt,w,t){
+  const pal=String(txt).split(" "); let ln="", n=1;
+  pal.forEach(p=>{
+    const pr=ln?ln+" "+p:p;
+    if(PDFmin.ancho(pr,t,"F1")>w){ n++; ln=p; } else ln=pr;
+  });
+  return n;
+}
 function envolver(P,txt,x,y,w,t,lh){
   const pal=String(txt).split(" "); let ln="";
   pal.forEach(p=>{
@@ -5399,7 +5468,7 @@ function dibujarPlantaPDF(P,V,L,A,casa,px0,py0,pw,ph){
          (casa.mod==="2p" ? (TT(" en dos niveles"," on two levels")) : (TT(" en un piso"," on one storey"))))
       : T("Volumen de prueba")],
              [[198,216,193],T("Faja de protección")]];
-  if(A.c)leg.push([[201,170,110],T("Área construible (aislamientos y antejardín)")]);
+  if(A.c)leg.push([[201,170,110],T("Suelo donde puede ir la casa (aislamientos y antejardín)")]);
   const rayado = (A.cob!=null && A.cob<0.98);
   if(rayado) leg.push([null,T("Sin levantar · pendiente de más del 25 % declarada en campo")]);
   if(rayado) ly-=10;
@@ -5415,6 +5484,53 @@ function dibujarPlantaPDF(P,V,L,A,casa,px0,py0,pw,ph){
     }
     col([90,96,84]); P.texto(px0+25,ly+1,t,6.6,"F1"); ly+=10; });
 }
+/* El bloque del sol de la ficha: rosa a la izquierda, tabla y veredicto a la
+   derecha. Va en su propia función porque a veces se dibuja en la hoja 2 y a
+   veces en una hoja aparte, cuando en la 2 ya no cabe. */
+function bloqueSolPDF(P,V,M,y,PIE_Y,ej,ver,parcial){
+  const col=(c,f)=>f?P.trazo(c[0],c[1],c[2]):P.color(c[0],c[1],c[2]);
+  y += parcial ? 4 : 20;
+  col(V.gold).texto(M,y,T("EL SOL SOBRE EL LOTE"),7.6,"F2",1.1); y+=12;
+  const TOPE_SOL = PIE_Y - 16;
+  /* la leyenda de la rosa son dos filas de 8,8 pt más el aire de 18 */
+  const ALTO_LEY = 2*8.8 + 20;
+  let RS = Math.min(parcial?108:132, TOPE_SOL - y - ALTO_LEY);
+  RS = Math.max(74, RS);
+  dibujarSolPDF(P,V,M,y,RS,ej?ej.rumbo:null);
+  /* La columna de texto arranca donde termina la rosa, no en un sitio fijo:
+     cuando la rosa se achica porque hay poco alto, el texto gana ancho y baja
+     de tres líneas a dos, que es justo lo que hacía falta. */
+  const sx=M+Math.max(RS,120)+26, sw=595.28-M-sx;
+  let sy=y+10;
+  col(V.ink).texto(sx,sy,T("Latitud 4,47° norte — el sol pasa casi por el cenit"),9,"F2"); sy+=14;
+  const th=[["",T("Sale"),T("Mediodía"),T("Se pone")]];
+  HITOS.forEach(h=>th.push([
+    LANG==="es" ? h.t.replace("Solsticio de ","").replace("Equinoccios","equinoccio")
+                : T(h.t).replace(" solstice","").replace("Equinoxes","equinox")
+                        .replace("Solstice de ","").replace("Équinoxes","équinoxe"),
+    h.salida.az.toFixed(0)+"°",
+    h.mediodia.alt.toFixed(0)+TT("° al ","° to the ")+rumboTxt(h.mediodia.az),
+    h.puesta.az.toFixed(0)+"°"]));
+  const cw=[sw*0.30,sw*0.16,sw*0.36,sw*0.18];
+  th.forEach((r,i)=>{
+    let x=sx;
+    r.forEach((t,j)=>{ col(i?V.ink:V.muted).texto(x,sy,t,i?8.4:7.6,i?"F1":"F2"); x+=cw[j]; });
+    sy+=6; col(V.line,1).grosor(.4).linea(sx,sy,sx+sw,sy); sy+=8;
+  });
+  sy+=3;
+  if(ver){
+    col(V.ink).texto(sx,sy,ver.n,9,"F2"); sy+=13;
+    /* y el texto se achica antes que cruzar la raya del pie */
+    /* y el texto se achica hasta caber sobre la raya del pie, nunca encima.
+       El alto real es (líneas-1)*interlínea más el descuelgue de la última. */
+    const tope = PIE_Y - 14;
+    let tt=8.2, lh=10.5;
+    while(tt>6.5 && sy + (lineasEnvolver(ver.t,sw,tt)-1)*lh + 4 > tope){ tt-=0.4; lh-=0.5; }
+    col(V.muted); envolver(P,ver.t,sx,sy,sw,tt,lh);
+  }
+
+}
+
 function dibujarSolPDF(P,V,x,y,R,rumbo){
   const col=(c,f)=>f?P.trazo(c[0],c[1],c[2]):P.color(c[0],c[1],c[2]);
   const cx=x+R/2, cy=y+R/2+8, r=R/2-12;
