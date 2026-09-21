@@ -187,3 +187,20 @@ alter table public.laureles_visitas enable row level security;
 create policy laureles_visitas_insercion on public.laureles_visitas for insert to anon, authenticated with check (true);
 create policy laureles_visitas_lectura   on public.laureles_visitas for select to authenticated using (true);
 create policy laureles_visitas_gestion   on public.laureles_visitas for update to authenticated using (true) with check (true);
+
+-- =============================================================================
+-- 2026-09-21 · Configurador de casas con IA (sólo administradores)
+-- -----------------------------------------------------------------------------
+-- Tabla public.laureles_ia_uso: una fila por consulta (usuario, lote, tokens,
+-- ok/error). RLS: sólo la Edge Function escribe (service role); cada
+-- administrador lee sus filas. Sirve para el cupo diario por persona y el tope
+-- mensual del proyecto.
+--
+-- Edge Function `laureles-ia` (supabase/functions/laureles-ia/index.ts):
+--   · exige JWT de Supabase Auth (verify_jwt = true) → sólo administradores;
+--   · lee la llave de Anthropic del secreto ANTHROPIC_API_KEY (nunca en la web);
+--   · variables opcionales: LAURELES_IA_MODELO (claude-sonnet-4-5),
+--     LAURELES_IA_CUPO_DIA (40 por persona/día), LAURELES_IA_CUPO_MES (1500/mes).
+-- La página (ia.js) manda la ficha real del lote y recibe bloques en metros;
+-- las áreas y el 30 % los recalcula la página, no la IA.
+-- =============================================================================

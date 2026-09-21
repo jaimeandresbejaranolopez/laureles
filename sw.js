@@ -11,14 +11,14 @@
                 conexión mala eso se ve exactamente igual que "el satélite no
                 funciona". Las teselas no cambian nunca, así que se quedan.
    ============================================================================= */
-const VERSION = "laureles-20260920a-acceso";
+const VERSION = "laureles-20260921a-ia";
 const APP     = VERSION;
 const TESELAS = "laureles-teselas-1";
 /* Los archivos propios se piden con ?v=<sello>: el navegador guarda el JS
    hasta diez minutos por su cuenta, y sin el sello una publicación se ve en el
    index pero no en los datos —que fue justo lo que pasó con los frentes—.
    El sello de aquí tiene que ser el mismo que el de index.html. */
-const V = "20260920a";
+const V = "20260921a";
 const PROPIO = [
   "./", "./index.html", "./manifest.json",
   "./icono-192.png", "./icono-512.png",
@@ -26,7 +26,7 @@ const PROPIO = [
   "./analisis.css?v="+V, "./analisis.js?v="+V, "./adaptador.js?v="+V,
   "./datos-analisis.js?v="+V, "./armazon.css?v="+V, "./armazon.js?v="+V,
   "./datos-terreno.js?v="+V, "./datos-logo.js?v="+V,
-  "./r3d.js?v="+V, "./datos-via.js?v="+V, "./acceso.js?v="+V, "./politica-datos.html",
+  "./r3d.js?v="+V, "./datos-via.js?v="+V, "./acceso.js?v="+V, "./ia.js?v="+V, "./politica-datos.html",
   "./medios/logo.png", "./medios/logo_claro.png", "./medios/hero.jpg", "./medios/intro.mp4"
 ];
 
@@ -75,8 +75,14 @@ self.addEventListener("fetch", e=>{
     return;
   }
 
+  /* El index.html no lleva ?v= (es la propia dirección), y GitHub Pages lo
+     entrega con max-age=600: tras publicar, el navegador seguía mostrando el
+     viejo hasta diez minutos. Para el HTML se pide revalidar siempre (ETag →
+     304, casi gratis) y así una publicación se ve en la primera recarga. */
+  const esHTML = req.mode==="navigate" || /\.html?$/.test(u.pathname) || u.pathname.endsWith("/");
+  const pedir = esHTML ? fetch(req, {cache:"no-cache"}) : fetch(req);
   e.respondWith(
-    fetch(req).then(resp=>{
+    pedir.then(resp=>{
       if(resp && resp.ok && u.origin===location.origin){
         const cp=resp.clone();
         caches.open(APP).then(c=>c.put(req,cp)).catch(()=>{});

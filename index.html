@@ -6,16 +6,16 @@
 <title>Laureles Campestre · Mapa de ventas</title>
 <meta name="description" content="Mapa de ventas de la parcelación Laureles Campestre, El Caimo, Armenia (Quindío).">
 <meta name="theme-color" content="#32402F">
-<meta name="build" content="2026-09-20 · acceso">
+<meta name="build" content="2026-09-21 · ia a">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20260920a">
+<link rel="stylesheet" href="maplibre-gl.css?v=20260921a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20260920a">
-<link rel="stylesheet" href="analisis.css?v=20260920a">
+<link rel="stylesheet" href="armazon.css?v=20260921a">
+<link rel="stylesheet" href="analisis.css?v=20260921a">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -631,7 +631,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20260920a"></script>
+<script src="maplibre-gl.js?v=20260921a"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -653,7 +653,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20260920a"></script>
+<script src="lotes.js?v=20260921a"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -2054,7 +2054,13 @@ const ROL = (()=>{
         '<button class="pri" id="bSalir">Salir de la sesión</button>';
       document.getElementById("bSalir").onclick=()=>{ salir(); velo.classList.remove("on"); };
     } else {
+      const vis = (window.ACCESO && ACCESO.visitante && ACCESO.visitante()) || null;
       cuerpo.innerHTML =
+        (vis && vis.correo
+          ? '<div class="pista" style="margin-bottom:12px">Registrado como <b>'+String(vis.nombre||"").replace(/[<>&]/g,"")+
+            '</b> ('+String(vis.correo).replace(/[<>&]/g,"")+'). '+
+            '<a href="#" id="rOlvidar">Entrar como otra persona</a></div>'
+          : '')+
         '<p><b>Visitante.</b> Es como está ahora. Puede recorrer el plano, abrir cualquier lote, '+
         'ver el análisis del terreno, el 3D, el asoleamiento y descargar la ficha en PDF. '+
         'Lo único que no puede es modificar nada: ni el estado de un lote ni ningún dato.</p>'+
@@ -2084,6 +2090,9 @@ const ROL = (()=>{
       };
       document.getElementById("bEntrar").onclick=ir;
       document.getElementById("rClave").onkeydown=ev=>{ if(ev.key==="Enter") ir(); };
+      const olv=document.getElementById("rOlvidar");
+      if(olv) olv.onclick=ev=>{ ev.preventDefault(); try{ localStorage.removeItem("laureles.visitante"); }catch(e){}
+        velo.classList.remove("on"); if(window.ACCESO) ACCESO.puerta(null); };
       const ol=document.getElementById("rOlvide");
       if(ol) ol.onclick=ev=>{ ev.preventDefault(); if(window.ACCESO) ACCESO.formAdmin(null); setTimeout(()=>{ const a=document.getElementById("aOlvide"); if(a) a.click(); },0); };
     }
@@ -2410,15 +2419,16 @@ window.seleccionarLote = n => {
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png"};</script>
-<script src="datos-analisis.js?v=20260920a"></script>
-<script src="datos-terreno.js?v=20260920a"></script>
-<script src="datos-logo.js?v=20260920a"></script>
-<script src="adaptador.js?v=20260920a"></script>
-<script src="analisis.js?v=20260920a"></script>
-<script src="datos-via.js?v=20260920a"></script>
-<script src="r3d.js?v=20260920a"></script>
-<script src="armazon.js?v=20260920a"></script>
-<script src="acceso.js?v=20260920a"></script>
+<script src="datos-analisis.js?v=20260921a"></script>
+<script src="datos-terreno.js?v=20260921a"></script>
+<script src="datos-logo.js?v=20260921a"></script>
+<script src="adaptador.js?v=20260921a"></script>
+<script src="analisis.js?v=20260921a"></script>
+<script src="datos-via.js?v=20260921a"></script>
+<script src="r3d.js?v=20260921a"></script>
+<script src="armazon.js?v=20260921a"></script>
+<script src="acceso.js?v=20260921a"></script>
+<script src="ia.js?v=20260921a"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

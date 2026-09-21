@@ -583,6 +583,65 @@ const R3D = (()=>{
       cerrar([0.66,0.58,0.45,1.0]);
     })();
 
+    /* --- casa configurada con IA (ia.js): bloques genéricos en el marco de
+       referencia, ya convertidos por el cliente. Si hay una para ESTE lote,
+       reemplaza a la Casa 30JB; si no, se dibuja el tipo de siempre. --- */
+    const CI = (window.__CASA_IA && String(window.__CASA_IA.lote)===String(loteCasa)
+                && Array.isArray(window.__CASA_IA.bloques)) ? window.__CASA_IA : null;
+    function dibujarIA(C){
+      const B = C.bloques;
+      const n1 = B.filter(b=>b.clase==="muro" && (b.nivel||1)===1);
+      const baseDe = b=>{                      /* cota de arranque de un bloque de nivel 2 */
+        const cu=(b.u0+b.u1)/2, cv=(b.v0+b.v1)/2;
+        const bajo = n1.find(x=>cu>=x.u0&&cu<=x.u1&&cv>=x.v0&&cv<=x.v1);
+        return bajo ? (bajo.alto||3.4) : 3.4;
+      };
+      /* muros nivel 1 */
+      n1.forEach(b=>prisma(quad(b.u0,b.v0,b.u1,b.v1,"muro"), z0, z0+H(b.alto||3.4), true));
+      cerrar([0.93,0.90,0.83,1.0]);
+      /* muros nivel 2, un tono más claro para que se lea el piso */
+      B.filter(b=>b.clase==="muro" && b.nivel===2).forEach(b=>{
+        const za=z0+H(baseDe(b));
+        prisma(quad(b.u0,b.v0,b.u1,b.v1,"muro"), za, za+H(b.alto||3.0), true);
+      });
+      cerrar([0.95,0.93,0.87,1.0]);
+      /* parapetos de todos los muros */
+      B.filter(b=>b.clase==="muro").forEach(b=>{
+        const e=0.30, za = (b.nivel===2) ? z0+H(baseDe(b)) : z0, top = za+H(b.alto||(b.nivel===2?3.0:3.4));
+        [[b.u0,b.v0,b.u1,b.v0+e],[b.u0,b.v1-e,b.u1,b.v1],[b.u0,b.v0,b.u0+e,b.v1],[b.u1-e,b.v0,b.u1,b.v1]]
+          .forEach(q=>prisma(quad(q[0],q[1],q[2],q[3],"muro"), top, top+H(PARAPETO), true));
+      });
+      cerrar([0.97,0.95,0.90,1.0]);
+      /* porches y carports: losa sobre cuatro columnas */
+      B.filter(b=>b.clase==="porche").forEach(b=>{
+        const h=b.alto||3.2;
+        prisma(quad(b.u0,b.v0,b.u1,b.v1,"porche"), z0+H(h-0.32), z0+H(h), true);
+        const c=0.34;
+        [[b.u0,b.v0],[b.u1-c,b.v0],[b.u0,b.v1-c],[b.u1-c,b.v1-c]].forEach(([a,bb])=>
+          prisma(quad(a,bb,a+c,bb+c,"porche"), z0, z0+H(h-0.32), false));
+      });
+      cerrar([0.90,0.87,0.79,1.0]);
+      /* patios (piedra) y decks (madera) */
+      B.filter(b=>b.clase==="patio").forEach(b=>prisma(quad(b.u0,b.v0,b.u1,b.v1,"patio"), z0-H(0.05), z0+H(0.02), true));
+      cerrar([0.72,0.66,0.55,1.0]);
+      B.filter(b=>b.clase==="deck").forEach(b=>prisma(quad(b.u0,b.v0,b.u1,b.v1,"patio"), z0-H(0.05), z0+H(0.06), true));
+      cerrar([0.60,0.42,0.25,1.0]);
+      /* piscina: brocal claro y lámina de agua hundida */
+      /* el brocal es un anillo (no una losa: taparía el agua) y el agua queda
+         apenas por encima del deck para que se vea desde cualquier ángulo */
+      B.filter(b=>b.clase==="piscina").forEach(b=>{
+        const e=0.4;
+        [[b.u0-e,b.v0-e,b.u1+e,b.v0],[b.u0-e,b.v1,b.u1+e,b.v1+e],[b.u0-e,b.v0,b.u0,b.v1],[b.u1,b.v0,b.u1+e,b.v1]]
+          .forEach(q=>prisma(quad(q[0],q[1],q[2],q[3],"patio"), z0-H(0.05), z0+H(0.14), true));
+      });
+      cerrar([0.90,0.89,0.84,1.0]);
+      B.filter(b=>b.clase==="piscina").forEach(b=>{
+        prisma(quad(b.u0,b.v0,b.u1,b.v1,"patio"), z0-H(0.05), z0+H(0.10), true);
+      });
+      cerrar([0.36,0.64,0.80,1.0]);
+    }
+    if(CI){ dibujarIA(CI); }
+    else {
     /* --- 1. muros: el cuerpo de la casa, crema --- */
     BLOQUES.forEach(([nom,u0,v0,u1,v1,h,cls])=>{
       if(cls!=="muro") return;
@@ -656,6 +715,7 @@ const R3D = (()=>{
       });
       cerrar([0.44,0.36,0.26,1.0]);
     }
+    } /* fin de la Casa 30JB */
 
     /* la malla se rehace si el banqueo cambió */
     const banqAhora = BANQ ? BANQ.z+'|'+BANQ.poly[0][0].toFixed(1)+','+BANQ.poly[0][1].toFixed(1) : '';
@@ -663,12 +723,18 @@ const R3D = (()=>{
 
     /* --- 8. la sombra sobre el terreno --- */
     const alt=SOLPOS?SOLPOS.alt:60, azm=SOLPOS?SOLPOS.az:120;
+    /* con casa de IA la sombra sale de SUS bloques y de su altura mayor */
+    const BL_SOMBRA = CI ? CI.bloques.filter(b=>b.clase==="muro"||b.clase==="porche")
+                               .map(b=>[b.nombre,b.u0,b.v0,b.u1,b.v1,b.alto||3.4,b.clase])
+                         : BLOQUES;
+    const ALT_SOMBRA = CI ? Math.max(3.4, ...CI.bloques.filter(b=>b.clase==="muro")
+                               .map(b=>(b.nivel===2?3.4:0)+(b.alto||3.4))) : ALTURA_CASA;
     if(alt>2){
-      const Lp=ALTURA_CASA/Math.tan(alt*Math.PI/180);
+      const Lp=ALT_SOMBRA/Math.tan(alt*Math.PI/180);
       if(Lp<300){
         const A2=azm*Math.PI/180, dx=-Lp*Math.sin(A2), dy=Lp*Math.cos(A2);
         const base=[];
-        BLOQUES.forEach(([nom,u0,v0,u1,v1,h,cls])=>{
+        BL_SOMBRA.forEach(([nom,u0,v0,u1,v1,h,cls])=>{
           if(cls!=="muro"&&cls!=="porche") return;
           quad(u0,v0,u1,v1,cls).forEach(q=>base.push(q));
         });
