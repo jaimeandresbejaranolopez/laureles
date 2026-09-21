@@ -154,18 +154,61 @@ function validar(cfg, f){
                   "“"+b.nombre+"” is not by the road; parking goes at the front."));
   });
   const area = b=>(b.u1-b.u0)*(b.v1-b.v0);
+  /* ---- los espacios de la planta esquemática: cada uno dentro de un bloque
+     muro de su nivel; se recortan a él; se avisa de traslapes, de lo que
+     quedó sin asignar y de medidas por debajo del mínimo ---- */
+  const MIN = {alcoba_principal:[3.4,3.4], alcoba:[2.9,2.9], bano:[1.4,2.0], vestier:[1.4,1.8], cocina:[2.6,2.6],
+               sala:[3.4,3.4], comedor:[3.0,3.0], estudio:[2.6,2.6], hall:[1.6,1.6], circulacion:[0.9,0.9],
+               ropas:[1.4,1.4], deposito:[1.0,1.0], terraza_cubierta:[1.5,1.5]};
+  const TIPOS = Object.keys(MIN);
+  const muros = bl.filter(b=>b.clase==="muro");
+  const esp = [];
+  (cfg.espacios||[]).slice(0,26).forEach(e=>{
+    let u0=+e.u0,u1=+e.u1,v0=+e.v0,v1=+e.v1;
+    if(!isFinite(u0+u1+v0+v1)) return;
+    if(u0>u1)[u0,u1]=[u1,u0]; if(v0>v1)[v0,v1]=[v1,v0];
+    const nivel = e.nivel===2 ? 2 : 1;
+    /* el bloque que más lo contiene */
+    let mejor=null, ab=0;
+    muros.filter(m=>m.nivel===nivel).forEach(m=>{
+      const w=Math.min(u1,m.u1)-Math.max(u0,m.u0), h=Math.min(v1,m.v1)-Math.max(v0,m.v0);
+      if(w>0&&h>0&&w*h>ab){ ab=w*h; mejor=m; }
+    });
+    if(!mejor){ adv.push(tt("«"+e.nombre+"» quedó fuera de todo bloque y se descartó.","“"+e.nombre+"” fell outside every block and was dropped.")); return; }
+    const c=[Math.max(mejor.u0,u0),Math.min(mejor.u1,u1),Math.max(mejor.v0,v0),Math.min(mejor.v1,v1)];
+    if(c[1]-c[0]<0.6||c[3]-c[2]<0.6) return;
+    [u0,u1,v0,v1]=c;
+    const tipo = TIPOS.indexOf(e.tipo)>=0 ? e.tipo : "deposito";
+    const mn=MIN[tipo], w=u1-u0, h=v1-v0;
+    if(Math.min(w,h)<Math.min(mn[0],mn[1])-0.05 || Math.max(w,h)<Math.max(mn[0],mn[1])-0.05)
+      adv.push(tt("«"+e.nombre+"» mide "+dec1(w)+" × "+dec1(h)+" m, por debajo del mínimo ("+dec1(mn[0])+" × "+dec1(mn[1])+").",
+                  "“"+e.nombre+"” is "+dec1(w)+" × "+dec1(h)+" m, under the minimum ("+dec1(mn[0])+" × "+dec1(mn[1])+")."));
+    esp.push({nombre:String(e.nombre||tipo).slice(0,32), tipo, u0,v0,u1,v1, nivel, bloque:mejor.nombre, area:w*h});
+  });
+  /* traslapes entre espacios del mismo nivel */
+  for(let i=0;i<esp.length;i++) for(let j=i+1;j<esp.length;j++){
+    const a=esp[i], b=esp[j]; if(a.nivel!==b.nivel) continue;
+    const w=Math.min(a.u1,b.u1)-Math.max(a.u0,b.u0), h=Math.min(a.v1,b.v1)-Math.max(a.v0,b.v0);
+    if(w>0.2&&h>0.2) adv.push(tt("«"+a.nombre+"» y «"+b.nombre+"» se traslapan "+dec1(w*h)+" m².","“"+a.nombre+"” and “"+b.nombre+"” overlap by "+dec1(w*h)+" m²."));
+  }
+  /* lo que quedó sin asignar en cada bloque */
+  muros.forEach(m=>{
+    const sum=esp.filter(e=>e.bloque===m.nombre&&e.nivel===m.nivel).reduce((s,e)=>s+e.area,0);
+    const libre=area(m)-sum;
+    if(esp.length && libre>3) adv.push(tt("En «"+m.nombre+"» quedan "+ent(libre)+" m² sin asignar a ningún espacio.","“"+m.nombre+"” has "+ent(libre)+" m² not assigned to any room."));
+  });
   const construida = bl.filter(b=>b.clase==="muro"||b.clase==="porche").reduce((s,b)=>s+area(b),0);
   const huella = bl.filter(b=>b.nivel===1&&(b.clase==="muro"||b.clase==="porche")).reduce((s,b)=>s+area(b),0);
   const piscina = bl.filter(b=>b.clase==="piscina").reduce((s,b)=>s+area(b),0);
   const pisos = bl.some(b=>b.nivel===2) ? 2 : 1;
   const escU = L/REF_W, escV = D/REF_D;
   const ref = bl.map(b=>Object.assign({},b,{u0:b.u0/escU,u1:b.u1/escU,v0:b.v0/escV,v1:b.v1/escV}));
-  return {bloques:bl, ref, construida, huella, piscina, pisos, cap, excede:Math.max(0,construida-cap), adv};
+  return {bloques:bl, ref, espacios:esp, construida, huella, piscina, pisos, cap, excede:Math.max(0,construida-cap), adv};
 }
 
 function aplicar(n, val, conv){
   /* bloques: en el marco de referencia (para el 3D) · reales: en metros (para el informe) */
-  window.__CASA_IA = { lote:n, bloques:val.ref, reales:val.bloques, construida:val.construida, huella:val.huella,
+  window.__CASA_IA = { lote:n, bloques:val.ref, reales:val.bloques, espacios:val.espacios, construida:val.construida, huella:val.huella,
                        piscina:val.piscina, pisos:val.pisos, cap:val.cap, conversacion:(conv||[]).slice(-8) };
   if(!R3D.activo()){ const b=document.getElementById("b3d"); if(b) b.click(); }
   R3D.casa(n,null,null);
@@ -177,17 +220,19 @@ function aplicar(n, val, conv){
 async function cab(){
   const t = (typeof ROL!=="undefined") ? await ROL.token() : null;
   if(!t) return null;
-  return { "apikey":CFGp().supabaseKey, "Authorization":"Bearer "+t, "Content-Type":"application/json", "Prefer":"return=minimal" };
+  return { "apikey":CFGp().supabaseKey, "Authorization":"Bearer "+t, "Content-Type":"application/json", "Prefer":"return=representation" };
 }
 async function guardar(n, val, cfg, conv){
   try{
     const h = await cab(); if(!h || !base()) return;
     const r = await fetch(base()+"/rest/v1/laureles_ia_casas", { method:"POST", headers:h, body: JSON.stringify([{
       lote:n, correo:(typeof ROL!=="undefined"&&ROL.correo&&ROL.correo())||null,
-      conversacion:conv.slice(-8), config:cfg, bloques:val.bloques,
+      conversacion:conv.slice(-8), config:cfg, bloques:val.bloques, espacios:val.espacios,
       construida:Math.round(val.construida*10)/10, huella:Math.round(val.huella*10)/10,
       piscina:Math.round(val.piscina*10)/10, pisos:val.pisos, cap:val.cap }]) });
-    if(!r.ok){ const j=await r.json().catch(()=>({})); console.warn("ia.js: no se guardó:", j.message||r.status); }
+    const j=await r.json().catch(()=>null);
+    if(!r.ok){ console.warn("ia.js: no se guardó:", (j&&j.message)||r.status); return; }
+    if(j&&j[0]&&window.__CASA_IA&&String(window.__CASA_IA.lote)===String(n)){ window.__CASA_IA.id=j[0].id; delete window.__CASA_IA.render_url; }
   }catch(e){ console.warn("ia.js: no se guardó:", e.message); }
 }
 /* la última propuesta guardada de este lote; null si no hay */
@@ -203,12 +248,13 @@ async function cargar(n){
 /* pone en el 3D y en el informe una propuesta guardada */
 function reponer(n, fila){
   const f = fichaReal(n); if(!f || !fila || !Array.isArray(fila.bloques)) return false;
-  const val = validar({bloques:fila.bloques}, f);
+  const val = validar({bloques:fila.bloques, espacios:fila.espacios||(fila.config&&fila.config.espacios)||[]}, f);
   if(!val.bloques.length) return false;
   conversacion = Array.isArray(fila.conversacion) ? fila.conversacion.slice() : [];
   historial = []; (fila.config ? [ {rol:"usuario", texto:(conversacion.filter(m=>m.rol==="usuario").slice(-1)[0]||{}).texto||""}, {rol:"asistente", config:fila.config} ] : []).forEach(x=>historial.push(x));
-  window.__CASA_IA = { lote:n, bloques:val.ref, reales:val.bloques, construida:val.construida, huella:val.huella,
-                       piscina:val.piscina, pisos:val.pisos, cap:val.cap, conversacion:conversacion.slice(-8), guardada:fila.creado };
+  window.__CASA_IA = { lote:n, bloques:val.ref, reales:val.bloques, espacios:val.espacios, construida:val.construida, huella:val.huella,
+                       piscina:val.piscina, pisos:val.pisos, cap:val.cap, conversacion:conversacion.slice(-8), guardada:fila.creado,
+                       id:fila.id, render_url:fila.render_url||null };
   if(R3D.activo()) R3D.casa(n,null,null);
   return true;
 }
@@ -243,6 +289,45 @@ async function pedir(mensaje){
   return j;
 }
 
+/* ------------------------------ el render ----------------------------- */
+async function renderizar(){
+  if(ocupado) return;
+  const C=window.__CASA_IA;
+  if(!C||String(C.lote)!==String(lote)){ burbuja("err", tt("Primero propón una casa.","Propose a house first.")); return; }
+  ocupado=true; const bt=panel.querySelector("#iaRender"); if(bt) bt.disabled=true;
+  const esp=burbuja("ia", tt("Preparando la vista y pidiendo el render (20–40 s)…","Framing the view and requesting the render (20–40 s)…"));
+  try{
+    if(!R3D.activo()){ const b=document.getElementById("b3d"); if(b) b.click(); }
+    R3D.exagerar(1); R3D.casa(lote,null,null);
+    if(!(R3D.enfocarCasa && R3D.enfocarCasa(lote, 56, 0.42))) R3D.irA(lote);
+    await new Promise(r=>setTimeout(r,350));
+    const img=R3D.capturar(1536);
+    if(!img) throw new Error(tt("No se pudo capturar el 3D.","Could not capture the 3D view."));
+    if(typeof window.__RENDER_PRUEBA==="function"){ const j=await window.__RENDER_PRUEBA(img); mostrarRender(j.url, esp); return; }
+    if(!base()||!CFGp().supabaseKey) throw new Error("Falta configurar Supabase en Ajustes.");
+    const t=(typeof ROL!=="undefined")?await ROL.token():null;
+    if(!t) throw new Error(tt("Hace falta una sesión de administrador.","An administrator session is required."));
+    const extra=(conversacion.filter(m=>m.rol==="usuario").map(m=>m.texto).join(" · ")).slice(0,500);
+    const r=await fetch(base()+"/functions/v1/laureles-render",{ method:"POST",
+      headers:{ "apikey":CFGp().supabaseKey, "Authorization":"Bearer "+t, "Content-Type":"application/json" },
+      body:JSON.stringify({ lote, casa_id:C.id||null, imagen:img, ficha:fichaReal(lote), extra }) });
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.error||(r.status+" "+r.statusText));
+    mostrarRender(j.url, esp);
+    if(j.uso&&j.uso.cupo_dia){ const p=panel.querySelector(".pie"); if(p) p.textContent += " · "+tt("Renders hoy","Renders today")+": "+j.uso.hoy+"/"+j.uso.cupo_dia; }
+  }catch(e){ esp.className="m err"; esp.textContent=e.message||String(e); }
+  finally{ ocupado=false; if(bt) bt.disabled=false; }
+}
+function mostrarRender(url, esp){
+  if(window.__CASA_IA) window.__CASA_IA.render_url=url;
+  const d=esp||burbuja("ia","");
+  d.className="m ia"; d.innerHTML='<a href="'+esc(url)+'" target="_blank" rel="noopener"><img src="'+esc(url)+'" alt="" style="display:block;width:100%;border-radius:8px"></a>'+
+    '<div style="font-size:10.5px;color:var(--muted);margin-top:6px">'+tt("Imagen ilustrativa generada por IA a partir del volumen implantado; no es diseño aprobado. Entra al Análisis del lote y al PDF.",
+    "Illustrative AI image generated from the placed volume; not an approved design. Goes into the lot analysis and the PDF.")+'</div>';
+  const h=panel.querySelector("#iaHilo"); if(h) h.scrollTop=h.scrollHeight;
+  try{ if(typeof pintarFicha==="function" && document.getElementById("ficha").classList.contains("on")) pintarFicha(lote); }catch(e){}
+}
+
 /* ------------------------------ el panel ------------------------------ */
 function pintar(){
   panel.innerHTML =
@@ -254,11 +339,14 @@ function pintar(){
         .map(c=>'<button type="button">'+c+'</button>').join('')+'</div>'+
     '<form id="iaForm"><textarea id="iaTxt" placeholder="'+tt("Describe la casa que quiere el cliente…","Describe the house the client wants…")+'"></textarea>'+
     '<button type="submit" id="iaEnviar">'+tt("Proponer","Propose","Proposer")+'</button></form>'+
+    '<div class="chips" style="padding-top:0"><button type="button" id="iaRender" style="background:#3E5A3A;color:#F4F2EA;border-color:#3E5A3A">'+tt("Ver cómo se vería (render IA)","See how it would look (AI render)","Voir le rendu IA")+'</button></div>'+
     '<div class="pie">'+tt("Sólo asesores. Las áreas y el 30 % los calcula el motor del sitio, no la IA. La propuesta se guarda y entra al Análisis del lote y al PDF.",
                             "Advisors only. Areas and the 30 % rule are computed by the site engine, not by the AI. The proposal is saved and goes into the lot analysis and the PDF.")+'</div>';
   panel.querySelector("#iaCerrar").onclick = cerrar;
   panel.querySelectorAll("#iaChips button").forEach(b=>b.onclick=()=>{ panel.querySelector("#iaTxt").value=b.textContent; enviar(); });
   panel.querySelector("#iaForm").onsubmit = e=>{ e.preventDefault(); enviar(); };
+  panel.querySelector("#iaRender").onclick = renderizar;
+  if(window.__CASA_IA && String(window.__CASA_IA.lote)===String(lote) && window.__CASA_IA.render_url) mostrarRender(window.__CASA_IA.render_url);
   panel.querySelector("#iaTxt").onkeydown = e=>{ if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); enviar(); } };
   const f = fichaReal(lote);
   if(f) burbuja("ia", tt("Lote "+lote+": "+ent(f.area_util_m2)+" m² útiles, hasta "+ent(f.construible_30pct_m2)+
@@ -281,7 +369,7 @@ function tarjeta(val, cfg){
     '<div class="cifras">'+
       '<div class="'+(mal?"mal":"bien")+'"><b>'+ent(val.construida)+' m²</b><small>'+tt("construidos","built")+'</small></div>'+
       '<div><b>'+ent(val.cap)+' m²</b><small>'+tt("tope 30 %","30 % cap")+'</small></div>'+
-      '<div><b>'+(val.pisos)+(val.piscina?' · '+ent(val.piscina)+' m²':'')+'</b><small>'+(val.piscina?tt("pisos · piscina","floors · pool"):tt("pisos","floors"))+'</small></div>'+
+      '<div><b>'+(val.pisos)+(val.espacios&&val.espacios.length?' · '+val.espacios.length:'')+'</b><small>'+(val.espacios&&val.espacios.length?tt("pisos · espacios","floors · rooms"):tt("pisos","floors"))+(val.piscina?' · '+tt("piscina","pool")+' '+ent(val.piscina)+' m²':'')+'</small></div>'+
     '</div>';
   const adv = (cfg.advertencias||[]).map(String).concat(val.adv);
   if(mal) adv.unshift(tt("Excede el 30 % en "+ent(val.excede)+" m². Pídele que la reduzca.",
@@ -321,6 +409,7 @@ function abrir(n){
       const ult = (conversacion.filter(m=>m.rol==="asistente").slice(-1)[0]||{}).texto || "";
       burbuja("ia", tt("Propuesta guardada el "+new Date(f.creado).toLocaleString("es-CO")+(f.correo?" por "+f.correo:"")+". "+ult,
                        "Saved proposal from "+new Date(f.creado).toLocaleString("en")+". "+ult));
+      if(f.render_url) mostrarRender(f.render_url);
     } });
   } else if(window.__CASA_IA.guardada){
     burbuja("ia", tt("Propuesta guardada el "+new Date(window.__CASA_IA.guardada).toLocaleString("es-CO")+".",

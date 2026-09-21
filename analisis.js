@@ -3372,6 +3372,20 @@ function analisis(n){
       '<tr><td>'+T("Eje largo")+'</td><td>'+ej.rumbo.toFixed(0)+'° — '+
         (TT('fachadas largas al ','long facades to the '))+fachadas[0]+(TT(' y al ',' and '))+fachadas[1]+'</td></tr>'+
       '</table>'+
+      (casaIA(n) && (casaIA(n).espacios||[]).length
+        ? '<h4 style="margin:18px 0 6px">'+TT("Planta esquemática de la casa propuesta","Schematic plan of the proposed house","Plan schématique de la maison proposée")+
+          ' · '+TT("planta baja","ground floor","rez-de-chaussée")+'</h4>'+plantaEsquematicaSVG(n,1,860,560)+
+          ((casaIA(n).espacios||[]).some(e=>e.nivel===2)
+            ? '<h4 style="margin:14px 0 6px">'+TT("Piso alto","Upper floor","Étage")+'</h4>'+plantaEsquematicaSVG(n,2,860,560) : '')+
+          '<p class="p" style="margin-top:8px">'+TT("Muros, puertas y ventanas los pone el motor con reglas fijas (ventanales al fondo, que es la vista); la IA sólo repartió los espacios. Anteproyecto esquemático, no diseño ni licencia.",
+             "Walls, doors and windows are placed by the engine with fixed rules (large windows to the back, the view); the AI only laid out the rooms. Schematic, not a design nor a permit.")+'</p>'
+        : '')+
+      (casaIA(n) && casaIA(n).render_url
+        ? '<h4 style="margin:18px 0 6px">'+TT("Así se vería","How it would look","À quoi elle ressemblerait")+'</h4>'+
+          '<img src="'+String(casaIA(n).render_url).replace(/"/g,"")+'" alt="" style="display:block;width:100%;border-radius:9px">'+
+          '<p class="p" style="margin-top:6px;font-size:12px">'+TT("Imagen ilustrativa generada con IA a partir del volumen implantado; no es diseño aprobado.",
+             "Illustrative AI image generated from the placed volume; not an approved design.")+'</p>'
+        : '')+
       (casa.mod==="2p"
         ? '<p class="p" style="margin-top:12px">'+(TT('<b>Este lote arranca en pendiente: no tiene plataforma natural.</b> Por eso el modelo lo resuelve '+
               'en dos niveles y no en uno. El piso de acceso se apoya en la parte alta del terreno y por debajo va '+
@@ -3619,6 +3633,7 @@ function analisis(n){
     '<button class="btn" id="anl3d">'+T("Ver el volumen en 3D")+'</button>'+
     ((typeof RENDERS!=="undefined" && RENDERS[String(n)])
       ? '<button class="btn" id="anlRen">'+T("Renderizar")+'</button>' : '')+
+    '<button class="btn" id="anlDxf" title="'+TT("Lote, curvas, envolvente y casa propuesta en coordenadas CTM12","Lot, contours, envelope and proposed house in CTM12")+'">'+TT("DXF para AutoCAD","DXF for AutoCAD","DXF pour AutoCAD")+'</button>'+
     '<button class="btn pri" id="anlPdf">'+T("Descargar ficha técnica y comercial")+'</button>'+
   '</div></div>';
 }
@@ -4198,6 +4213,14 @@ function hojaPortadaPDF(n,L,A,casa,V){
     indice.push(TT("La casa que pediste: bloque por bloque, con áreas y piscina",
                    "The house you asked for: block by block, with areas and pool",
                    "La maison demandée : bloc par bloc, surfaces et piscine"));
+    if((casaIA(n).espacios||[]).length)
+      indice.push(TT("Planta esquemática: espacios, muros, puertas y ventanas",
+                     "Schematic floor plan: rooms, walls, doors and windows",
+                     "Plan schématique : pièces, murs, portes et fenêtres"));
+    if(RENDER_PDF[n])
+      indice.push(TT("Así se vería: imagen ilustrativa generada con IA",
+                     "How it would look: illustrative AI image",
+                     "À quoi elle ressemblerait : image illustrative IA"));
   }
   if(casa){
     indice.push(TT("El sol sobre la casa: implantación en isométrico",
@@ -4213,10 +4236,14 @@ function hojaPortadaPDF(n,L,A,casa,V){
   indice.push(TT("Plan de pagos: el calendario de cuotas mes a mes",
                  "Payment plan: the month-by-month schedule",
                  "Plan de paiement : le calendrier mensuel"));
+  /* con casa propuesta el índice tiene hasta ocho renglones y llegaba al pie
+     (MEDIDO: "Plan de pagos" sobre "Geometría del plano" en el lote 27); el
+     paso se acorta para que el último renglón quede 10 pt sobre la raya */
+  const pasoIdx = Math.min(12.5, Math.max(9.6, (794-10-y)/Math.max(1,indice.length)));
   indice.forEach((t,i)=>{
     col(V.gold).texto(M,y,String(i+2),8.6,"F2");
     col(V.ink).texto(M+16,y,t,8.6,"F1");
-    y+=12.5;
+    y+=pasoIdx;
   });
 
   /* ---------------- pie ---------------- */
@@ -4474,6 +4501,8 @@ function fichaPDF(n){
   const hojas=[hojaPortadaPDF(n,L,A,casa,V), P];
   if(HOJA_SOL) hojas.push(HOJA_SOL);
   if(casa && casaIA(n)) hojas.push(hojaPropuestaPDF(n,L,A,V));
+  if(casa && casaIA(n) && (casaIA(n).espacios||[]).length) hojas.push(hojaPlantaPDF(n,L,A,V));
+  if(casa && casaIA(n) && RENDER_PDF[n]){ const hr=hojaRenderPDF(n,L,A,V); if(hr) hojas.push(hr); }
   if(casa){ hojas.push(hojaIsoPDF(n,L,A,casa,V)); hojas.push(hojaSolarPDF(n,L,A,casa,ej,V)); }
   if(esTerraza(n)) hojas.push(hojaTerrazaPDF(n,L,V));
   hojas.push(hojaComercialPDF(n,L,V));
@@ -5251,6 +5280,465 @@ function dibujarIsoPDF(P,V,n,L,A,x0,y0,w,h){
 }
 
 /* --------- hoja del sol: la casa en isométrico bajo los recorridos --------- */
+/* =========================================================================
+   PLANTA ESQUEMÁTICA DE LA CASA PROPUESTA
+   Los espacios que reparte la IA (rectángulos en metros dentro de cada bloque
+   muro) se convierten aquí en un plano de arquitectura esquemático: muros a
+   doble línea, puertas con su giro, ventanas en los bordes exteriores (las
+   grandes hacia el fondo, que es la vista), rótulos con área, cotas, norte y
+   escala. Las puertas y las ventanas NO las decide la IA: las decide este
+   módulo con reglas fijas, para que dos plantas iguales den siempre el mismo
+   dibujo. Se dibuja igual en pantalla (SVG) y en el PDF a través de un
+   "pintor" con cinco órdenes, y la misma geometría sale al DXF.
+   ========================================================================= */
+const PLANTA_ESQ = (()=>{
+  const EPS=0.06;
+  const dec1=v=>dec(v,1);
+  const HABIT  = {sala:1,comedor:1,cocina:1,alcoba_principal:1,alcoba:1,estudio:1,terraza_cubierta:1};
+  const CIRC   = {circulacion:1,hall:1};
+  const SOCIAL = {sala:1,comedor:1,cocina:1,hall:1,circulacion:1,terraza_cubierta:1};
+  const RELLENO = {sala:[247,241,226], comedor:[247,241,226], cocina:[243,236,214], terraza_cubierta:[240,238,226],
+                   alcoba_principal:[232,238,226], alcoba:[236,240,230], estudio:[236,240,230],
+                   bano:[226,234,238], vestier:[232,236,238], ropas:[236,234,226], deposito:[236,234,226],
+                   circulacion:[246,244,236], hall:[246,244,236]};
+  const NOMBRE = t=>({sala:"Sala",comedor:"Comedor",cocina:"Cocina",alcoba_principal:"Alcoba principal",alcoba:"Alcoba",
+                      bano:"Baño",vestier:"Vestier",estudio:"Estudio",ropas:"Ropas",circulacion:"Circulación",hall:"Hall",
+                      deposito:"Depósito",terraza_cubierta:"Terraza cubierta"})[t]||t;
+  const MURO_EXT=0.20, MURO_INT=0.12;
+
+  /* borde compartido entre dos rectángulos: eje del borde, posición, tramo */
+  function compartido(a,b){
+    if(Math.abs(a.u1-b.u0)<EPS||Math.abs(a.u0-b.u1)<EPS){
+      const f=Math.max(a.v0,b.v0), t=Math.min(a.v1,b.v1);
+      if(t-f>0.3) return {axis:"v", pos:Math.abs(a.u1-b.u0)<EPS?a.u1:a.u0, from:f, to:t, lado:Math.abs(a.u1-b.u0)<EPS?"u1":"u0"};
+    }
+    if(Math.abs(a.v1-b.v0)<EPS||Math.abs(a.v0-b.v1)<EPS){
+      const f=Math.max(a.u0,b.u0), t=Math.min(a.u1,b.u1);
+      if(t-f>0.3) return {axis:"u", pos:Math.abs(a.v1-b.v0)<EPS?a.v1:a.v0, from:f, to:t, lado:Math.abs(a.v1-b.v0)<EPS?"v1":"v0"};
+    }
+    return null;
+  }
+  /* tramos de cada lado de x que no tocan a ningún otro espacio del nivel */
+  function bordesExteriores(x,R){
+    const out=[];
+    const lados=[{axis:"v",pos:x.u0,lado:"u0",from:x.v0,to:x.v1,otro:y=>Math.abs(y.u1-x.u0)<EPS,rng:y=>[y.v0,y.v1]},
+                 {axis:"v",pos:x.u1,lado:"u1",from:x.v0,to:x.v1,otro:y=>Math.abs(y.u0-x.u1)<EPS,rng:y=>[y.v0,y.v1]},
+                 {axis:"u",pos:x.v0,lado:"v0",from:x.u0,to:x.u1,otro:y=>Math.abs(y.v1-x.v0)<EPS,rng:y=>[y.u0,y.u1]},
+                 {axis:"u",pos:x.v1,lado:"v1",from:x.u0,to:x.u1,otro:y=>Math.abs(y.v0-x.v1)<EPS,rng:y=>[y.u0,y.u1]}];
+    lados.forEach(L=>{
+      let libres=[[L.from,L.to]];
+      R.forEach(y=>{ if(y===x||!L.otro(y)) return; const [a,b]=L.rng(y);
+        const nx=[]; libres.forEach(([f,t])=>{ const f2=Math.max(f,a), t2=Math.min(t,b);
+          if(t2<=f2){ nx.push([f,t]); return; } if(f2-f>0.2) nx.push([f,f2]); if(t-t2>0.2) nx.push([t2,t]); });
+        libres=nx; });
+      libres.forEach(([f,t])=>{ if(t-f>0.3) out.push({axis:L.axis,pos:L.pos,lado:L.lado,from:f,to:t}); });
+    });
+    return out;
+  }
+  function tocaBloque(s,b){          /* ¿el tramo s corre por el borde del bloque b? */
+    if(s.axis==="u") return (Math.abs(s.pos-b.v0)<EPS||Math.abs(s.pos-b.v1)<EPS) && s.to>b.u0 && s.from<b.u1;
+    return (Math.abs(s.pos-b.u0)<EPS||Math.abs(s.pos-b.u1)<EPS) && s.to>b.v0 && s.from<b.v1;
+  }
+
+  /* --- la geometría de un nivel: espacios, puertas, aberturas y ventanas --- */
+  function armar(C, nivel){
+    const R=(C.espacios||[]).filter(e=>(e.nivel||1)===nivel);
+    const B=(C.reales||[]).filter(b=>(b.nivel||1)===nivel);
+    const puertas=[], aberturas=[], ventanas=[];
+    R.forEach(x=>{
+      if(CIRC[x.tipo]) return;
+      const cands=R.filter(y=>y!==x).map(y=>({y,s:compartido(x,y)})).filter(c=>c.s&&(c.s.to-c.s.from)>=0.9);
+      let p;
+      if(x.tipo==="bano"||x.tipo==="vestier")
+        p=cands.find(c=>c.y.tipo==="alcoba_principal")||cands.find(c=>c.y.tipo==="alcoba")||cands.find(c=>CIRC[c.y.tipo])||cands.find(c=>SOCIAL[c.y.tipo]);
+      else if(x.tipo==="ropas"||x.tipo==="deposito")
+        p=cands.find(c=>c.y.tipo==="cocina")||cands.find(c=>CIRC[c.y.tipo])||cands[0];
+      else p=cands.find(c=>CIRC[c.y.tipo])||cands.find(c=>SOCIAL[c.y.tipo])||cands[0];
+      if(!p) return;
+      const abierta=SOCIAL[x.tipo]&&SOCIAL[p.y.tipo]&&!CIRC[x.tipo]&&!CIRC[p.y.tipo];
+      const w=abierta?Math.min(2.4,(p.s.to-p.s.from)*0.7):((x.tipo==="bano"||x.tipo==="vestier")?0.8:0.9);
+      (abierta?aberturas:puertas).push({axis:p.s.axis,pos:p.s.pos,c:(p.s.from+p.s.to)/2,w,hacia:x,desde:p.y});
+    });
+    /* la puerta de entrada: el hall, o la sala, por el borde hacia la vía o el carport */
+    const acc=R.find(e=>e.tipo==="hall")||R.find(e=>e.tipo==="sala");
+    if(acc){
+      const ext=bordesExteriores(acc,R);
+      const e=ext.find(s=>s.lado==="v0"&&s.to-s.from>=1.0)||ext.find(s=>B.some(b=>b.clase==="porche"&&tocaBloque(s,b))&&s.to-s.from>=1.0)||ext.find(s=>s.to-s.from>=1.0);
+      if(e) puertas.push({axis:e.axis,pos:e.pos,c:(e.from+e.to)/2,w:1.0,hacia:acc,desde:null,exterior:true,lado:e.lado});
+    }
+    /* ventanas: bordes exteriores de los espacios habitables; hacia el fondo (v1) el ventanal */
+    R.forEach(x=>{
+      if(!(HABIT[x.tipo]||x.tipo==="bano")) return;
+      bordesExteriores(x,R).forEach(s=>{
+        const len=s.to-s.from; if(len<0.9) return;
+        if(puertas.some(p=>p.exterior&&p.axis===s.axis&&Math.abs(p.pos-s.pos)<EPS&&p.c>s.from&&p.c<s.to)) return;
+        let w = x.tipo==="bano" ? 0.6 : (s.lado==="v1" ? Math.min(4.8,Math.max(1.2,len*0.6)) : Math.min(2.4,Math.max(1.0,len*0.45)));
+        if(w>len-0.4) w=Math.max(0.6,len-0.4);
+        ventanas.push({axis:s.axis,pos:s.pos,c:(s.from+s.to)/2,w,de:x,lado:s.lado});
+      });
+    });
+    return {R,B,puertas,aberturas,ventanas};
+  }
+
+  /* --- el dibujo, con un pintor abstracto ---
+     pintor: rect(x,y,w,h,fill,stroke,sw) · line(x1,y1,x2,y2,stroke,sw,dash) ·
+             poly(pts,fill,stroke,sw) · text(x,y,txt,size,anchor,fill,bold)
+     x,y en unidades del pintor; aquí se le entregan ya proyectadas.
+     Marco: u a la derecha, v hacia ARRIBA (el fondo del lote arriba, la vía abajo). */
+  function dibujar(pt, C, K, nivel, X0, Y0, s, W, H, opciones){
+    const o=opciones||{};
+    const G=armar(C,nivel);
+    const L=K.L, D=K.Dc||K.A||28.4;
+    const X=u=>X0+u*s, Y=v=>Y0+(D-v)*s;
+    const rectUV=(u0,v0,u1,v1,fill,stroke,sw)=>pt.rect(X(u0),Y(v1),(u1-u0)*s,(v1-v0)*s,fill,stroke,sw);
+    /* la envolvente, de guía */
+    rectUV(0,0,L,D,[250,249,243],[180,176,160],0.5);
+    /* en el piso alto, la planta baja punteada debajo, para ubicarse */
+    if(nivel===2) (C.reales||[]).filter(b=>(b.nivel||1)===1&&(b.clase==="muro"||b.clase==="porche")).forEach(b=>{
+      pt.rect(X(b.u0),Y(b.v1),(b.u1-b.u0)*s,(b.v1-b.v0)*s,[244,243,236],[170,166,150],0.5);
+      pt.line(X(b.u0),Y(b.v1),X(b.u1),Y(b.v0),[200,196,180],0.3,"2 2");
+    });
+    /* bloques que no son muro: patio, deck, piscina, porche */
+    G.B.forEach(b=>{
+      if(b.clase==="patio") rectUV(b.u0,b.v0,b.u1,b.v1,[235,232,220],[170,166,150],0.5);
+      if(b.clase==="deck"){ rectUV(b.u0,b.v0,b.u1,b.v1,[224,204,176],[150,110,70],0.6);
+        for(let k=b.u0+0.6;k<b.u1;k+=0.6) pt.line(X(k),Y(b.v0),X(k),Y(b.v1),[190,160,120],0.3); }
+      if(b.clase==="piscina"){ rectUV(b.u0-0.3,b.v0-0.3,b.u1+0.3,b.v1+0.3,[236,236,230],[150,150,140],0.5);
+        rectUV(b.u0,b.v0,b.u1,b.v1,[150,196,222],[70,120,160],0.6);
+        pt.text(X((b.u0+b.u1)/2),Y((b.v0+b.v1)/2)+o.t*0.35,"Piscina "+dec1(b.u1-b.u0)+" × "+dec1(b.v1-b.v0),o.t,"middle",[40,70,100],true); }
+      if(b.clase==="porche"){ rectUV(b.u0,b.v0,b.u1,b.v1,[244,243,236],[120,116,100],0.5);
+        pt.line(X(b.u0),Y(b.v0),X(b.u1),Y(b.v1),[190,186,170],0.3,"2 2"); pt.line(X(b.u0),Y(b.v1),X(b.u1),Y(b.v0),[190,186,170],0.3,"2 2");
+        const c=0.3; [[b.u0,b.v0],[b.u1-c,b.v0],[b.u0,b.v1-c],[b.u1-c,b.v1-c]].forEach(([a,bb])=>rectUV(a,bb,a+c,bb+c,[90,88,78],null,0));
+        pt.text(X((b.u0+b.u1)/2),Y((b.v0+b.v1)/2)+o.t*0.35,String(b.nombre||"Carport"),o.t,"middle",[90,88,78],false); }
+    });
+    /* espacios: relleno */
+    G.R.forEach(e=>rectUV(e.u0,e.v0,e.u1,e.v1,RELLENO[e.tipo]||[240,240,235],null,0));
+    /* muros interiores y exteriores */
+    G.R.forEach(e=>rectUV(e.u0,e.v0,e.u1,e.v1,null,[52,58,50],MURO_INT*s));
+    G.B.filter(b=>b.clase==="muro").forEach(b=>rectUV(b.u0,b.v0,b.u1,b.v1,null,[40,46,38],MURO_EXT*s));
+    /* huecos: el vano se "borra" con el relleno del espacio al que abre */
+    const vano=(h,ancho,esp,relleno)=>{
+      const g=Math.max(MURO_EXT,MURO_INT)*1.15;
+      if(h.axis==="u") pt.rect(X(h.c-ancho/2),Y(h.pos+g/2),ancho*s,g*s,relleno||[255,255,255],null,0);
+      else pt.rect(X(h.pos-g/2),Y(h.c+ancho/2),g*s,ancho*s,relleno||[255,255,255],null,0);
+    };
+    G.aberturas.forEach(a=>{ vano(a,a.w,a.hacia,RELLENO[a.hacia.tipo]);
+      if(a.axis==="u") pt.line(X(a.c-a.w/2),Y(a.pos),X(a.c+a.w/2),Y(a.pos),[120,116,100],0.4,"1.5 1.5");
+      else pt.line(X(a.pos),Y(a.c-a.w/2),X(a.pos),Y(a.c+a.w/2),[120,116,100],0.4,"1.5 1.5"); });
+    G.puertas.forEach(p=>{
+      vano(p,p.w,p.hacia,p.exterior?[255,255,255]:RELLENO[p.hacia.tipo]);
+      /* la hoja y el arco, hacia el espacio al que abre */
+      const h=p.hacia, hacia = p.axis==="u" ? (Math.abs(h.v0-p.pos)<EPS?1:-1) : (Math.abs(h.u0-p.pos)<EPS?1:-1);
+      const bis=p.c-p.w/2, pts=[], N=8;
+      for(let i=0;i<=N;i++){ const a=(Math.PI/2)*i/N;
+        if(p.axis==="u") pts.push([X(bis+p.w*Math.cos(a)), Y(p.pos+hacia*p.w*Math.sin(a))]);
+        else pts.push([X(p.pos+hacia*p.w*Math.sin(a)), Y(bis+p.w*Math.cos(a))]); }
+      const hoja = p.axis==="u" ? [[X(bis),Y(p.pos)],[X(bis),Y(p.pos+hacia*p.w)]] : [[X(p.pos),Y(bis)],[X(p.pos+hacia*p.w),Y(bis)]];
+      pt.line(hoja[0][0],hoja[0][1],hoja[1][0],hoja[1][1],[52,58,50],0.7);
+      pt.poly(pts,null,[52,58,50],0.35,false);
+    });
+    G.ventanas.forEach(v=>{
+      vano(v,v.w,v.de,[255,255,255]);
+      const g=MURO_EXT*0.5;
+      if(v.axis==="u"){ [-g,0,g].forEach(d=>pt.line(X(v.c-v.w/2),Y(v.pos+d),X(v.c+v.w/2),Y(v.pos+d),[52,58,50],d?0.35:0.6)); }
+      else { [-g,0,g].forEach(d=>pt.line(X(v.pos+d),Y(v.c-v.w/2),X(v.pos+d),Y(v.c+v.w/2),[52,58,50],d?0.35:0.6)); }
+    });
+    /* rótulos con área */
+    G.R.forEach(e=>{
+      const w=(e.u1-e.u0)*s, h=(e.v1-e.v0)*s, cx=X((e.u0+e.u1)/2), cy=Y((e.v0+e.v1)/2);
+      const nom=String(e.nombre||NOMBRE(e.tipo)); const ar=ent(e.area)+" m²";
+      if(w<o.t*3.2||h<o.t*1.6) return;
+      const dos = h>o.t*3.0 && w>o.t*4;
+      if(dos){ pt.text(cx,cy-o.t*0.15,nom,o.t,"middle",[40,46,38],true); pt.text(cx,cy+o.t*1.05,ar,o.t*0.85,"middle",[110,106,92],false); }
+      else pt.text(cx,cy+o.t*0.35,nom,Math.min(o.t,w/ (nom.length*0.62)),"middle",[40,46,38],true);
+    });
+    /* cotas generales, vía, norte y escala */
+    const ct=[90,96,84];
+    const yc=Y(0)+o.t*1.6;
+    pt.line(X(0),yc,X(L),yc,ct,0.5); pt.line(X(0),yc-3,X(0),yc+3,ct,0.5); pt.line(X(L),yc-3,X(L),yc+3,ct,0.5);
+    pt.text(X(L/2),yc+o.t*1.1,dec1(L)+" m",o.t*0.9,"middle",ct,false);
+    const xc=X(0)-o.t*1.2;
+    pt.line(xc,Y(0),xc,Y(D),ct,0.5); pt.line(xc-3,Y(0),xc+3,Y(0),ct,0.5); pt.line(xc-3,Y(D),xc+3,Y(D),ct,0.5);
+    pt.text(xc-o.t*0.4,Y(D/2)+o.t*0.35,dec1(D),o.t*0.9,"end",ct,false);
+    pt.text(X(L/2),yc+o.t*2.6,TT("VÍA · acceso","ROAD · access","VOIE · accès"),o.t*0.85,"middle",[150,120,60],true);
+    pt.text(X(L/2),Y(D)-o.t*0.6,TT("FONDO · vista","BACK · view","FOND · vue"),o.t*0.85,"middle",[110,140,110],true);
+    /* el norte: componente del norte geográfico en el marco (u,v) */
+    if(K.ux&&K.uv){
+      const nu=-K.ux[1], nv=-K.uv[1], r=o.t*1.6, cx=X(L)+o.t*2.2, cy=Y(D)+o.t*2.2;
+      const ex=cx+nu*r, ey=cy-nv*r;
+      pt.line(cx,cy,ex,ey,[40,46,38],0.9);
+      pt.poly([[ex,ey],[ex-nv*r*0.28-nu*r*0.5,ey-nu*r*0.28+nv*r*0.5],[ex+nv*r*0.28-nu*r*0.5,ey+nu*r*0.28+nv*r*0.5]],[40,46,38],null,0,true);
+      pt.text(ex+nu*o.t*1.1, ey-nv*o.t*1.1+o.t*0.35,"N",o.t,"middle",[40,46,38],true);
+    }
+    /* escala gráfica de 5 m */
+    const bx=X(L)-5*s, by=Y(0)+o.t*4.2;
+    pt.line(bx,by,bx+5*s,by,ct,0.9); pt.line(bx,by-2.5,bx,by+2.5,ct,0.6); pt.line(bx+5*s,by-2.5,bx+5*s,by+2.5,ct,0.6);
+    pt.text(bx-o.t*0.4,by+o.t*0.35,"5 m",o.t*0.85,"end",ct,false);
+    return G;
+  }
+
+  /* --- pintores --- */
+  function pintorSVG(){
+    const o=[]; const rgb=c=>c?"rgb("+c.join(",")+")":"none";
+    return {
+      rect(x,y,w,h,f,st,sw){ o.push('<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+'" fill="'+rgb(f)+'"'+(st?' stroke="'+rgb(st)+'" stroke-width="'+sw.toFixed(2)+'" stroke-linejoin="miter"':'')+'/>'); },
+      line(x1,y1,x2,y2,st,sw,dash){ o.push('<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="'+rgb(st)+'" stroke-width="'+sw.toFixed(2)+'"'+(dash?' stroke-dasharray="'+dash+'"':'')+'/>'); },
+      poly(pts,f,st,sw,cerrar){ o.push('<path d="'+pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join("")+(cerrar?"Z":"")+'" fill="'+rgb(f)+'"'+(st?' stroke="'+rgb(st)+'" stroke-width="'+sw.toFixed(2)+'"':'')+'/>'); },
+      text(x,y,t,sz,anc,f,b){ o.push('<text x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" font-size="'+sz.toFixed(1)+'" text-anchor="'+(anc||"start")+'" fill="'+rgb(f)+'"'+(b?' font-weight="700"':'')+'>'+String(t).replace(/[<>&]/g,"")+'</text>'); },
+      html(){ return o.join(""); }
+    };
+  }
+  function pintorPDF(P){
+    const col=(c,f)=>f?P.trazo(c[0],c[1],c[2]):P.color(c[0],c[1],c[2]);
+    return {
+      rect(x,y,w,h,f,st,sw){ if(f){ col(f); P.rect(x,y,w,h,"f"); } if(st&&sw>0){ col(st,1).grosor(sw); P.rect(x,y,w,h,"S"); } },
+      line(x1,y1,x2,y2,st,sw,dash){ col(st,1).grosor(sw); if(dash){ const d=dash.split(" "); P.raya(+d[0],+d[1]); } P.linea(x1,y1,x2,y2); if(dash) P.raya(0); },
+      poly(pts,f,st,sw,cerrar){ if(f){ col(f); P.poli(pts,"f",cerrar!==false); } if(st&&sw>0){ col(st,1).grosor(sw); P.poli(pts,"S",cerrar!==false); } },
+      text(x,y,t,sz,anc,f,b){ col(f); const fn=b?"F2":"F1"; if(anc==="middle") P.textoC(x,y,t,sz,fn); else if(anc==="end") P.textoD(x,y,t,sz,fn); else P.texto(x,y,t,sz,fn); }
+    };
+  }
+
+  /* encuadre: escala para que la envolvente quepa en W×H dejando sitio a cotas */
+  function escala(K,W,H){ const L=K.L, D=K.Dc||K.A||28.4; return Math.min((W-46)/L,(H-40)/D); }
+
+  return {armar, dibujar, pintorSVG, pintorPDF, escala, NOMBRE};
+})();
+
+/* la planta esquemática en SVG, para la pantalla */
+function plantaEsquematicaSVG(n, nivel, W, H){
+  const C=casaIA(n), A=IMPL[String(n)], K=A&&A.k; if(!C||!K||!(C.espacios||[]).length) return "";
+  const pt=PLANTA_ESQ.pintorSVG();
+  const s=PLANTA_ESQ.escala(K,W,H), L=K.L, D=K.Dc||K.A||28.4;
+  const X0=(W-L*s)/2+8, Y0=14;
+  PLANTA_ESQ.dibujar(pt,C,K,nivel,X0,Y0,s,W,H,{t:Math.max(7,Math.min(11,s*0.9))});
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+Math.round(H)+'" preserveAspectRatio="xMidYMid meet" '+
+         'style="display:block;border-radius:9px;background:#FFFFFF;font-family:inherit">'+pt.html()+'</svg>';
+}
+
+/* ---------- la hoja de la planta esquemática ---------- */
+function hojaPlantaPDF(n,L,A,V){
+  const CI=casaIA(n), K=A.k;
+  const P=PDFmin.Hoja(595.28,841.89), M=38, W=595.28;
+  const col=(c,f)=>f?P.trazo(c[0],c[1],c[2]):P.color(c[0],c[1],c[2]);
+  col(V.forest).rect(0,0,W,56);
+  const xt=logoEnBanda(P,M,28.0,24);
+  col([200,214,192]).texto(xt,32,TT("Planta esquemática","Schematic floor plan","Plan schématique"),8.4,"F1");
+  col(V.blanco).textoD(W-M,34,(TT("LOTE ","LOT "))+n,20,"F2");
+  col(V.gold).rect(0,56,W,2.5);
+  let y=86;
+  col(V.gold).texto(M,y,TT("LA CASA PROPUESTA, EN PLANTA","THE PROPOSED HOUSE, IN PLAN","LA MAISON PROPOSÉE, EN PLAN"),7.6,"F2",1.1); y+=16;
+  col(V.muted);
+  y=envolver(P, TT("Anteproyecto esquemático: los espacios que se repartieron con el cliente, con muros, puertas y ventanas puestos por reglas fijas del motor del sitio (ventanales hacia el fondo, que es la vista; baños y ropas al interior). Las medidas son reales dentro de la envolvente de "+dec(K.L,1)+" × "+dec(K.Dc||K.A,1)+" m. No es un diseño arquitectónico ni sirve para licencia: es el punto de partida para el proyecto.",
+    "Schematic preliminary plan: the rooms laid out with the client, with walls, doors and windows placed by fixed rules of the site engine (large windows to the back, which is the view; bathrooms and laundry inward). Dimensions are real within the "+dec(K.L,1)+" × "+dec(K.Dc||K.A,1)+" m envelope. It is not an architectural design nor valid for a permit: it is the starting point for the project.",
+    "Avant-projet schématique : les pièces réparties avec le client, avec murs, portes et fenêtres placés par des règles fixes du moteur du site. Ce n'est ni un projet architectural ni un document de permis."), M, y, W-2*M, 8.4, 11);
+  y+=6;
+  const niveles=[1].concat((CI.espacios||[]).some(e=>e.nivel===2)?[2]:[]);
+  const bw=W-2*M, bh=niveles.length===2?340:400;
+  col([255,255,255]).rect(M,y,bw,bh); col(V.line,1).grosor(.6).rect(M,y,bw,bh,"S");
+  const pt=PLANTA_ESQ.pintorPDF(P);
+  const anchoCada=bw/niveles.length;
+  niveles.forEach((nv,i)=>{
+    const s=PLANTA_ESQ.escala(K,anchoCada-16,bh-30);
+    const Lx=K.L, Dy=K.Dc||K.A||28.4;
+    const X0=M+i*anchoCada+(anchoCada-Lx*s)/2+8, Y0=y+18;
+    P.guarda(); P.recorte([[M+i*anchoCada,y],[M+(i+1)*anchoCada,y],[M+(i+1)*anchoCada,y+bh],[M+i*anchoCada,y+bh]]);
+    col(V.gold).texto(M+i*anchoCada+10,y+12,(nv===2?TT("PISO ALTO","UPPER FLOOR","ÉTAGE"):TT("PLANTA BAJA","GROUND FLOOR","REZ-DE-CHAUSSÉE")),6.8,"F2",1.0);
+    PLANTA_ESQ.dibujar(pt,CI,K,nv,X0,Y0,s,anchoCada,bh,{t:Math.max(5,Math.min(7.5,s*0.62))});
+    P.recupera();
+  });
+  y+=bh+16;
+  /* tabla de espacios en dos columnas */
+  col(V.gold).texto(M,y,TT("ESPACIOS","ROOMS","PIÈCES"),7.6,"F2",1.1); y+=13;
+  const esp=(CI.espacios||[]).slice().sort((a,b)=>(a.nivel-b.nivel)||(b.area-a.area));
+  const colW=(W-2*M-16)/2, y0=y; let yA=y, yB=y;
+  esp.forEach((e,i)=>{
+    const izq=i<Math.ceil(esp.length/2); const x=izq?M:M+colW+16; let yy=izq?yA:yB;
+    if(yy>760) return;
+    col([52,58,50]); P.texto(x,yy,String(e.nombre)+(e.nivel===2?" (P2)":""),7.6,"F1");
+    col(V.muted); P.texto(x+colW*0.48,yy,dec(e.u1-e.u0,1)+" × "+dec(e.v1-e.v0,1),7.2,"F1");
+    col([52,58,50]); P.textoD(x+colW,yy,ent(e.area)+" m²",7.6,"F1");
+    yy+=5; col(V.line,1).grosor(.3).linea(x,yy,x+colW,yy); yy+=8.5;
+    if(izq) yA=yy; else yB=yy;
+  });
+  y=Math.max(yA,yB)+8;
+  const sumE=esp.reduce((a,e)=>a+e.area,0);
+  col([52,58,50]); P.texto(M,y,TT("Suma de espacios","Sum of rooms","Somme des pièces"),8,"F2"); P.textoD(W-M,y,ent(sumE)+" m²",8.4,"F2"); y+=12;
+  col(V.muted); P.texto(M,y,TT("Área construida (bloques, con muros y cubiertos)","Built area (blocks, with walls and covered)","Surface bâtie"),7.6,"F1"); col([52,58,50]); P.textoD(W-M,y,ent(CI.construida)+" m²",8,"F1");
+  const TXT=TT("Las puertas y ventanas las coloca el motor del sitio con reglas fijas, no la IA; la diferencia entre la suma de espacios y el área construida son los muros y los cubiertos. Anteproyecto esquemático: no constituye diseño arquitectónico, cálculo estructural ni licencia.",
+    "Doors and windows are placed by the site engine with fixed rules, not by the AI; the difference between the room sum and the built area is walls and covered areas. Schematic preliminary plan: not an architectural design, structural calculation nor permit.",
+    "Portes et fenêtres sont placées par le moteur du site selon des règles fixes ; avant-projet schématique, sans valeur de permis.");
+  const WP=W-2*M, AL=lineasEnvolver(TXT,WP,6.6)*8.6, PY=841.89-26-AL;
+  col(V.line,1).grosor(.5).linea(M,PY-12,W-M,PY-12);
+  col(V.muted); envolver(P,TXT,M,PY,WP,6.6,8.6);
+  return P;
+}
+
+
+/* =========================================================================
+   EXPORTAR A DXF (AutoCAD R12, el formato que abre cualquier versión)
+   Sale en MAGNA-SIRGAS / Origen Nacional CTM12, las mismas coordenadas del
+   plano 039: las capas del lote, las vías, la protección, los aislamientos,
+   la envolvente, las curvas de nivel del MDT y, si hay casa propuesta, sus
+   bloques, espacios, puertas y ventanas, para terminar el proyecto en CAD.
+
+   AMARRE: las coordenadas locales del sitio (PX) pasan a CTM12 con una
+   transformación afín ajustada por mínimos cuadrados contra los 86 lotes del
+   plano 039 (1.677 vértices). Error medido: medio 0,004 m · p95 0,007 m ·
+   máximo 0,009 m. Es decir, dentro del milímetro de dibujo del plano.
+   ========================================================================= */
+const PX2CTM = (()=>{
+  const a=1.0003517552383825, b=-0.0037353953330239165, tx=4696165.794949548,
+        c=-0.0037344031144466807, d=-1.0007067952879363, ty=2052970.2633624796;
+  return p=>[a*p[0]+b*p[1]+tx, c*p[0]+d*p[1]+ty];
+})();
+const DXF_ERR_M = "0,004 m medio · 0,009 m máximo";
+
+function exportarDXF(n){
+  const L=DATA.lotes.find(x=>x.n===n), A=IMPL[String(n)]; if(!L||!A) return null;
+  const K=A.k, C=casaIA(n);
+  const sinAcento = t=>String(t).normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^\x20-\x7E]/g,"");
+  const f=v=>(+v).toFixed(3);
+  const out=[];
+  const w=(...a)=>a.forEach(x=>out.push(String(x)));
+  const CAPAS=[["LOTE",3],["LOTEO",8],["VIA",7],["PROTECCION",92],["AISLAMIENTOS",40],["ENVOLVENTE",30],
+               ["CURVAS-MAESTRAS",33],["CURVAS",253],["CASA-MUROS",1],["CASA-CUBIERTO",6],["CASA-PATIO",9],["CASA-DECK",34],
+               ["CASA-PISCINA",4],["CASA-ESPACIOS",2],["CASA-PUERTAS",5],["CASA-VENTANAS",4],["CASA-P2-MUROS",1],["CASA-P2-ESPACIOS",2],
+               ["CASA-P2-PUERTAS",5],["CASA-P2-VENTANAS",4],["TEXTO",7],["NOTAS",8]];
+  let xmin=1e12,ymin=1e12,xmax=-1e12,ymax=-1e12;
+  const T=p=>{ const q=PX2CTM(p); xmin=Math.min(xmin,q[0]); xmax=Math.max(xmax,q[0]); ymin=Math.min(ymin,q[1]); ymax=Math.max(ymax,q[1]); return q; };
+  const ents=[];
+  const poli=(capa,ptsPX,cerrada)=>{
+    const P=ptsPX.map(T); if(P.length<2) return;
+    ents.push("0","POLYLINE","8",capa,"66","1","70",cerrada?"1":"0","10","0","20","0","30","0");
+    P.forEach(q=>ents.push("0","VERTEX","8",capa,"10",f(q[0]),"20",f(q[1]),"30","0"));
+    ents.push("0","SEQEND","8",capa);
+  };
+  const linea=(capa,aPX,bPX)=>{ const p=T(aPX), q=T(bPX); ents.push("0","LINE","8",capa,"10",f(p[0]),"20",f(p[1]),"30","0","11",f(q[0]),"21",f(q[1]),"31","0"); };
+  const texto=(capa,pPX,t,h,rot)=>{ const q=T(pPX);
+    ents.push("0","TEXT","8",capa,"10",f(q[0]),"20",f(q[1]),"30","0","40",f(h||0.5),"1",sinAcento(t),"50",f(rot||0),"72","1","11",f(q[0]),"21",f(q[1]),"31","0"); };
+
+  /* --- el predio --- */
+  const g0=L.g.map(PX);
+  poli("LOTE", g0, true);
+  const cL=g0.slice(0,-1).reduce((s,p)=>[s[0]+p[0]/(g0.length-1),s[1]+p[1]/(g0.length-1)],[0,0]);
+  texto("TEXTO", cL, "LOTE "+n+"  "+Math.round(L.at)+" m2", 2.0);
+  DATA.lotes.forEach(o=>{ if(o.n!==n) poli("LOTEO", o.g.map(PX), true); });
+  DATA.via.forEach(v=>poli("VIA", v.map(PX), false));
+  DATA.prot.forEach(r=>poli("PROTECCION", r.map(PX), true));
+  if(A.c) poli("AISLAMIENTOS", A.c, true);
+  if(K&&K.g) poli("ENVOLVENTE", K.g, true);
+  /* curvas de nivel del MDT, cada metro, recortadas al lote (+6 m) */
+  try{
+    let bx0=1e9,by0=1e9,bx1=-1e9,by1=-1e9; g0.forEach(q=>{bx0=Math.min(bx0,q[0]);bx1=Math.max(bx1,q[0]);by0=Math.min(by0,q[1]);by1=Math.max(by1,q[1]);});
+    const CN=curvasNivel(bx0-6,by0-6,bx1+6,by1+6,q=>q,1.5,1.0);
+    CN.forEach(c=>{
+      const capa=c.maestra?"CURVAS-MAESTRAS":"CURVAS";
+      c.segs.forEach(([a,b])=>{ const m=[(a[0]+b[0])/2,(a[1]+b[1])/2]; if(dentroAnillo(m[0],m[1],g0)) linea(capa,a,b); });
+      if(c.maestra&&c.segs.length){ const sg=c.segs[Math.floor(c.segs.length/2)]; const m=[(sg[0][0]+sg[1][0])/2,(sg[0][1]+sg[1][1])/2];
+        if(dentroAnillo(m[0],m[1],g0)) texto("CURVAS-MAESTRAS", m, String(Math.round(c.cota)), 0.6); }
+    });
+  }catch(e){}
+
+  /* --- la casa propuesta --- */
+  if(C&&K&&K.o){
+    const XY=(u,v)=>[K.o[0]+K.ux[0]*u+K.uv[0]*v, K.o[1]+K.ux[1]*u+K.uv[1]*v];
+    const rect=(capa,b)=>poli(capa,[XY(b.u0,b.v0),XY(b.u1,b.v0),XY(b.u1,b.v1),XY(b.u0,b.v1)],true);
+    (C.reales||[]).forEach(b=>{
+      const p2=(b.nivel||1)===2;
+      const capa={muro:p2?"CASA-P2-MUROS":"CASA-MUROS",porche:"CASA-CUBIERTO",patio:"CASA-PATIO",deck:"CASA-DECK",piscina:"CASA-PISCINA"}[b.clase]||"CASA-MUROS";
+      rect(capa,b);
+      texto("TEXTO", XY((b.u0+b.u1)/2,(b.v0+b.v1)/2), String(b.nombre)+(p2?" (P2)":"")+"  "+Math.round((b.u1-b.u0)*(b.v1-b.v0))+" m2", 0.45);
+    });
+    [1,2].forEach(nv=>{
+      const G=PLANTA_ESQ.armar(C,nv); if(!G.R.length) return;
+      const pre=nv===2?"CASA-P2-":"CASA-";
+      G.R.forEach(e=>{ rect(pre+"ESPACIOS",e); texto(pre+"ESPACIOS", XY((e.u0+e.u1)/2,(e.v0+e.v1)/2), String(e.nombre)+"  "+Math.round(e.area)+" m2", 0.35); });
+      const seg=(capa,h,ancho,off)=>{ /* tramo del vano sobre el muro, desplazado off perpendicular */
+        if(h.axis==="u") linea(capa, XY(h.c-ancho/2,h.pos+(off||0)), XY(h.c+ancho/2,h.pos+(off||0)));
+        else linea(capa, XY(h.pos+(off||0),h.c-ancho/2), XY(h.pos+(off||0),h.c+ancho/2)); };
+      G.puertas.forEach(p=>{
+        const h=p.hacia, hacia = p.axis==="u" ? (Math.abs(h.v0-p.pos)<0.06?1:-1) : (Math.abs(h.u0-p.pos)<0.06?1:-1);
+        const bis=p.c-p.w/2, pts=[];
+        for(let i=0;i<=8;i++){ const a=(Math.PI/2)*i/8;
+          pts.push(p.axis==="u" ? XY(bis+p.w*Math.cos(a), p.pos+hacia*p.w*Math.sin(a)) : XY(p.pos+hacia*p.w*Math.sin(a), bis+p.w*Math.cos(a))); }
+        poli(pre+"PUERTAS", pts, false);
+        linea(pre+"PUERTAS", p.axis==="u"?XY(bis,p.pos):XY(p.pos,bis), p.axis==="u"?XY(bis,p.pos+hacia*p.w):XY(p.pos+hacia*p.w,bis));
+      });
+      G.aberturas.forEach(a=>seg(pre+"PUERTAS",a,a.w,0));
+      G.ventanas.forEach(v=>{ seg(pre+"VENTANAS",v,v.w,-0.05); seg(pre+"VENTANAS",v,v.w,0.05); });
+    });
+  }
+  /* --- notas --- */
+  const nota=[ "LAURELES CAMPESTRE - LOTE "+n+" - exportado el "+new Date().toISOString().slice(0,10),
+    "Coordenadas MAGNA-SIRGAS / Origen Nacional CTM12, metros. Geometria del plano 039 (09-09-2026).",
+    "Amarre local->CTM12 por afin sobre 1677 vertices: error "+DXF_ERR_M+".",
+    "Curvas del MDT del levantamiento (1 m). La casa es un anteproyecto esquematico: no es diseno ni licencia." ];
+  nota.forEach((t,i)=>texto("NOTAS",[g0[0][0], g0[0][1]+ (i+1)*1.2 + 8], t, 0.7));
+
+  /* --- el archivo --- */
+  w("0","SECTION","2","HEADER","9","$ACADVER","1","AC1009","9","$DWGCODEPAGE","3","ANSI_1252",
+    "9","$EXTMIN","10",f(xmin),"20",f(ymin),"30","0","9","$EXTMAX","10",f(xmax),"20",f(ymax),"30","0","0","ENDSEC");
+  w("0","SECTION","2","TABLES","0","TABLE","2","LTYPE","70","1","0","LTYPE","2","CONTINUOUS","70","0","3","Solid line","72","65","73","0","40","0","0","ENDTAB",
+    "0","TABLE","2","LAYER","70",String(CAPAS.length));
+  CAPAS.forEach(([nm,col])=>w("0","LAYER","2",nm,"70","0","62",String(col),"6","CONTINUOUS"));
+  w("0","ENDTAB","0","ENDSEC","0","SECTION","2","ENTITIES");
+  out.push(...ents);
+  w("0","ENDSEC","0","EOF");
+  return out.join("\n")+"\n";
+}
+function bajarDXF(n){
+  const t=exportarDXF(n); if(!t){ toast(TT("No hay geometría para exportar.","Nothing to export.")); return; }
+  const b=new Blob([t],{type:"application/dxf"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="Laureles_lote_"+n+".dxf";
+  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
+}
+
+
+/* ---------- la hoja del render: "así se vería" ---------- */
+const RENDER_PDF = {};
+async function prepararRenderPDF(n){
+  const C=casaIA(n); if(!C||!C.render_url) return;
+  if(RENDER_PDF[n] && RENDER_PDF[n].url===C.render_url) return;
+  try{
+    const r=await fetch(C.render_url,{mode:"cors"}); if(!r.ok) throw new Error(r.status);
+    const bmp=await createImageBitmap(await r.blob());
+    const W=Math.min(1600,bmp.width), H=Math.round(bmp.height*W/bmp.width);
+    const c=document.createElement("canvas"); c.width=W; c.height=H; c.getContext("2d").drawImage(bmp,0,0,W,H);
+    const b64=c.toDataURL("image/jpeg",0.88).split(",")[1];
+    const id="Rn"+n; PDFmin.registrarJPEG(id,b64,W,H); RENDER_PDF[n]={id,w:W,h:H,url:C.render_url};
+  }catch(e){ console.warn("render PDF:",e); }
+}
+function hojaRenderPDF(n,L,A,V){
+  const R=RENDER_PDF[n], CI=casaIA(n); if(!R) return null;
+  const P=PDFmin.Hoja(595.28,841.89), M=38, W=595.28;
+  const col=(c,f)=>f?P.trazo(c[0],c[1],c[2]):P.color(c[0],c[1],c[2]);
+  col(V.forest).rect(0,0,W,56);
+  const xt=logoEnBanda(P,M,28.0,24);
+  col([200,214,192]).texto(xt,32,TT("Así se vería","How it would look","À quoi elle ressemblerait"),8.4,"F1");
+  col(V.blanco).textoD(W-M,34,(TT("LOTE ","LOT "))+n,20,"F2");
+  col(V.gold).rect(0,56,W,2.5);
+  let y=86;
+  col(V.gold).texto(M,y,TT("LA CASA PROPUESTA, COMO UNA FOTOGRAFÍA","THE PROPOSED HOUSE, AS A PHOTOGRAPH","LA MAISON PROPOSÉE, COMME UNE PHOTO"),7.6,"F2",1.1); y+=16;
+  col(V.muted);
+  y=envolver(P, TT("Imagen generada por inteligencia artificial a partir de la captura del volumen implantado en el terreno medido de este lote —la misma casa de "+ent(CI.construida)+" m² de las hojas anteriores, desde la misma cámara—. La IA puso materiales, vegetación y cielo; la forma, la posición y el número de pisos son los del volumen.",
+    "Image generated by artificial intelligence from the capture of the volume placed on this lot's measured ground —the same "+ent(CI.construida)+" m² house of the previous pages, from the same camera—. The AI added materials, vegetation and sky; shape, position and number of storeys are those of the volume.",
+    "Image générée par IA à partir de la capture du volume implanté sur le terrain mesuré de ce lot ; la forme, la position et le nombre de niveaux sont ceux du volume."), M, y, W-2*M, 8.4, 11);
+  y+=6;
+  const bw=W-2*M; let iw=bw, ih=iw*R.h/R.w; const maxH=560; if(ih>maxH){ ih=maxH; iw=ih*R.w/R.h; }
+  const ix=M+(bw-iw)/2;
+  col(V.line,1).grosor(.6).rect(ix-1,y-1,iw+2,ih+2,"S");
+  P.imagen(R.id, ix, y, iw, ih);
+  y+=ih+14;
+  col(V.muted); P.texto(M,y,TT("Imagen ilustrativa · generada con IA · no es un diseño aprobado ni un compromiso de entrega.","Illustrative image · AI generated · not an approved design nor a delivery commitment."),7,"F1");
+  const TXT=TT("Esta imagen es una ilustración para conversar sobre la casa que quiere el cliente. No representa un diseño arquitectónico aprobado, ni acabados, ni alcance de obra; las medidas válidas son las de las hojas de bloques y planta esquemática. Precios de trabajo; no es oferta comercial.",
+    "This image is an illustration to discuss the house the client wants. It does not represent an approved architectural design, finishes or scope of works; the valid dimensions are those on the block and schematic plan pages. Working prices; not a commercial offer.",
+    "Cette image est une illustration pour discuter de la maison souhaitée. Elle ne représente ni un projet approuvé, ni des finitions, ni une étendue de travaux.");
+  const WP=W-2*M, AL=lineasEnvolver(TXT,WP,6.6)*8.6, PY=841.89-26-AL;
+  col(V.line,1).grosor(.5).linea(M,PY-12,W-M,PY-12);
+  col(V.muted); envolver(P,TXT,M,PY,WP,6.6,8.6);
+  return P;
+}
+
 /* ---------- la hoja de la casa propuesta con la IA ---------- */
 function hojaPropuestaPDF(n,L,A,V){
   const CI=casaIA(n), BI=bloquesIA(n)||[];
@@ -5807,6 +6295,7 @@ async function descargador(){
 }
 async function bajarPDF(n){
   let u;
+  try{ await prepararRenderPDF(n); }catch(e){}
   try{ u=fichaPDF(n); }catch(e){ console.error(e); return; }
   const nombre=(LANG==="es"?"Laureles_lote_":LANG==="fr"?"Laureles_lot_":"Laureles_lot_")+String(n).padStart(2,"0")+".pdf";
   const b=new Blob([u],{type:"application/pdf"});
@@ -5901,6 +6390,7 @@ function abrirAnalisis(n){
              "Casa 30JB à l'échelle de l'enveloppe du type de "+TIPOS_CASA[TAM_CASA].et+" sur le lot "+n+"."));
   };
   mb.querySelector("#anlPdf").onclick=()=>{ toast(T("Preparando la ficha…")); bajarPDF(n); };
+  const bDxf=mb.querySelector("#anlDxf"); if(bDxf) bDxf.onclick=()=>{ toast(TT("Generando el DXF…","Building the DXF…")); try{ bajarDXF(n); }catch(e){ console.error(e); toast("DXF: "+e.message); } };
   const bRen=mb.querySelector("#anlRen");
   if(bRen) bRen.onclick=()=>abrirRender(n);
   /* El tour se calcula al entrar, no al abrir la hoja: rasterizar el lote y
@@ -5929,7 +6419,7 @@ function cerrarAnalisis(){ modal.hidden=true; mb.classList.remove("ancha"); }
 /* ---- lo que el mapa necesita de aquí ---- */
 window.__ANL_LOC = LOC;
 window.ANALISIS = {
-  abrir: abrirAnalisis, cerrar: cerrarAnalisis, pdf: bajarPDF,
+  abrir: abrirAnalisis, cerrar: cerrarAnalisis, pdf: bajarPDF, dxf: bajarDXF, dxfTexto: exportarDXF,
   idioma: l => { LANG = IDIOMAS.indexOf(l)>=0 ? l : "es";
                  try{ localStorage.setItem("laureles.lang",LANG); }catch(e){}
                  document.documentElement.lang = LANG==="en"?"en":LANG==="fr"?"fr":"es-CO";

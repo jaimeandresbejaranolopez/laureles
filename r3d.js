@@ -1185,6 +1185,30 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
       pedir();
     },
     quitarCasa(){ loteCasa=null; malloSolido(); if(domo)mallaSolar(); pedir(); },
+    /* encuadre sobre la casa (centro de la envolvente), para el render */
+    enfocarCasa(n,d,e){
+      const A=(typeof IMPL!=="undefined")?IMPL[String(n)]:null; const K=A&&A.k; if(!K||!K.o) return false;
+      const L=K.L, D=K.Dc||K.A||28.4;
+      const c=[K.o[0]+K.ux[0]*L/2+K.uv[0]*D/2, K.o[1]+K.ux[1]*L/2+K.uv[1]*D/2];
+      panX=c[0]-CX; panY=-(c[1]-CY);
+      dist=d||70; elv=(e!=null)?e:0.40;
+      /* que la cámara mire desde la vía hacia el fondo: azimut según el eje v */
+      az=Math.atan2(-K.uv[1], K.uv[0]) + Math.PI;
+      pedir(); return true;
+    },
+    /* captura del lienzo para el render: se pinta de forma sincrónica y se
+       compone sobre un cielo claro (el lienzo es transparente) */
+    capturar(maxW){
+      if(!listo||!activo) return null;
+      pintar3d();
+      const W=Math.min(maxW||1536, cv.width), H=Math.round(cv.height*W/cv.width);
+      const c2=document.createElement("canvas"); c2.width=W; c2.height=H;
+      const x=c2.getContext("2d");
+      const g=x.createLinearGradient(0,0,0,H); g.addColorStop(0,"#DCE9F2"); g.addColorStop(0.55,"#EEF2EA"); g.addColorStop(1,"#E4E8DC");
+      x.fillStyle=g; x.fillRect(0,0,W,H);
+      x.drawImage(cv,0,0,W,H);
+      return c2.toDataURL("image/jpeg",0.9);
+    },
     camara(d,e,a){ if(d)dist=d; if(e!=null)elv=e; if(a!=null)az=a; pedir(); },
     domoSolar(v){
       domo=v;

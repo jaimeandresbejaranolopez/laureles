@@ -57,6 +57,21 @@ const HERRAMIENTA = {
           },
         },
       },
+      espacios: {
+        type: "array",
+        maxItems: 26,
+        description: "La planta esquemática: los espacios de la casa como rectángulos en metros que TESELAN cada bloque muro de su nivel (sin traslapes, sin dejar huecos). Obligatorio cuando hay bloques muro.",
+        items: {
+          type: "object",
+          required: ["nombre", "tipo", "u0", "v0", "u1", "v1"],
+          properties: {
+            nombre: { type: "string", description: "Rótulo: Sala, Comedor, Cocina, Alcoba principal, Alcoba 2, Baño 1, Vestier, Estudio, Ropas, Hall, Circulación…" },
+            tipo: { type: "string", enum: ["sala", "comedor", "cocina", "alcoba_principal", "alcoba", "bano", "vestier", "estudio", "ropas", "circulacion", "hall", "deposito", "terraza_cubierta"] },
+            u0: { type: "number" }, v0: { type: "number" }, u1: { type: "number" }, v1: { type: "number" },
+            nivel: { type: "integer", enum: [1, 2] },
+          },
+        },
+      },
       resumen: { type: "string", description: "Dos a cuatro frases, tuteo, en el idioma del mensaje, con los números del lote: qué se propuso, cuánto construye contra el 30 % y por qué va orientada así." },
       advertencias: { type: "array", items: { type: "string" } },
       cabe: { type: "boolean", description: "false si lo pedido no cabe en el 30 % o en la envolvente aunque se haya propuesto la mejor aproximación." },
@@ -76,6 +91,14 @@ REGLAS DEL PROYECTO (no negociables)
 - ZONIFICACIÓN OBLIGATORIA: hacia la vía (v entre 0 y unos 6 m) van SOLAMENTE el carport/parqueadero y el acceso. La casa se desarrolla hacia el fondo. La piscina, el deck, las terrazas, el jacuzzi, la cabaña y la zona social van en la franja del fondo (v mayor que Dc/2), lo más lejos posible de la vía y mirando a la vista. Nunca pongas piscina, deck ni zona social en la mitad delantera de la envolvente.
 - Si el programa que pide el cliente no cabe en un piso dentro de la envolvente, propón DOS PISOS antes de recortar el programa (el 30 % cuenta la suma de los niveles). Sólo recorta si ni en dos pisos cabe, y di exactamente qué recortaste y por qué.
 - Máximo 14 bloques. Prefiere pocas piezas claras a muchas pequeñas.
+
+PLANTA ESQUEMÁTICA (obligatoria): además de los bloques, reparte los ESPACIOS dentro de cada bloque "muro", como rectángulos en las mismas coordenadas (metros reales), que cubran el bloque completo sin traslaparse (una partición: cada punto del bloque pertenece a un solo espacio). Reglas:
+- Medidas mínimas: alcoba principal 3,6 × 3,6 m; alcoba 3,0 × 3,0 m; baño 1,6 × 2,4 m; vestier 1,6 × 2,0 m; cocina ancho ≥ 2,8 m; sala y comedor ancho ≥ 3,6 m; circulación entre 1,0 y 1,5 m de ancho (nunca más ancha: el resto es desperdicio); hall 2,0 × 2,0 m mínimo.
+- Toda alcoba abre a una circulación o al hall; todo baño toca su alcoba (los de alcoba) o una circulación (el social). Pon una circulación que toque todas las alcobas.
+- La alcoba principal lleva su baño y su vestier contiguos. Cada alcoba secundaria tiene un baño contiguo o comparte uno que toque la circulación.
+- Sala, comedor y cocina contiguos entre sí, hacia el fondo y la vista; baños, ropas y depósitos hacia el lado sin vista o interior. El hall toca el borde del bloque más cercano a la vía o al carport.
+- Un espacio nunca sale de su bloque ni cruza a otro bloque. El piso alto (nivel 2) se reparte igual dentro de sus bloques.
+- Los rótulos van numerados cuando se repiten (Alcoba 2, Alcoba 3, Baño 2).
 - Si lo pedido no cabe en el 30 %, propón la mejor versión que sí cabe, di exactamente cuántos m² sobran y marca cabe=false.
 - Orientación: usa los rumbos que te doy. La vista principal del lote es hacia "${f.vista_hacia}". Pon la zona social y las alcobas principales mirando a esa vista cuando el cliente no diga otra cosa; el sol de la tarde entra por el occidente (4°28' N: el sol pasa casi por el cenit, las fachadas norte y sur reciben poco sol directo).
 - Responde en el idioma del mensaje del cliente. Tutea. Sé concreto y con números; sin adornos.
@@ -145,7 +168,7 @@ Deno.serve(async (req: Request) => {
       method: "POST",
       headers: { "x-api-key": llave, "anthropic-version": "2023-06-01", "content-type": "application/json" },
       body: JSON.stringify({
-        model: MODELO, max_tokens: 2000, temperature: 0.3,
+        model: MODELO, max_tokens: 4000, temperature: 0.3,
         system: sistema(ficha),
         tools: [HERRAMIENTA], tool_choice: { type: "tool", name: "configurar_casa" },
         messages: msgs,

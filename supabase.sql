@@ -210,3 +210,11 @@ create policy laureles_visitas_gestion   on public.laureles_visitas for update t
 -- envolvente, cifras validadas por la página). RLS: insertan y leen sólo los
 -- administradores autenticados. La última por lote es la que entra al
 -- Análisis del lote y al PDF (hoja "La casa que pediste").
+
+-- 2026-09-21 · Planta esquemática, render y DXF
+-- laureles_ia_casas.espacios (jsonb): espacios de la planta esquemática.
+-- laureles_ia_casas.render_url / render_prompt: render ilustrativo (Gemini).
+-- Bucket público storage 'laureles-renders' (escribe la Edge Function laureles-render).
+-- Edge Function laureles-render: secreto GEMINI_API_KEY_LAURELES; opcionales
+--   LAURELES_RENDER_MODELO (gemini-3.1-flash-image), LAURELES_RENDER_CUPO_DIA (15),
+--   LAURELES_RENDER_CUPO_MES (300), LAURELES_RENDER_ESTILO (premisas del lenguaje).
