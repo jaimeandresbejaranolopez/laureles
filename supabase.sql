@@ -204,3 +204,9 @@ create policy laureles_visitas_gestion   on public.laureles_visitas for update t
 -- La página (ia.js) manda la ficha real del lote y recibe bloques en metros;
 -- las áreas y el 30 % los recalcula la página, no la IA.
 -- =============================================================================
+
+-- 2026-09-21 · public.laureles_ia_casas: una fila por propuesta de casa
+-- aplicada con la IA (lote, conversación, bloques en metros dentro de la
+-- envolvente, cifras validadas por la página). RLS: insertan y leen sólo los
+-- administradores autenticados. La última por lote es la que entra al
+-- Análisis del lote y al PDF (hoja "La casa que pediste").

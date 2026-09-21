@@ -736,6 +736,41 @@ function ponerTamano(t){
 ponerTamano(TAM_CASA);          /* deja 'k' en el tamaño guardado desde el arranque */
 
 /* =========================================================================
+   LA CASA PROPUESTA CON IA (ia.js)
+   Cuando el asesor arma una casa con el configurador, ia.js deja en
+   window.__CASA_IA los bloques validados: en metros reales dentro de la
+   envolvente K (u a lo ancho, v hacia el fondo, v=0 hacia la vía). Todo lo
+   que en el informe depende de la casa —planta, isométrico, sombra, tabla de
+   áreas, portada— pasa por aquí y, si hay casa propuesta, la usa en vez del
+   tipo. El movimiento de tierra NO cambia: es el de la envolvente medida
+   contra el terreno, y así se dice en la hoja.
+   ========================================================================= */
+function casaIA(n){
+  const C = window.__CASA_IA;
+  if(!C || String(C.lote)!==String(n) || !Array.isArray(C.reales) || !C.reales.length) return null;
+  return C;
+}
+function bloquesIA(n){
+  const C=casaIA(n), A=IMPL[String(n)], K=A&&A.k; if(!C||!K||!K.o) return null;
+  const XY=(u,v)=>[K.o[0]+K.ux[0]*u+K.uv[0]*v, K.o[1]+K.ux[1]*u+K.uv[1]*v];
+  return C.reales.map(b=>({nombre:b.nombre, clase:b.clase, nivel:b.nivel||1, alto:b.alto||0,
+    u0:b.u0,v0:b.v0,u1:b.u1,v1:b.v1, area:(b.u1-b.u0)*(b.v1-b.v0),
+    g:[XY(b.u0,b.v0),XY(b.u1,b.v0),XY(b.u1,b.v1),XY(b.u0,b.v1),XY(b.u0,b.v0)]}));
+}
+/* alturas de cada clase en la propuesta; el piso alto arranca sobre el bloque de abajo */
+function altoBloqueIA(b, todos){
+  if(b.clase!=="muro" && b.clase!=="porche") return 0.1;
+  if(b.nivel!==2) return b.alto||3.4;
+  const cu=(b.u0+b.u1)/2, cv=(b.v0+b.v1)/2;
+  const bajo=(todos||[]).find(x=>x.clase==="muro"&&x.nivel!==2&&cu>=x.u0&&cu<=x.u1&&cv>=x.v0&&cv<=x.v1);
+  return (bajo?(bajo.alto||3.4):3.4)+(b.alto||3.0);
+}
+const COLOR_IA = {muro:[70,88,64], porche:[150,160,140], patio:[205,196,170], deck:[160,112,66], piscina:[92,164,205]};
+const COLOR_IA_CSS = {muro:"#465840", porche:"#96A08C", patio:"#CDC4AA", deck:"#A07042", piscina:"#5CA4CD"};
+const claseIAtxt = c => ({muro:TT("Construido","Built","Bâti"), porche:TT("Cubierto (carport / porche)","Covered (carport / porch)","Couvert"),
+  patio:TT("Patio","Patio","Patio"), deck:TT("Deck","Deck","Deck"), piscina:TT("Piscina","Pool","Piscine")})[c]||c;
+
+/* =========================================================================
    PLAN DE PAGOS
    La cuota inicial se paga dentro de 2026: para separar entran $50.000.000 y el
    resto de la inicial se completa hasta diciembre. El saldo se reparte de enero
@@ -1638,6 +1673,23 @@ function bloque3D(n, W, H){
       /* el nivel -1, enterrado: se insinúa con su caja */
       caraCaja(caras, XY, pr, fondo, 0, 0, CASA30.W, CASA30.D, K.zm, z0, "#5E7358", "#43533F", .55);
     }
+    const CIb = casaIA(n);
+    if(CIb){
+      /* la casa propuesta, en el marco de referencia (ya escalado por XY) */
+      const R = CIb.bloques, orden={patio:0,deck:1,piscina:2,porche:3,muro:4};
+      const baseDe = b=>{ const cu=(b.u0+b.u1)/2, cv=(b.v0+b.v1)/2;
+        const bajo=R.find(x=>x.clase==="muro"&&x.nivel!==2&&cu>=x.u0&&cu<=x.u1&&cv>=x.v0&&cv<=x.v1);
+        return bajo?(bajo.alto||3.4):3.4; };
+      R.slice().sort((a,b)=>(orden[a.clase]-orden[b.clase])||(a.nivel-b.nivel)).forEach(b=>{
+        if(b.clase==="muro"||b.clase==="porche"){
+          const za = b.nivel===2 ? z0+baseDe(b) : z0;
+          const c1 = b.clase==="porche" ? "#CFC7B2" : (b.nivel===2 ? "#EFE8D8" : "#E4DCCA");
+          caraCaja(caras, XY, pr, fondo, b.u0, b.v0, b.u1, b.v1, za, za+(b.alto||(b.nivel===2?3.0:3.4)), c1, "#A79C86", 1);
+        } else {
+          caraCaja(caras, XY, pr, fondo, b.u0, b.v0, b.u1, b.v1, z0-0.05, z0+0.12, COLOR_IA_CSS[b.clase], "#7C7460", 1);
+        }
+      });
+    } else
     CASA30.bloques.forEach(([nom,u0,v0,u1,v1,alt,cls])=>{
       if(cls==="patio") return;
       const c1 = cls==="porche" ? "#CFC7B2" : "#E4DCCA";
@@ -2099,15 +2151,26 @@ const ISO = (()=>{
        así va dicho en el pie: cuando llegue el DXF de cada casa se reemplaza.
        ------------------------------------------------------------------ */
     const ALTO_T = 4.00, ALTO_P = 2.60, PARQ = 35.5;
-    const cuerpo=(u0,v0,u1,v1,h,cls,b0)=>{
+    const cuerpo=(u0,v0,u1,v1,h,cls,b0,bb)=>{
       const base=[XY(u0,v0),XY(u1,v0),XY(u1,v1),XY(u0,v1)];
       const q=base.map(EN);
       const zs=base.map(alt);
-      piezas.push({nom:cls, base:q, h:h, cls:cls,
+      piezas.push({nom:cls, base:q, h:h, cls:cls, b:bb||0,
         base0: b0!=null ? b0 : Math.min.apply(null,zs),     /* apoya en lo más bajo, o en su plataforma */
         z: q.reduce((a,pp,i)=>a+fondo(pp[0],pp[1],h),0)/4});
     };
-    if(K){
+    const BI = K ? bloquesIA(n) : null;
+    if(BI){
+      /* la casa propuesta con la IA: cada bloque con su altura y su clase; el
+         piso alto arranca sobre el bloque de abajo; patio, deck y piscina son
+         losas de 10 cm para que se lean en el suelo */
+      BI.forEach(b=>{
+        const top=altoBloqueIA(b,BI);
+        const bot=(b.nivel===2)?top-(b.alto||3.0):0;
+        cuerpo(b.u0,b.v0,b.u1,b.v1, top, b.clase==="muro"?"casa":b.clase, null, bot);
+      });
+      piezas.sort((a,b)=>b.z-a.z);
+    } else if(K){
       /* La envolvente del tipo escogido. Se probó levantar aquí los muros
          reales leídos de los PDF, pero en un isométrico de este tamaño 72
          tabiques de 20 cm se leen como ruido, y además el PDF sólo vectorizó
@@ -2228,8 +2291,9 @@ function diagramaIso(n, W, H){
 
   /* --- los volúmenes, del fondo hacia adelante --- */
   esc.piezas.forEach(bl=>{
-    const b0=bl.base.map(p=>P(p[0],p[1],0));
+    const b0=bl.base.map(p=>P(p[0],p[1],bl.b||0));
     const bt=bl.base.map(p=>P(p[0],p[1],bl.h));
+    const tapaIA=COLOR_IA_CSS[bl.cls]&&bl.cls!=="muro"&&bl.cls!=="porche" ? COLOR_IA_CSS[bl.cls] : null;
     const cara=bl.cls==="porche"?"#FFFFFF":"#FDFCF8";
     const linea="#3B453A";
     /* muros: sólo los que se ven, ordenados por profundidad */
@@ -2243,7 +2307,7 @@ function diagramaIso(n, W, H){
       if(i<2) return;                                  /* las dos caras de atrás no se ven */
       o+='<path d="'+d(l.q)+'" fill="'+cara+'" stroke="'+linea+'" stroke-width="1.15" stroke-linejoin="round"/>';
     });
-    o+='<path d="'+d(bt)+'" fill="#FFFFFF" stroke="'+linea+'" stroke-width="1.15" stroke-linejoin="round"/>';
+    o+='<path d="'+d(bt)+'" fill="'+(tapaIA||"#FFFFFF")+'" stroke="'+linea+'" stroke-width="1.15" stroke-linejoin="round"/>';
     if(bl.cls==="porche")
       o+='<path d="'+d(bt)+'" fill="'+linea+'" opacity=".07"/>';
   });
@@ -3285,6 +3349,12 @@ function analisis(n){
             (A.env && A.env!==TIPOS_CASA[TAM_CASA].env
               ? ' · <b>'+(TT("en este lote sólo cupo la de ","on this lot only the "))+A.env+' m²</b>'
               : ''))+'</td></tr>'+
+      (casaIA(n)
+        ? '<tr><td><b>'+TT("Casa propuesta con IA","AI-proposed house","Maison proposée")+'</b></td><td><b>'+ent(casaIA(n).construida)+' m²</b> '+
+          TT("construidos","built","bâtis")+' · '+(casaIA(n).pisos===2?TT("dos pisos","two storeys","deux niveaux"):TT("un piso","one storey","un niveau"))+
+          (casaIA(n).piscina?' · '+TT("piscina","pool","piscine")+' '+ent(casaIA(n).piscina)+' m²':'')+
+          (casaIA(n).construida>OCUP30(L)?' · <b style="color:#A3341C">'+TT("excede el 30 %","exceeds the 30 %","dépasse les 30 %")+'</b>':'')+'</td></tr>'
+        : '')+
       '<tr><td>'+T("Área construida")+'</td><td>'+ent(casa.ac||casa.an)+' m²</td></tr>'+
       (casa.pat?'<tr><td>'+T("Patio interior")+'</td><td>'+ent(casa.pat)+' m²</td></tr>':'')+
       '<tr><td>'+T("Huella en el lote")+'</td><td>'+dec(casa.L,1)+' × '+dec(casa.A,1)+' m</td></tr>'+
@@ -3664,6 +3734,14 @@ function abanicoSombras(n, iFecha, W, H){
     o+='<text x="'+q[0]+'" y="'+q[1]+'" font-size="9.5" font-weight="700" text-anchor="middle" '+
        'fill="#4A4E42" opacity=".9">'+(ob.h>12?ob.h-12:ob.h)+(ob.h<12?"a":"p")+'</text>';
   });
+  const BIs=bloquesIA(n);
+  if(BIs){
+    const orden={patio:0,deck:1,piscina:2,porche:3,muro:4};
+    BIs.slice().sort((a,b)=>(orden[a.clase]-orden[b.clase])||(a.nivel-b.nivel)).forEach(b=>{
+      if(b.nivel===2) return;
+      o+='<path d="'+d(b.g,1)+'" fill="'+COLOR_IA_CSS[b.clase]+'" fill-opacity=".92" stroke="var(--forest-deep)" stroke-width=".7"/>';
+    });
+  } else
   o+='<path d="'+d(HC.g,1)+'" fill="var(--forest)" fill-opacity=".9" stroke="var(--forest-deep)" stroke-width="1"/>';
   o+='<g transform="translate('+(w-24).toFixed(0)+',22) rotate('+(th*180/Math.PI).toFixed(1)+')">'+
      '<path d="M0 -11 L3.8 5 L0 2 L-3.8 5 Z" fill="var(--ink-2)"/>'+
@@ -3687,6 +3765,16 @@ function cascoConvexo(ps){
    siempre del mismo volumen. */
 function huellaCasa(n){
   const A=IMPL[String(n)]; if(!A) return null;
+  /* con casa propuesta, la huella que da sombra es la de sus bloques cubiertos */
+  const BI=bloquesIA(n);
+  if(BI){
+    const cub=BI.filter(b=>b.clase==="muro"||b.clase==="porche");
+    if(cub.length){
+      const pts=[]; cub.forEach(b=>b.g.slice(0,-1).forEach(q=>pts.push(q)));
+      const h=Math.max(...cub.map(b=>altoBloqueIA(b,BI)));
+      return {g:cascoConvexo(pts), h:h, tz:false, T:null, ia:true};
+    }
+  }
   if(A.k && A.k.g) return {g:A.k.g, h:ALTURA_MAX, tz:false, T:null};
   const T=implantarTerraza(n);
   return T ? {g:T.g, h:T.alto, tz:true, T:T} : null;
@@ -3754,7 +3842,23 @@ function plantaLote(n, iFecha, hora, W, H){
   o+='<path d="'+d(g0,1)+'" fill="none" stroke="var(--ink-2)" stroke-width="1.6"/>';
   if(A.c) o+='<path d="'+d(A.c,1)+'" fill="none" stroke="var(--gold)" stroke-width="1.3" stroke-dasharray="5 4"/>';
   if(som) o+='<path d="'+d(som,1)+'" fill="#2A2E22" fill-opacity=".26"/>';
-  if(HC){
+  const BIp=bloquesIA(n);
+  if(BIp){
+    /* la casa propuesta: la envolvente queda de guía y encima cada bloque con
+       su color y su nombre; el piso alto va punteado sobre el de abajo */
+    if(A.k&&A.k.g) o+='<path d="'+d(A.k.g,1)+'" fill="none" stroke="var(--forest)" stroke-width=".8" stroke-dasharray="3 3" opacity=".7"/>';
+    const orden={patio:0,deck:1,piscina:2,porche:3,muro:4};
+    BIp.slice().sort((a,b)=>(orden[a.clase]-orden[b.clase])||(a.nivel-b.nivel)).forEach(b=>{
+      if(b.nivel===2) o+='<path d="'+d(b.g,1)+'" fill="none" stroke="#F4F2EA" stroke-width="1.2" stroke-dasharray="3 2"/>';
+      else o+='<path d="'+d(b.g,1)+'" fill="'+COLOR_IA_CSS[b.clase]+'" fill-opacity=".9" stroke="var(--forest-deep)" stroke-width=".7"/>';
+      const c=b.g.slice(0,-1).reduce((a,p)=>[a[0]+p[0]/4,a[1]+p[1]/4],[0,0]), q=XY(c);
+      const anchoPx=Math.hypot(+XY(b.g[0])[0]-+XY(b.g[1])[0], +XY(b.g[0])[1]-+XY(b.g[1])[1]);
+      if(anchoPx>34 && (b.clase==="muro"||b.clase==="piscina"||b.clase==="porche"))
+        o+='<text x="'+q[0]+'" y="'+q[1]+'" font-size="7.5" font-weight="700" text-anchor="middle" dy="2.6" '+
+           'fill="'+(b.clase==="muro"?"#F4F2EA":"#1C221B")+'">'+String(b.nombre).replace(/[<>&]/g,"")+(b.nivel===2?" ↑":"")+'</text>';
+    });
+  }
+  else if(HC){
     o+='<path d="'+d(HC.g,1)+'" fill="var(--forest)" fill-opacity=".82" stroke="var(--forest-deep)" stroke-width="1"/>';
     const c=HC.g.slice(0,-1).reduce((a,p)=>[a[0]+p[0]/4,a[1]+p[1]/4],[0,0]);
     const q=XY(c);
@@ -4090,6 +4194,11 @@ function hojaPortadaPDF(n,L,A,casa,V){
   const indice=[TT("Ficha técnica: áreas, terreno, pendientes y asoleamiento",
                    "Technical sheet: areas, terrain, slopes and sun",
                    "Fiche technique : surfaces, terrain, pentes et ensoleillement")];
+  if(casa && casaIA(n)){
+    indice.push(TT("La casa que pediste: bloque por bloque, con áreas y piscina",
+                   "The house you asked for: block by block, with areas and pool",
+                   "La maison demandée : bloc par bloc, surfaces et piscine"));
+  }
   if(casa){
     indice.push(TT("El sol sobre la casa: implantación en isométrico",
                    "The sun on the house: isometric siting",
@@ -4208,7 +4317,24 @@ function fichaPDF(n){
      norma permite: en el lote 44 decía 2.025 m² cuando el tope son 948 m². */
   fila(T("Área construible (30 % del área útil)"), ent(OCUP30(L))+" m²", 1);
   fila(T("Suelo tras aislamientos"), A.cm2?ent(A.cm2)+" m²":"—");
-  if(casa){
+  const CIf = casa ? casaIA(n) : null;
+  if(CIf){
+    dy+=6; col(V.gold).texto(dx,dy,TT("CASA PROPUESTA","PROPOSED HOUSE","MAISON PROPOSÉE"),7.6,"F2",1.1); dy+=14;
+    fila(T("Modelo"), TT("Diseñada con el cliente","Designed with the client","Conçue avec le client")+" · "+
+         (CIf.pisos===2 ? TT("dos pisos","two storeys","deux niveaux") : TT("un piso","one storey","un niveau")), 1);
+    fila(TT("Área construida","Built area","Surface bâtie"), ent(CIf.construida)+" m²  ·  "+TT("tope","cap","plafond")+" "+ent(OCUP30(L))+" m²", 1);
+    fila(TT("Huella en planta","Footprint","Emprise"), ent(CIf.huella)+" m²");
+    if(CIf.piscina) fila(TT("Piscina","Pool","Piscine"), ent(CIf.piscina)+" m²");
+    if(CIf.construida > OCUP30(L))
+      fila(TT("Atención","Note","Attention"),
+           TT("excede el 30 % en "+ent(CIf.construida-OCUP30(L))+" m²",
+              "exceeds the 30% cap by "+ent(CIf.construida-OCUP30(L))+" m²",
+              "dépasse les 30 % de "+ent(CIf.construida-OCUP30(L))+" m²"), 1);
+    fila(T("Nivel de acceso"),dec(casa.z,2)+" m");
+    fila(TT("Corte y lleno (envolvente)","Cut and fill (envelope)","Déblai / remblai (enveloppe)"),casa.co+" m³"+(casa.ll?" / "+casa.ll+" m³":""));
+    fila(T("Eje largo"),ej.rumbo.toFixed(0)+"°");
+  }
+  else if(casa){
     dy+=6; col(V.gold).texto(dx,dy,T("VOLUMEN DE PRUEBA"),7.6,"F2",1.1); dy+=14;
     fila(T("Modelo"), T(casa.mod==="2p" ? "Dos niveles (uno semienterrado)" : "Un solo piso"), 1);
     fila(T("Huella"), dec(casa.L,1)+" × "+dec(casa.A,1)+" m"+
@@ -4347,6 +4473,7 @@ function fichaPDF(n){
 
   const hojas=[hojaPortadaPDF(n,L,A,casa,V), P];
   if(HOJA_SOL) hojas.push(HOJA_SOL);
+  if(casa && casaIA(n)) hojas.push(hojaPropuestaPDF(n,L,A,V));
   if(casa){ hojas.push(hojaIsoPDF(n,L,A,casa,V)); hojas.push(hojaSolarPDF(n,L,A,casa,ej,V)); }
   if(esTerraza(n)) hojas.push(hojaTerrazaPDF(n,L,V));
   hojas.push(hojaComercialPDF(n,L,V));
@@ -5069,8 +5196,9 @@ function dibujarIsoPDF(P,V,n,L,A,x0,y0,w,h){
 
   /* volúmenes */
   esc.piezas.forEach(bl=>{
-    const b0=bl.base.map(p=>Q(p[0],p[1],0));
+    const b0=bl.base.map(p=>Q(p[0],p[1],bl.b||0));
     const bt=bl.base.map(p=>Q(p[0],p[1],bl.h));
+    const tapaIA=COLOR_IA[bl.cls]&&bl.cls!=="muro"&&bl.cls!=="porche" ? COLOR_IA[bl.cls] : null;
     const lados=[];
     for(let i=0;i<4;i++){
       const j=(i+1)%4;
@@ -5082,7 +5210,7 @@ function dibujarIsoPDF(P,V,n,L,A,x0,y0,w,h){
       col([253,252,248]).poli(l.q,"f",true);
       col([59,69,58],1).grosor(.85).poli(l.q,"S",true);
     });
-    col([255,255,255]).poli(bt,"f",true);
+    col(tapaIA||[255,255,255]).poli(bt,"f",true);
     col([59,69,58],1).grosor(.85).poli(bt,"S",true);
   });
 
@@ -5123,6 +5251,58 @@ function dibujarIsoPDF(P,V,n,L,A,x0,y0,w,h){
 }
 
 /* --------- hoja del sol: la casa en isométrico bajo los recorridos --------- */
+/* ---------- la hoja de la casa propuesta con la IA ---------- */
+function hojaPropuestaPDF(n,L,A,V){
+  const CI=casaIA(n), BI=bloquesIA(n)||[];
+  const P=PDFmin.Hoja(595.28,841.89), M=38, W=595.28;
+  const col=(c,f)=>f?P.trazo(c[0],c[1],c[2]):P.color(c[0],c[1],c[2]);
+  col(V.forest).rect(0,0,W,56);
+  const xt = logoEnBanda(P, M, 28.0, 24);
+  col([200,214,192]).texto(xt,32,TT("La casa que pediste","The house you asked for","La maison demandée"),8.4,"F1");
+  col(V.blanco).textoD(W-M,34,(TT("LOTE ","LOT "))+n,20,"F2");
+  col(V.gold).rect(0,56,W,2.5);
+  let y=86;
+  col(V.gold).texto(M,y,TT("LO QUE PIDIÓ EL CLIENTE","WHAT THE CLIENT ASKED FOR","CE QUE LE CLIENT A DEMANDÉ"),7.6,"F2",1.1); y+=15;
+  const conv=(CI.conversacion||[]).slice(-6);
+  if(!conv.length){ col(V.muted); y=envolver(P, TT("Sin registro de la conversación.","No conversation record.","Pas d'historique."), M, y, W-2*M, 8.4, 11); }
+  conv.forEach(m=>{
+    if(y>560) return;
+    if(m.rol==="usuario"){ col(V.ink); y=envolver(P, "› "+String(m.texto||""), M, y, W-2*M, 8.6, 11.2); y+=2; }
+    else { col(V.muted); y=envolver(P, String(m.texto||""), M+12, y, W-2*M-12, 8.2, 10.8); y+=5; }
+  });
+  y+=8;
+  col(V.gold).texto(M,y,TT("LA CASA, BLOQUE POR BLOQUE","THE HOUSE, BLOCK BY BLOCK","LA MAISON, BLOC PAR BLOC"),7.6,"F2",1.1); y+=14;
+  /* tabla: nombre · uso · nivel · medidas · área */
+  const cx=[M, M+150, M+280, M+340, M+430, W-M];
+  const cab=[TT("Bloque","Block","Bloc"),TT("Uso","Use","Usage"),TT("Nivel","Level","Niveau"),TT("Medidas (m)","Size (m)","Dimensions (m)"),TT("Área","Area","Surface")];
+  col(V.muted); cab.forEach((t,i)=>{ if(i<4) P.texto(cx[i],y,t,7,"F2"); else P.textoD(cx[5],y,t,7,"F2"); });
+  y+=5; col(V.line,1).grosor(.5).linea(M,y,W-M,y); y+=10;
+  BI.forEach(b=>{
+    if(y>760) return;
+    col(COLOR_IA[b.clase]||[70,88,64]); P.rect(cx[0],y-6,6,6);
+    col(V.ink); P.texto(cx[0]+10,y,String(b.nombre).slice(0,28),8.2,"F1");
+    P.texto(cx[1],y,claseIAtxt(b.clase),8.2,"F1");
+    P.texto(cx[2],y,b.nivel===2?TT("Piso alto","Upper","Étage"):TT("Planta baja","Ground","RDC"),8.2,"F1");
+    P.texto(cx[3],y,dec(b.u1-b.u0,1)+" × "+dec(b.v1-b.v0,1)+(b.clase==="muro"||b.clase==="porche"?"  h "+dec(b.alto||3.4,1):""),8.2,"F1");
+    P.textoD(cx[5],y,ent(b.area)+" m²",8.2,"F1");
+    y+=6; col(V.line,1).grosor(.3).linea(M,y,W-M,y); y+=10;
+  });
+  y+=6;
+  const tot=[[TT("Área construida (muros + cubiertos, todos los niveles)","Built area (walls + covered, all levels)","Surface bâtie"), ent(CI.construida)+" m²"],
+             [TT("Tope del 30 % del área útil","30 % cap of usable area","Plafond 30 %"), ent(OCUP30(L))+" m²"],
+             [TT("Huella en planta baja","Ground-floor footprint","Emprise au sol"), ent(CI.huella)+" m²"]];
+  if(CI.piscina) tot.push([TT("Piscina (no cuenta como construida)","Pool (not counted as built)","Piscine (non comptée)"), ent(CI.piscina)+" m²"]);
+  tot.forEach(([k,v],i)=>{ col(i===0?V.ink:V.muted); P.texto(M,y,k,8.4,i===0?"F2":"F1"); col(V.ink); P.textoD(W-M,y,v,9,"F2"); y+=13; });
+  if(CI.construida>OCUP30(L)){ col([163,52,28]); P.texto(M,y,TT("Atención: excede el 30 % en "+ent(CI.construida-OCUP30(L))+" m².","Note: exceeds the 30 % cap by "+ent(CI.construida-OCUP30(L))+" m².","Attention : dépasse les 30 % de "+ent(CI.construida-OCUP30(L))+" m²."),8.4,"F2"); y+=13; }
+  /* pie */
+  const TXT=TT("La casa de esta hoja es la que el asesor armó con el cliente en el configurador del sitio. La geometría, las áreas y la regla del 30 % las calcula el motor del sitio, no la inteligencia artificial, que sólo tradujo lo que pidió el cliente a bloques. Es un ejercicio de escala y ubicación sobre la envolvente que cabe tras aislamientos: no es un diseño arquitectónico ni una licencia. El movimiento de tierra del informe es el de la envolvente medida contra el terreno.",
+    "The house on this page is the one the advisor built with the client in the site's configurator. Geometry, areas and the 30 % rule are computed by the site engine, not by the AI, which only translated the client's request into blocks. It is a scale and siting exercise on the envelope that fits after setbacks: it is not an architectural design nor a permit. Earthworks in this report are those of the envelope against the measured ground.",
+    "La maison de cette page est celle que le conseiller a construite avec le client dans le configurateur du site. La géométrie, les surfaces et la règle des 30 % sont calculées par le moteur du site, pas par l'IA. Ce n'est ni un projet architectural ni un permis.");
+  const WP=W-2*M, AL=lineasEnvolver(TXT,WP,6.6)*8.6, PY=841.89-26-AL;
+  col(V.line,1).grosor(.5).linea(M,PY-12,W-M,PY-12);
+  col(V.muted); envolver(P,TXT,M,PY,WP,6.6,8.6);
+  return P;
+}
 function hojaIsoPDF(n,L,A,casa,V){
   const P=PDFmin.Hoja(595.28,841.89), M=38;
   const col=(c,f)=>f?P.trazo(c[0],c[1],c[2]):P.color(c[0],c[1],c[2]);
@@ -5138,7 +5318,17 @@ function hojaIsoPDF(n,L,A,casa,V){
     "COURSE DU SOLEIL AU-DESSUS DE LA MAISON"),7.6,"F2",1.1);
   y+=16;
   col(V.muted);
-  y=envolver(P, TT("El volumen del tipo de "+TIPOS_CASA[TAM_CASA].et+" puesto sobre el terreno medido de este lote "+
+  const CIi=casaIA(n);
+  y=envolver(P, CIi ? TT("La casa propuesta con el cliente —"+ent(CIi.construida)+" m² construidos"+(CIi.piscina?", con piscina":"")+"— puesta sobre el terreno medido de este lote "+
+      "—su forma real y su pendiente, del plano 039— con la orientación de la implantación, y encima el recorrido del sol en los tres "+
+      "momentos que mandan el año: el solsticio de junio, los equinoccios y el solsticio de diciembre. Los soles "+
+      "marcan las 8 de la mañana, el mediodía y las 4 de la tarde.",
+    "The house proposed with the client —"+ent(CIi.construida)+" m² built"+(CIi.piscina?", with pool":"")+"— placed on this lot's measured ground, "+
+      "with the path of the sun on the three dates that rule the year: the June solstice, the equinoxes and the December solstice. "+
+      "The suns mark 8 in the morning, noon and 4 in the afternoon.",
+    "La maison proposée avec le client —"+ent(CIi.construida)+" m² bâtis— posée sur le terrain mesuré de ce lot, avec la course du soleil "+
+      "aux trois moments qui rythment l'année. Les soleils marquent 8 h, midi et 16 h.")
+    : TT("El volumen del tipo de "+TIPOS_CASA[TAM_CASA].et+" puesto sobre el terreno medido de este lote "+
       "—su forma real y su pendiente, del plano 039— con la orientación de la implantación, y encima el recorrido del sol en los tres "+
       "momentos que mandan el año: el solsticio de junio, los equinoccios y el solsticio de diciembre. Los soles "+
       "marcan las 8 de la mañana, el mediodía y las 4 de la tarde.",
@@ -5272,8 +5462,11 @@ function dibujarAbanicoPDF(P,V,L,A,casa,px0,py0,pw,ph,iFecha){
   const R=p=>[p[0]*ct-p[1]*stt, p[0]*stt+p[1]*ct];
   const f=SOL.FECHAS[iFecha];
   const HORAS=[7,9,11,13,15,17];
+  /* con casa propuesta la sombra sale de sus bloques cubiertos y su altura */
+  const HCa=huellaCasa(L.n), BIa=bloquesIA(L.n);
+  const gS=(HCa&&HCa.ia)?HCa.g:A.k.g, hS=(HCa&&HCa.ia)?HCa.h:ALTURA_MAX;
   const som=HORAS.map(h=>{ const p=SOL.posicion(ANIO,f.m,f.d,h,lat0,lon0);
-    return {h:h, s:(p.alt>3? sombraCasa(A.k.g,p.alt,p.az,ALTURA_MAX):null)}; }).filter(x=>x.s);
+    return {h:h, s:(p.alt>3? sombraCasa(gS,p.alt,p.az,hS):null)}; }).filter(x=>x.s);
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
   const met=q=>{x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);};
   g0.map(R).forEach(met); casa.g.map(R).forEach(met);
@@ -5289,11 +5482,26 @@ function dibujarAbanicoPDF(P,V,L,A,casa,px0,py0,pw,ph,iFecha){
     col([g,g+4,g-6]); P.poli(ob.s.map(XY),"f");
   });
   col([64,78,58],1).grosor(1.3); P.poli(g0.map(XY),"S");
-  col([70,88,64]); P.poli(casa.g.map(XY),"f");
-  col([28,38,25],1).grosor(.8); P.poli(casa.g.map(XY),"S");
+  if(BIa){
+    const orden={patio:0,deck:1,piscina:2,porche:3,muro:4};
+    BIa.slice().sort((a,b)=>(orden[a.clase]-orden[b.clase])||(a.nivel-b.nivel)).forEach(b=>{
+      if(b.nivel===2) return;
+      col(COLOR_IA[b.clase]); P.poli(b.g.map(XY),"f");
+      col([28,38,25],1).grosor(.5); P.poli(b.g.map(XY),"S");
+    });
+  } else {
+    col([70,88,64]); P.poli(casa.g.map(XY),"f");
+    col([28,38,25],1).grosor(.8); P.poli(casa.g.map(XY),"S");
+  }
+  /* cerca del mediodía las sombras casi no salen de la casa y sus rótulos
+     caían uno sobre otro (MEDIDO: 11a sobre 1p en el lote 27): el que no
+     tenga 10 pt libres respecto al anterior no se escribe */
+  const puestos=[];
   som.forEach(ob=>{
     const c=ob.s.reduce((a,p)=>[a[0]+p[0]/ob.s.length,a[1]+p[1]/ob.s.length],[0,0]);
-    const q=XY(c); col([255,255,255]);
+    const q=XY(c);
+    if(puestos.some(r=>Math.hypot(r[0]-q[0],r[1]-q[1])<10)) return;
+    puestos.push(q); col([255,255,255]);
     P.textoC(q[0],q[1]+2.5,(ob.h>12?ob.h-12:ob.h)+(ob.h<12?"a":"p"),7,"F2");
   });
   P.recupera();
@@ -5433,7 +5641,23 @@ function dibujarPlantaPDF(P,V,L,A,casa,px0,py0,pw,ph){
     col([176,180,162],1).grosor(.5); P.poli(vv.map(XY),"S",false); });
   col([64,78,58],1).grosor(1.4); P.poli(g0.map(XY),"S");   /* el lindero del lote, encima de todo */
   if(A.c){ col(V.gold,1).grosor(1).raya(3,2.5); P.poli(A.c.map(XY),"S"); P.raya(0); }
-  if(casa){
+  const BIpdf = casa ? bloquesIA(L.n) : null;
+  if(BIpdf){
+    col([70,88,64],1).grosor(.6).raya(2,2); P.poli(casa.g.map(XY),"S"); P.raya(0);
+    const orden={patio:0,deck:1,piscina:2,porche:3,muro:4};
+    BIpdf.slice().sort((a,b)=>(orden[a.clase]-orden[b.clase])||(a.nivel-b.nivel)).forEach(b=>{
+      const pts=b.g.map(XY);
+      if(b.nivel===2){ col([244,242,234],1).grosor(.9).raya(2,1.5); P.poli(pts,"S"); P.raya(0); }
+      else { col(COLOR_IA[b.clase]); P.poli(pts,"f"); col([28,38,25],1).grosor(.5); P.poli(pts,"S"); }
+      const c=b.g.slice(0,-1).reduce((a,p)=>[a[0]+p[0]/4,a[1]+p[1]/4],[0,0]), q=XY(c);
+      const anchoDib=Math.hypot(pts[0][0]-pts[1][0],pts[0][1]-pts[1][1]);
+      const rot=String(b.nombre)+(b.nivel===2?" ^":"");
+      if((b.clase==="muro"||b.clase==="piscina"||b.clase==="porche") && PDFmin.ancho(rot,5.6,"F2") < anchoDib*0.9){
+        col(b.clase==="muro"?[244,242,234]:[28,34,27]); P.textoC(q[0],q[1]+2,rot,5.6,"F2");
+      }
+    });
+  }
+  else if(casa){
     col([70,88,64]); P.poli(casa.g.map(XY),"f");
     col([28,38,25],1).grosor(.8); P.poli(casa.g.map(XY),"S");
     const c=casa.g.slice(0,-1).reduce((a,p)=>[a[0]+p[0]/4,a[1]+p[1]/4],[0,0]);
@@ -5463,15 +5687,21 @@ function dibujarPlantaPDF(P,V,L,A,casa,px0,py0,pw,ph){
   col([60,70,56]); P.textoD(bx-5,by+2.5,m+" m",7,"F1");
   /* leyenda */
   let ly=py0+ph-38;
-  const leg=[[[70,88,64], casa
+  const CI=casaIA(L.n);
+  const leg=[[[70,88,64], CI
+      ? (TT("Casa propuesta","Proposed house","Maison proposée")+" · "+ent(CI.construida)+" m² "+TT("construidos","built","bâtis")+
+         (CI.piscina?" · "+TT("piscina","pool","piscine")+" "+ent(CI.piscina)+" m²":""))
+      : casa
       ? (T("Volumen de prueba")+" "+dec(casa.L,1)+" × "+dec(casa.A,1)+" m"+
          (casa.mod==="2p" ? (TT(" en dos niveles"," on two levels")) : (TT(" en un piso"," on one storey"))))
       : T("Volumen de prueba")],
              [[198,216,193],T("Faja de protección")]];
+  if(CI && CI.piscina) leg.push([COLOR_IA.piscina, TT("Piscina y deck","Pool and deck","Piscine et deck")]);
   if(A.c)leg.push([[201,170,110],T("Suelo donde puede ir la casa (aislamientos y antejardín)")]);
   const rayado = (A.cob!=null && A.cob<0.98);
   if(rayado) leg.push([null,T("Sin levantar · pendiente de más del 25 % declarada en campo")]);
   if(rayado) ly-=10;
+  if(CI && CI.piscina) ly-=10;
   leg.forEach(([c,t])=>{
     if(c){ col(c); P.rect(px0+14,ly-5,7,7); }
     else { /* la casilla del rayado se dibuja con tres diagonales */

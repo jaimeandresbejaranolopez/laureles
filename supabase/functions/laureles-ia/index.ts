@@ -73,6 +73,8 @@ REGLAS DEL PROYECTO (no negociables)
 - Los bloques de un mismo nivel no se traslapan. Un bloque de nivel 2 va completamente encima de un bloque "muro" de nivel 1.
 - Alturas: 3,40 m normal; un solo bloque puede ir a 5,00 m (doble altura). Carport/porche 3,20 m.
 - Piscina: si la piden, un rectángulo clase "piscina" entre 3×7 y 5×12 m, separada al menos 1,5 m de cualquier muro, con un "deck" alrededor si cabe.
+- ZONIFICACIÓN OBLIGATORIA: hacia la vía (v entre 0 y unos 6 m) van SOLAMENTE el carport/parqueadero y el acceso. La casa se desarrolla hacia el fondo. La piscina, el deck, las terrazas, el jacuzzi, la cabaña y la zona social van en la franja del fondo (v mayor que Dc/2), lo más lejos posible de la vía y mirando a la vista. Nunca pongas piscina, deck ni zona social en la mitad delantera de la envolvente.
+- Si el programa que pide el cliente no cabe en un piso dentro de la envolvente, propón DOS PISOS antes de recortar el programa (el 30 % cuenta la suma de los niveles). Sólo recorta si ni en dos pisos cabe, y di exactamente qué recortaste y por qué.
 - Máximo 14 bloques. Prefiere pocas piezas claras a muchas pequeñas.
 - Si lo pedido no cabe en el 30 %, propón la mejor versión que sí cabe, di exactamente cuántos m² sobran y marca cabe=false.
 - Orientación: usa los rumbos que te doy. La vista principal del lote es hacia "${f.vista_hacia}". Pon la zona social y las alcobas principales mirando a esa vista cuando el cliente no diga otra cosa; el sol de la tarde entra por el occidente (4°28' N: el sol pasa casi por el cenit, las fachadas norte y sur reciben poco sol directo).
