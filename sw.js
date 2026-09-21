@@ -11,14 +11,14 @@
                 conexión mala eso se ve exactamente igual que "el satélite no
                 funciona". Las teselas no cambian nunca, así que se quedan.
    ============================================================================= */
-const VERSION = "laureles-20260921e-ia";
+const VERSION = "laureles-20260921f-ia";
 const APP     = VERSION;
 const TESELAS = "laureles-teselas-1";
 /* Los archivos propios se piden con ?v=<sello>: el navegador guarda el JS
    hasta diez minutos por su cuenta, y sin el sello una publicación se ve en el
    index pero no en los datos —que fue justo lo que pasó con los frentes—.
    El sello de aquí tiene que ser el mismo que el de index.html. */
-const V = "20260921e";
+const V = "20260921f";
 const PROPIO = [
   "./", "./index.html", "./manifest.json",
   "./icono-192.png", "./icono-512.png",

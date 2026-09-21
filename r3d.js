@@ -84,6 +84,9 @@ const R3D = (()=>{
     return TEX_T;
   }
   let ve=2.0, az=-0.62, elv=0.50, dist=1050, panX=0, panY=0;
+  /* hasta dónde acerca la rueda: 45 m del punto de mira deja ver la casa de
+     cerca (antes 260 m, que se quedaba lejos para juzgar una piscina) */
+  const DIST_MIN=45;
   let modoMano=false;            /* arrastrar mueve en vez de girar */
   let H=null, texCv=null, texDirty=true, raf=0;
   let progS=null, progL=null, piezas=[], somB=null, loteCasa=null, LUZ=[-0.42,0.46,0.78];
@@ -1130,7 +1133,7 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
     pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(pin&&pts.size===2){
       const[a,b]=[...pts.values()];const nd=Math.hypot(a.x-b.x,a.y-b.y);
-      if(pin.d>4){dist=Math.max(260,Math.min(3200,pin.dist*pin.d/nd));pedir();}
+      if(pin.d>4){dist=Math.max(DIST_MIN,Math.min(3200,pin.dist*pin.d/nd));pedir();}
       movido=true; return;
     }
     if(!arr)return;
@@ -1152,7 +1155,7 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
     arr=null;
   }));
   cv.addEventListener("wheel",e=>{e.preventDefault();
-    dist=Math.max(260,Math.min(3200,dist*(e.deltaY>0?1.12:0.9)));pedir();},{passive:false});
+    dist=Math.max(DIST_MIN,Math.min(3200,dist*(e.deltaY>0?1.12:0.9)));pedir();},{passive:false});
   cv.addEventListener("contextmenu",e=>e.preventDefault());
 
   addEventListener("resize",()=>{if(activo)pedir();});
