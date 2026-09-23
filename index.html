@@ -6,16 +6,16 @@
 <title>Laureles Campestre · Mapa de ventas</title>
 <meta name="description" content="Mapa de ventas de la parcelación Laureles Campestre, El Caimo, Armenia (Quindío).">
 <meta name="theme-color" content="#32402F">
-<meta name="build" content="2026-09-23 · porteria 039 3d">
+<meta name="build" content="2026-09-23 · red 039">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20260923d">
+<link rel="stylesheet" href="maplibre-gl.css?v=20260923e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20260923d">
-<link rel="stylesheet" href="analisis.css?v=20260923d">
+<link rel="stylesheet" href="armazon.css?v=20260923e">
+<link rel="stylesheet" href="analisis.css?v=20260923e">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -641,7 +641,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20260923d"></script>
+<script src="maplibre-gl.js?v=20260923e"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -663,7 +663,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20260923d"></script>
+<script src="lotes.js?v=20260923e"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -1043,26 +1043,28 @@ window.__REENC = ()=>({tocado, reencuadrado});
    METROS reales, convertidos a píxeles según el zoom, así que a cualquier
    escala la vía mide lo que mide en el plano. */
 function montarViaReal(){
-  const V = window.__VIAP;
-  if(!V || !V.calzada || !V.corredor || !V.eje){ return false; }
+  const V = window.__VIAP, E = window.__ENTRADA || null;
+  const red = !!(E && E.calzada);             /* la red del plano 039 */
+  if(!red && (!V || !V.calzada || !V.corredor || !V.eje)){ return false; }
   if(mapa.getSource("via-calzada")) return true;
-  const lat0v = V.eje[0][0][1], KXv = 111320*Math.cos(lat0v*Math.PI/180), KYv = 110540;
+  const EJE = red ? E.eje : V.eje;
+  const lat0v = EJE[0][0][1], KXv = 111320*Math.cos(lat0v*Math.PI/180), KYv = 110540;
   const poli = grupos => ({type:"FeatureCollection", features:grupos.map(g=>({type:"Feature",properties:{},
     geometry:{type:"Polygon", coordinates:g.map(a=>a.map(p=>[p[0],p[1]]))}}))});
   const linea = cs => ({type:"Feature",properties:{},geometry:{type:"LineString",coordinates:cs}});
-  /* En la plazoleta de acceso el polígono de la calzada del DXF envuelve todo
-     —carriles, parqueaderos, área social— y el eje que sale de él cruza la
-     plazoleta en diagonal. Ahí no se trazan eje ni líneas de borde: la
-     plazoleta se dibuja con su propio diseño (window.__ENTRADA, del plano 039). */
-  const E = window.__ENTRADA || null;
+  const fc=(arr,tipo)=>({type:"FeatureCollection",features:(arr||[]).map(r=>({type:"Feature",properties:{t:tipo},
+    geometry:{type:"Polygon",coordinates:[r]}}))});
+  const lc=arr=>({type:"FeatureCollection",features:(arr||[]).map(r=>linea(r))});
+  /* En la plazoleta de acceso no hay eje ni líneas de borde: allá manda la
+     demarcación del plano (guías de carril, cebras y flechas). */
   const enZona = (p)=>{ if(!E||!E.zona) return false; const r=E.zona; let d=false;
     for(let i=0,j=r.length-1;i<r.length;j=i++){ const a=r[i],b=r[j];
       if(((a[1]>p[1])!==(b[1]>p[1])) && (p[0] < (b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])) d=!d; }
     return d; };
-  const trozos=[];                       /* el eje partido fuera de la plazoleta */
-  V.eje.forEach(e=>{ let cur=[]; e.forEach(p=>{ if(enZona(p)){ if(cur.length>1) trozos.push(cur); cur=[]; } else cur.push(p); });
-                     if(cur.length>1) trozos.push(cur); });
-  /* líneas de borde: desplazadas del eje el semiancho local menos 0,45 m */
+  const trozos=[];
+  EJE.forEach(e=>{ let cur=[]; e.forEach(p=>{ if(enZona(p)){ if(cur.length>1) trozos.push(cur); cur=[]; } else cur.push(p); });
+                   if(cur.length>1) trozos.push(cur); });
+  /* líneas de borde: a 0,45 m del sardinel, con el semiancho de cada punto del eje */
   const bordes=[];
   trozos.forEach(e=>{
     [1,-1].forEach(sg=>{
@@ -1076,48 +1078,68 @@ function montarViaReal(){
       bordes.push(linea(cs));
     });
   });
-  mapa.addSource("via-corredor",{type:"geojson",data:poli(V.corredor)});
-  /* calzada: la del corredor fuera de la plazoleta y, dentro, la que encierran
-     los sardineles del plano 039 (datos-entrada.js → asfalto) */
-  mapa.addSource("via-calzada",{type:"geojson",data:poli(E && E.asfalto ? E.asfalto : V.calzada)});
-  mapa.addSource("via-bordes",{type:"geojson",data:{type:"FeatureCollection",features:bordes}});
-  mapa.addSource("via-eje",{type:"geojson",data:{type:"FeatureCollection",features:trozos.map(e=>linea(e.map(p=>[p[0],p[1]])))}});
-  /* metros → píxeles a la latitud del predio (4,47° N) */
   const m = w => ["interpolate",["exponential",2],["zoom"], 12, w*4096/155975, 22, w*4194304/155975];
   const antes = mapa.getLayer("vias-l") ? "vias-l" : undefined;
+  if(red){
+    /* bandas de la vía, tal como las achura el plano 039 (capa 03 AREAS) */
+    mapa.addSource("via-corredor",{type:"geojson",data:poli(E.anden)});
+    mapa.addSource("via-franja",{type:"geojson",data:poli(E.franja||[])});
+    mapa.addSource("via-sard",{type:"geojson",data:poli(E.sardinel||[])});
+    mapa.addSource("via-calzada",{type:"geojson",data:poli(E.calzada)});
+  } else {
+    mapa.addSource("via-corredor",{type:"geojson",data:poli(V.corredor)});
+    mapa.addSource("via-franja",{type:"geojson",data:poli([])});
+    mapa.addSource("via-sard",{type:"geojson",data:poli([])});
+    mapa.addSource("via-calzada",{type:"geojson",data:poli(V.calzada)});
+  }
+  mapa.addSource("via-bordes",{type:"geojson",data:{type:"FeatureCollection",features:bordes}});
+  mapa.addSource("via-eje",{type:"geojson",data:{type:"FeatureCollection",features:trozos.map(e=>linea(e.map(p=>[p[0],p[1]])))}});
   mapa.addLayer({id:"via-anden",type:"fill",source:"via-corredor",paint:{"fill-color":"#DAD6C7","fill-opacity":.95}}, antes);
-  mapa.addLayer({id:"via-anden-l",type:"line",source:"via-corredor",paint:{"line-color":"#C6C2B2","line-width":m(0.25)}}, antes);
+  mapa.addLayer({id:"via-anden-l",type:"line",source:"via-corredor",paint:{"line-color":"#C6C2B2","line-width":m(0.12)}}, antes);
+  mapa.addLayer({id:"via-franja-f",type:"fill",source:"via-franja",paint:{"fill-color":"#C9C4B2","fill-opacity":.95}}, antes);
+  mapa.addLayer({id:"via-sard-f",type:"fill",source:"via-sard",paint:{"fill-color":"#F2EFE4","fill-opacity":1}}, antes);
   mapa.addLayer({id:"via-asfalto",type:"fill",source:"via-calzada",paint:{"fill-color":"#4A4C4A","fill-opacity":1}}, antes);
-  mapa.addLayer({id:"via-sardinel",type:"line",source:"via-calzada",paint:{"line-color":"#F2EFE4","line-width":m(0.35)}}, antes);
+  mapa.addLayer({id:"via-sardinel",type:"line",source:"via-calzada",paint:{"line-color":"#F2EFE4","line-width":m(red?0.12:0.35)}}, antes);
   mapa.addLayer({id:"via-bordes-l",type:"line",source:"via-bordes",layout:{"line-join":"round"},
     paint:{"line-color":"#EFEDE2","line-opacity":.85,"line-width":m(0.12)}}, antes);
   mapa.addLayer({id:"via-eje-l",type:"line",source:"via-eje",layout:{"line-join":"round"},
     paint:{"line-color":"#F4F2EA","line-opacity":.9,"line-width":m(0.12),"line-dasharray":[25,37.5]}}, antes);
-  /* ---- la plazoleta de acceso, con su diseño del plano 039 ---- */
+  VIA_CAPAS.push("via-franja-f","via-sard-f");
+  /* ---- áreas comunes, parqueaderos, cancha y portería, del plano 039 ---- */
   if(E){
-    const fc=(arr,tipo)=>({type:"FeatureCollection",features:(arr||[]).map(r=>({type:"Feature",properties:{t:tipo},
-      geometry:{type:"Polygon",coordinates:[r]}}))});
-    const lc=arr=>({type:"FeatureCollection",features:(arr||[]).map(r=>linea(r))});
     mapa.addSource("ent-social",{type:"geojson",data:fc(E.social)});
+    mapa.addSource("ent-circ",{type:"geojson",data:fc(E.circulacion)});
     mapa.addSource("ent-verde",{type:"geojson",data:fc(E.verde)});
+    mapa.addSource("ent-cancha",{type:"geojson",data:fc(E.cancha)});
+    mapa.addSource("ent-cancha-l",{type:"geojson",data:lc(E.canchaL)});
     mapa.addSource("ent-edif",{type:"geojson",data:{type:"FeatureCollection",features:
       fc(E.porteria,"porteria").features.concat(fc(E.mant,"mant").features)}});
     mapa.addSource("ent-parq",{type:"geojson",data:fc(E.parking)});
+    mapa.addSource("ent-cubierta",{type:"geojson",data:lc(E.cubierta)});
     mapa.addSource("ent-marca",{type:"geojson",data:fc((E.cebra||[]).concat(E.flecha||[]))});
     mapa.addSource("ent-guia",{type:"geojson",data:lc(E.guia)});
-    mapa.addSource("ent-cubierta",{type:"geojson",data:lc(E.cubierta)});
+    mapa.addSource("ent-postes",{type:"geojson",data:{type:"FeatureCollection",features:(E.postes||[]).map(p=>({type:"Feature",properties:{},geometry:{type:"Point",coordinates:p}}))}});
     mapa.addLayer({id:"ent-social-f",type:"fill",source:"ent-social",paint:{"fill-color":"#E4DDC8","fill-opacity":1}}, antes);
+    mapa.addLayer({id:"ent-circ-f",type:"fill",source:"ent-circ",paint:{"fill-color":"#D6C8A6","fill-opacity":.95}}, antes);
     mapa.addLayer({id:"ent-parq-f",type:"fill",source:"ent-parq",paint:{"fill-color":"#6A6C69","fill-opacity":1}}, antes);
     mapa.addLayer({id:"ent-parq-l",type:"line",source:"ent-parq",paint:{"line-color":"#F4F2EA","line-width":m(0.15),"line-opacity":.95}}, antes);
     mapa.addLayer({id:"ent-verde-f",type:"fill",source:"ent-verde",paint:{"fill-color":"#8FAF78","fill-opacity":1}}, antes);
     mapa.addLayer({id:"ent-verde-l",type:"line",source:"ent-verde",paint:{"line-color":"#F2EFE4","line-width":m(0.3)}}, antes);
+    /* la cancha del Área Social 2: 10 × 20 m */
+    mapa.addLayer({id:"ent-cancha-f",type:"fill",source:"ent-cancha",paint:{"fill-color":"#4F7F96","fill-opacity":1}}, antes);
+    mapa.addLayer({id:"ent-cancha-ll",type:"line",source:"ent-cancha-l",paint:{"line-color":"#F4F2EA","line-width":m(0.12)}}, antes);
+    mapa.addLayer({id:"ent-cancha-b",type:"line",source:"ent-cancha",paint:{"line-color":"#F4F2EA","line-width":m(0.15)}}, antes);
     mapa.addLayer({id:"ent-edif-f",type:"fill",source:"ent-edif",paint:{"fill-color":["match",["get","t"],"porteria","#F7F5EE","#D9D3C2"],"fill-opacity":1}}, antes);
     mapa.addLayer({id:"ent-edif-l",type:"line",source:"ent-edif",paint:{"line-color":"#3B453A","line-width":m(0.25)}}, antes);
     mapa.addLayer({id:"ent-cubierta-l",type:"line",source:"ent-cubierta",paint:{"line-color":"#3B453A","line-width":m(0.12),"line-dasharray":[6,5],"line-opacity":.8}}, antes);
     /* demarcación del 039: cebras, flechas y la guía de cada carril */
     mapa.addLayer({id:"ent-guia-l",type:"line",source:"ent-guia",paint:{"line-color":"#F4F2EA","line-width":m(0.12),"line-opacity":.9,"line-dasharray":[25,37.5]}}, antes);
     mapa.addLayer({id:"ent-marca-f",type:"fill",source:"ent-marca",paint:{"fill-color":"#F4F2EA","fill-opacity":.95}}, antes);
-    VIA_CAPAS.push("ent-social-f","ent-parq-f","ent-parq-l","ent-verde-f","ent-verde-l","ent-edif-f","ent-edif-l","ent-cubierta-l","ent-guia-l","ent-marca-f");
+    /* postes de energía: sólo de cerca */
+    mapa.addLayer({id:"ent-postes-c",type:"circle",source:"ent-postes",minzoom:17,
+      paint:{"circle-radius":["interpolate",["linear"],["zoom"],17,2.2,19,4],"circle-color":"#2E3530","circle-stroke-color":"#F4F2EA","circle-stroke-width":1.2}}, antes);
+    VIA_CAPAS.push("ent-social-f","ent-circ-f","ent-parq-f","ent-parq-l","ent-verde-f","ent-verde-l","ent-cancha-f","ent-cancha-ll","ent-cancha-b",
+      "ent-edif-f","ent-edif-l","ent-cubierta-l","ent-guia-l","ent-marca-f","ent-postes-c");
   }
   /* la línea crema de antes queda apagada: la vía ya se dibuja de verdad */
   if(mapa.getLayer("vias-l")) mapa.setLayoutProperty("vias-l","visibility","none");
@@ -1140,6 +1162,10 @@ function colorVia(oscuro){
     mapa.setPaintProperty("ent-verde-f","fill-color", oscuro?"#4F6B45":"#8FAF78");
     mapa.setPaintProperty("ent-verde-l","line-color", oscuro?"#6A6B62":"#F2EFE4");
     mapa.setPaintProperty("ent-edif-f","fill-color", ["match",["get","t"],"porteria", oscuro?"#CFCABB":"#F7F5EE", oscuro?"#6E6A5C":"#D9D3C2"]);
+    mapa.setPaintProperty("ent-circ-f","fill-color", oscuro?"#4E4633":"#D6C8A6");
+    mapa.setPaintProperty("ent-cancha-f","fill-color", oscuro?"#2F5566":"#4F7F96");
+    mapa.setPaintProperty("via-franja-f","fill-color", oscuro?"#44453E":"#C9C4B2");
+    mapa.setPaintProperty("via-sard-f","fill-color", oscuro?"#6A6B62":"#F2EFE4");
   }
 }
 
@@ -1302,7 +1328,8 @@ const VIA_Z = 16.6;
 const viaPool = [];
 function pintarVia(){
   const z = mapa.getZoom();
-  const V = window.__VIAP;
+  const E0 = window.__ENTRADA, RED = !!(E0 && E0.eje);
+  const V = RED ? {eje:E0.eje} : window.__VIAP;
   const verVia = z >= VIA_Z && V && V.eje && document.getElementById("cVia").checked;
   if(!verVia){ viaPool.forEach(m=>m.getElement().style.display="none"); return; }
   const b = mapa.getBounds();
@@ -1325,8 +1352,10 @@ function pintarVia(){
          se construyó el corredor en el plano. */
       const ancho = p1[2]*2;
       if(ancho < 5 || ancho > 9.5) continue;
+      /* con la red del 039 el ancho sale de la calzada achurada del plano
+         (línea media) y el andén es la banda de 1,50 m que achura a cada lado */
       puestos.push({x:s1.x, y:s1.y, c:[p1[0],p1[1]], a:ang,
-                    t:"calzada "+ancho.toFixed(1).replace(".",",")+" m + andén 2,0 m"});
+                    t:"calzada "+ancho.toFixed(1).replace(".",",")+" m + andén "+(RED?"1,5":"2,0")+" m"});
     }
     if(puestos.length>=6) break;
   }
@@ -2631,17 +2660,17 @@ window.seleccionarLote = n => {
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png"};</script>
-<script src="datos-analisis.js?v=20260923d"></script>
-<script src="datos-terreno.js?v=20260923d"></script>
-<script src="datos-logo.js?v=20260923d"></script>
-<script src="adaptador.js?v=20260923d"></script>
-<script src="analisis.js?v=20260923d"></script>
-<script src="datos-via.js?v=20260923d"></script>
-<script src="datos-entrada.js?v=20260923d"></script>
-<script src="r3d.js?v=20260923d"></script>
-<script src="armazon.js?v=20260923d"></script>
-<script src="acceso.js?v=20260923d"></script>
-<script src="ia.js?v=20260923d"></script>
+<script src="datos-analisis.js?v=20260923e"></script>
+<script src="datos-terreno.js?v=20260923e"></script>
+<script src="datos-logo.js?v=20260923e"></script>
+<script src="adaptador.js?v=20260923e"></script>
+<script src="analisis.js?v=20260923e"></script>
+<script src="datos-via.js?v=20260923e"></script>
+<script src="datos-entrada.js?v=20260923e"></script>
+<script src="r3d.js?v=20260923e"></script>
+<script src="armazon.js?v=20260923e"></script>
+<script src="acceso.js?v=20260923e"></script>
+<script src="ia.js?v=20260923e"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");
