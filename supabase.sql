@@ -218,3 +218,12 @@ create policy laureles_visitas_gestion   on public.laureles_visitas for update t
 -- Edge Function laureles-render: secreto GEMINI_API_KEY_LAURELES; opcionales
 --   LAURELES_RENDER_MODELO (gemini-3.1-flash-image), LAURELES_RENDER_CUPO_DIA (15),
 --   LAURELES_RENDER_CUPO_MES (300), LAURELES_RENDER_ESTILO (premisas del lenguaje).
+
+-- 2026-09-23 · Separaciones y ventas con nombres
+-- public.laureles_negocios: historia (lote, estado, agente, cliente, documento,
+--   teléfono, notas, quién registró, fecha). RLS: sólo administradores leen;
+--   nadie escribe directo.
+-- public.laureles_cambiar_estado(p_lote, p_estado, p_agente, p_cliente,
+--   p_documento, p_telefono, p_notas): ÚNICO camino para cambiar el estado.
+--   Exige agente y cliente (>=3 letras) para separado/vendido/reservado.
+-- Se quitaron las políticas de INSERT/UPDATE directas sobre laureles_lotes.

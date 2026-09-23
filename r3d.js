@@ -376,6 +376,13 @@ const R3D = (()=>{
 
     /* ---------------- la vía, con andén, sardinel y demarcación ---------------- */
     if(!foto && document.getElementById("cVia").checked && typeof VIAP!=="undefined" && VIAP.calzada){
+      /* Plazoleta de acceso: igual que en el 2D. La calzada sale de datos-entrada.js
+         (corredor fuera de la zona, sardineles del plano 039 dentro) y ahí adentro
+         no se pintan eje ni líneas de borde, sólo la demarcación del plano. */
+      const E = window.__ENTRADA || null;
+      const CALZ = (E && E.asfalto) ? E.asfalto : VIAP.calzada;
+      const fueraDeZona = ()=>{ if(!E||!E.zona) return; x.beginPath(); x.rect(0,0,T,T);
+        E.zona.forEach((p,i)=>{const q=P(p);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]);}); x.closePath(); x.clip("evenodd"); };
       /* andén: la franja de 2 m que queda entre el lindero del lote y la calzada */
       x.fillStyle = oscuro ? "#3A3B36" : "#DAD6C7";
       VIAP.corredor.forEach(pol=>{ trazaPoli(pol); x.fill("evenodd"); });
@@ -384,14 +391,15 @@ const R3D = (()=>{
       VIAP.corredor.forEach(pol=>{ trazaPoli(pol); x.stroke(); });
       /* sardinel: labio claro justo antes del asfalto */
       x.strokeStyle = oscuro ? "#6A6B62" : "#F2EFE4"; x.lineWidth=Math.max(1.4,M(0.55));
-      VIAP.calzada.forEach(pol=>{ trazaPoli(pol); x.stroke(); });
+      CALZ.forEach(pol=>{ trazaPoli(pol); x.stroke(); });
       /* calzada */
       x.save();
       x.beginPath();
-      VIAP.calzada.forEach(pol=>pol.forEach(an=>{ an.forEach((p,i)=>{const q=P(p);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]);}); x.closePath(); }));
+      CALZ.forEach(pol=>pol.forEach(an=>{ an.forEach((p,i)=>{const q=P(p);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]);}); x.closePath(); }));
       x.clip("evenodd");
       x.fillStyle=asfPat; x.fillRect(0,0,T,T);
       x.restore();
+      x.save(); fueraDeZona();
       /* líneas de borde, continuas y blancas, a 0,4 m del sardinel */
       x.strokeStyle="#EFEDE2"; x.globalAlpha=.85; x.lineWidth=Math.max(1,M(0.12));
       x.setLineDash([]);
@@ -416,6 +424,30 @@ const R3D = (()=>{
         x.beginPath(); e.forEach((p,i)=>{const q=P(p);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]);}); x.stroke();
       });
       x.setLineDash([]); x.globalAlpha=1;
+      x.restore();
+      if(E) dibujarEntrada(E);
+    }
+
+    /* plazoleta de acceso y portería, del plano 039 (mismos colores que el 2D) */
+    function dibujarEntrada(E){
+      const relleno=(arr,col)=>{ x.fillStyle=col; (arr||[]).forEach(r=>{ traza(r,1); x.fill(); }); };
+      const borde=(arr,col,w,dash)=>{ x.strokeStyle=col; x.lineWidth=Math.max(1,M(w)); x.setLineDash(dash||[]);
+        (arr||[]).forEach(r=>{ traza(r,1); x.stroke(); }); x.setLineDash([]); };
+      x.save(); x.globalAlpha=1; x.lineJoin="round";
+      relleno(E.social, oscuro?"#4A4638":"#E4DDC8");
+      relleno(E.parking, oscuro?"#3E403D":"#6A6C69");
+      borde(E.parking, "#F4F2EA", 0.15);
+      relleno(E.verde, oscuro?"#4F6B45":"#8FAF78");
+      borde(E.verde, oscuro?"#6A6B62":"#F2EFE4", 0.3);
+      relleno(E.mant, oscuro?"#6E6A5C":"#D9D3C2");
+      relleno(E.porteria, oscuro?"#CFCABB":"#F7F5EE");
+      borde((E.mant||[]).concat(E.porteria||[]), "#3B453A", 0.25);
+      x.globalAlpha=.8; borde(E.cubierta, "#3B453A", 0.12, [M(1.2),M(1)]); x.globalAlpha=1;
+      /* guía de carril, cebras y flechas */
+      x.globalAlpha=.9; x.strokeStyle="#F4F2EA"; x.lineWidth=Math.max(1,M(0.12)); x.setLineDash([M(3),M(4.5)]);
+      (E.guia||[]).forEach(r=>{ traza(r,0); x.stroke(); }); x.setLineDash([]);
+      x.globalAlpha=.95; relleno((E.cebra||[]).concat(E.flecha||[]), "#F4F2EA");
+      x.restore();
     }
 
     x.strokeStyle=foto?"#FFD84A":(estilo("--forest")||"#32402F");
@@ -1210,6 +1242,8 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
       return c2.toDataURL("image/jpeg",0.9);
     },
     camara(d,e,a){ if(d)dist=d; if(e!=null)elv=e; if(a!=null)az=a; pedir(); },
+    /* centrar la cámara en un punto [lon,lat] (p. ej. la portería) */
+    enfocar(ll,d,e,a){ const c=PX(ll); panX=c[0]-CX; panY=-(c[1]-CY); if(d)dist=d; if(e!=null)elv=e; if(a!=null)az=a; pedir(); return true; },
     domoSolar(v){
       domo=v;
       if(v){ ve=1; mallaSolar(); }                 /* a escala real: si no, los ángulos mienten */

@@ -6,16 +6,16 @@
 <title>Laureles Campestre · Mapa de ventas</title>
 <meta name="description" content="Mapa de ventas de la parcelación Laureles Campestre, El Caimo, Armenia (Quindío).">
 <meta name="theme-color" content="#32402F">
-<meta name="build" content="2026-09-22 · via 2d">
+<meta name="build" content="2026-09-23 · porteria 039 3d">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20260922a">
+<link rel="stylesheet" href="maplibre-gl.css?v=20260923d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20260922a">
-<link rel="stylesheet" href="analisis.css?v=20260922a">
+<link rel="stylesheet" href="armazon.css?v=20260923d">
+<link rel="stylesheet" href="analisis.css?v=20260923d">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -164,6 +164,13 @@ main.en3d .fondos, .stage.en3d .fondos{bottom:70px}
 .hoja .hb{flex:1;min-height:0;overflow-y:auto;padding:18px 20px;font-size:13.5px;line-height:1.6;color:var(--ink-2)}
 .hoja .hf{flex-shrink:0;padding:14px 20px;border-top:1px solid var(--line-soft);background:var(--surface-2);
   display:flex;gap:9px;justify-content:flex-end}
+.ficha .negocio{margin-top:16px;border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:var(--r-sm);padding:10px 12px;background:var(--surface-2,#F6F4EC);font-size:12.5px}
+.ficha .negocio .et{margin:0 0 6px}
+.ficha .negocio table{width:100%;border-collapse:collapse}
+.ficha .negocio td{padding:3px 0;vertical-align:top}
+.ficha .negocio td:first-child{color:var(--muted);width:38%}
+.ficha .negocio.falta{border-left-color:#A3543F;color:var(--ink-2)}
+.ficha .negocio.falta button{display:block;margin-top:8px;border:1px solid var(--forest);background:var(--forest);color:var(--on-forest,#F4F2EA);border-radius:999px;padding:6px 12px;font:inherit;font-weight:600;cursor:pointer}
 .hoja label{display:block;font-size:12px;font-weight:600;color:var(--ink);margin:14px 0 5px}
 .hoja input[type=text]{width:100%;border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 11px;font-size:13px}
 .hoja .pista{font-size:11.5px;color:var(--muted);margin-top:4px}
@@ -634,7 +641,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20260922a"></script>
+<script src="maplibre-gl.js?v=20260923d"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -656,7 +663,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20260922a"></script>
+<script src="lotes.js?v=20260923d"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -1043,9 +1050,21 @@ function montarViaReal(){
   const poli = grupos => ({type:"FeatureCollection", features:grupos.map(g=>({type:"Feature",properties:{},
     geometry:{type:"Polygon", coordinates:g.map(a=>a.map(p=>[p[0],p[1]]))}}))});
   const linea = cs => ({type:"Feature",properties:{},geometry:{type:"LineString",coordinates:cs}});
+  /* En la plazoleta de acceso el polígono de la calzada del DXF envuelve todo
+     —carriles, parqueaderos, área social— y el eje que sale de él cruza la
+     plazoleta en diagonal. Ahí no se trazan eje ni líneas de borde: la
+     plazoleta se dibuja con su propio diseño (window.__ENTRADA, del plano 039). */
+  const E = window.__ENTRADA || null;
+  const enZona = (p)=>{ if(!E||!E.zona) return false; const r=E.zona; let d=false;
+    for(let i=0,j=r.length-1;i<r.length;j=i++){ const a=r[i],b=r[j];
+      if(((a[1]>p[1])!==(b[1]>p[1])) && (p[0] < (b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])) d=!d; }
+    return d; };
+  const trozos=[];                       /* el eje partido fuera de la plazoleta */
+  V.eje.forEach(e=>{ let cur=[]; e.forEach(p=>{ if(enZona(p)){ if(cur.length>1) trozos.push(cur); cur=[]; } else cur.push(p); });
+                     if(cur.length>1) trozos.push(cur); });
   /* líneas de borde: desplazadas del eje el semiancho local menos 0,45 m */
   const bordes=[];
-  V.eje.forEach(e=>{
+  trozos.forEach(e=>{
     [1,-1].forEach(sg=>{
       const cs=[];
       for(let i=0;i<e.length;i++){
@@ -1058,9 +1077,11 @@ function montarViaReal(){
     });
   });
   mapa.addSource("via-corredor",{type:"geojson",data:poli(V.corredor)});
-  mapa.addSource("via-calzada",{type:"geojson",data:poli(V.calzada)});
+  /* calzada: la del corredor fuera de la plazoleta y, dentro, la que encierran
+     los sardineles del plano 039 (datos-entrada.js → asfalto) */
+  mapa.addSource("via-calzada",{type:"geojson",data:poli(E && E.asfalto ? E.asfalto : V.calzada)});
   mapa.addSource("via-bordes",{type:"geojson",data:{type:"FeatureCollection",features:bordes}});
-  mapa.addSource("via-eje",{type:"geojson",data:{type:"FeatureCollection",features:V.eje.map(e=>linea(e.map(p=>[p[0],p[1]])))}});
+  mapa.addSource("via-eje",{type:"geojson",data:{type:"FeatureCollection",features:trozos.map(e=>linea(e.map(p=>[p[0],p[1]])))}});
   /* metros → píxeles a la latitud del predio (4,47° N) */
   const m = w => ["interpolate",["exponential",2],["zoom"], 12, w*4096/155975, 22, w*4194304/155975];
   const antes = mapa.getLayer("vias-l") ? "vias-l" : undefined;
@@ -1072,6 +1093,32 @@ function montarViaReal(){
     paint:{"line-color":"#EFEDE2","line-opacity":.85,"line-width":m(0.12)}}, antes);
   mapa.addLayer({id:"via-eje-l",type:"line",source:"via-eje",layout:{"line-join":"round"},
     paint:{"line-color":"#F4F2EA","line-opacity":.9,"line-width":m(0.12),"line-dasharray":[25,37.5]}}, antes);
+  /* ---- la plazoleta de acceso, con su diseño del plano 039 ---- */
+  if(E){
+    const fc=(arr,tipo)=>({type:"FeatureCollection",features:(arr||[]).map(r=>({type:"Feature",properties:{t:tipo},
+      geometry:{type:"Polygon",coordinates:[r]}}))});
+    const lc=arr=>({type:"FeatureCollection",features:(arr||[]).map(r=>linea(r))});
+    mapa.addSource("ent-social",{type:"geojson",data:fc(E.social)});
+    mapa.addSource("ent-verde",{type:"geojson",data:fc(E.verde)});
+    mapa.addSource("ent-edif",{type:"geojson",data:{type:"FeatureCollection",features:
+      fc(E.porteria,"porteria").features.concat(fc(E.mant,"mant").features)}});
+    mapa.addSource("ent-parq",{type:"geojson",data:fc(E.parking)});
+    mapa.addSource("ent-marca",{type:"geojson",data:fc((E.cebra||[]).concat(E.flecha||[]))});
+    mapa.addSource("ent-guia",{type:"geojson",data:lc(E.guia)});
+    mapa.addSource("ent-cubierta",{type:"geojson",data:lc(E.cubierta)});
+    mapa.addLayer({id:"ent-social-f",type:"fill",source:"ent-social",paint:{"fill-color":"#E4DDC8","fill-opacity":1}}, antes);
+    mapa.addLayer({id:"ent-parq-f",type:"fill",source:"ent-parq",paint:{"fill-color":"#6A6C69","fill-opacity":1}}, antes);
+    mapa.addLayer({id:"ent-parq-l",type:"line",source:"ent-parq",paint:{"line-color":"#F4F2EA","line-width":m(0.15),"line-opacity":.95}}, antes);
+    mapa.addLayer({id:"ent-verde-f",type:"fill",source:"ent-verde",paint:{"fill-color":"#8FAF78","fill-opacity":1}}, antes);
+    mapa.addLayer({id:"ent-verde-l",type:"line",source:"ent-verde",paint:{"line-color":"#F2EFE4","line-width":m(0.3)}}, antes);
+    mapa.addLayer({id:"ent-edif-f",type:"fill",source:"ent-edif",paint:{"fill-color":["match",["get","t"],"porteria","#F7F5EE","#D9D3C2"],"fill-opacity":1}}, antes);
+    mapa.addLayer({id:"ent-edif-l",type:"line",source:"ent-edif",paint:{"line-color":"#3B453A","line-width":m(0.25)}}, antes);
+    mapa.addLayer({id:"ent-cubierta-l",type:"line",source:"ent-cubierta",paint:{"line-color":"#3B453A","line-width":m(0.12),"line-dasharray":[6,5],"line-opacity":.8}}, antes);
+    /* demarcación del 039: cebras, flechas y la guía de cada carril */
+    mapa.addLayer({id:"ent-guia-l",type:"line",source:"ent-guia",paint:{"line-color":"#F4F2EA","line-width":m(0.12),"line-opacity":.9,"line-dasharray":[25,37.5]}}, antes);
+    mapa.addLayer({id:"ent-marca-f",type:"fill",source:"ent-marca",paint:{"fill-color":"#F4F2EA","fill-opacity":.95}}, antes);
+    VIA_CAPAS.push("ent-social-f","ent-parq-f","ent-parq-l","ent-verde-f","ent-verde-l","ent-edif-f","ent-edif-l","ent-cubierta-l","ent-guia-l","ent-marca-f");
+  }
   /* la línea crema de antes queda apagada: la vía ya se dibuja de verdad */
   if(mapa.getLayer("vias-l")) mapa.setLayoutProperty("vias-l","visibility","none");
   const c=document.getElementById("cVia");
@@ -1087,6 +1134,13 @@ function colorVia(oscuro){
   mapa.setPaintProperty("via-anden-l","line-color", oscuro?"#4A4B44":"#C6C2B2");
   mapa.setPaintProperty("via-asfalto","fill-color", oscuro?"#2A2C2B":"#4A4C4A");
   mapa.setPaintProperty("via-sardinel","line-color", oscuro?"#6A6B62":"#F2EFE4");
+  if(mapa.getLayer("ent-social-f")){           /* la plazoleta sigue la misma base */
+    mapa.setPaintProperty("ent-social-f","fill-color", oscuro?"#4A4638":"#E4DDC8");
+    mapa.setPaintProperty("ent-parq-f","fill-color", oscuro?"#3E403D":"#6A6C69");
+    mapa.setPaintProperty("ent-verde-f","fill-color", oscuro?"#4F6B45":"#8FAF78");
+    mapa.setPaintProperty("ent-verde-l","line-color", oscuro?"#6A6B62":"#F2EFE4");
+    mapa.setPaintProperty("ent-edif-f","fill-color", ["match",["get","t"],"porteria", oscuro?"#CFCABB":"#F7F5EE", oscuro?"#6E6A5C":"#D9D3C2"]);
+  }
 }
 
 mapa.on("load", ()=>{
@@ -1925,6 +1979,21 @@ function pintarFicha(n){
       ? 'Incluye '+m2(p.area_proteccion_m2)+' de ronda de cañada: bosque protegido, no se puede construir ni talar allí. '+
         'El área útil de este lote es de '+m2(p.area_util_m2)+'.'
       : 'Todo el lote es área útil: no lo toca ninguna faja de protección.')+'</div>'+
+    (ROL.esVentas() && p.estado!=="disponible"
+      ? (NEG[p.lote] && NEG[p.lote].estado===p.estado
+          ? '<div class="negocio"><div class="et">'+(p.estado==="vendido"?"Venta":p.estado==="reservado"?"Reserva":"Separación")+' · sólo administradores</div>'+
+            '<table>'+
+            '<tr><td>'+(p.estado==="vendido"?"Vendió":p.estado==="reservado"?"Reservó":"Separó")+'</td><td><b>'+escH(NEG[p.lote].agente)+'</b></td></tr>'+
+            '<tr><td>Cliente</td><td><b>'+escH(NEG[p.lote].cliente)+'</b></td></tr>'+
+            (NEG[p.lote].cliente_documento?'<tr><td>Documento</td><td>'+escH(NEG[p.lote].cliente_documento)+'</td></tr>':'')+
+            (NEG[p.lote].cliente_telefono?'<tr><td>Teléfono</td><td>'+escH(NEG[p.lote].cliente_telefono)+'</td></tr>':'')+
+            '<tr><td>Fecha</td><td>'+new Date(NEG[p.lote].creado).toLocaleString("es-CO",{dateStyle:"medium",timeStyle:"short"})+'</td></tr>'+
+            (NEG[p.lote].notas?'<tr><td>Notas</td><td>'+escH(NEG[p.lote].notas)+'</td></tr>':'')+
+            '<tr><td>Registró</td><td>'+escH(NEG[p.lote].correo||"")+'</td></tr>'+
+            '</table></div>'
+          : '<div class="negocio falta"><b>Sin registro de agente ni cliente.</b> Este lote se marcó '+ESTADOS[p.estado].t.toLowerCase()+
+            ' antes de que se pidieran los nombres. <button id="bCompletar">Completar datos</button></div>')
+      : '')+
     (ROL.esVentas()
       ? '<div class="et" style="margin-top:18px">Cambiar estado</div>'+
         '<div class="seg" id="segEstado">'+
@@ -1961,10 +2030,11 @@ function pintarFicha(n){
   ficha.querySelectorAll("#segEstado button").forEach(b=>b.onclick=()=>cambiarEstado(p.lote,b.dataset.e));
   const pE=document.getElementById("pistaEstado");
   if(pE) pE.textContent =
-    SB.activo() ? "El cambio queda guardado y lo ven todos los asesores."
+    SB.activo() ? "Separar, vender o reservar pide el nombre del agente y del cliente. El color lo ven todos; los nombres, sólo los administradores."
                 : "Modo local: el cambio sólo se ve en este dispositivo. Conecte Supabase en Ajustes para compartirlo.";
   const bEV=document.getElementById("bEntrarVentas"); if(bEV) bEV.onclick=()=>ROL.hoja();
   const bPr=ficha.querySelector("#bProsp"); if(bPr) bPr.onclick=()=>hojaProspecto(p,v,et);
+  const bCo=ficha.querySelector("#bCompletar"); if(bCo) bCo.onclick=()=>cambiarEstado(p.lote,p.estado);
 }
 
 /* --------------------- información comercial a la base de datos ---------------
@@ -2018,15 +2088,64 @@ function whatsapp(p,v,et){
     "¿Le cuadra que lo visitemos?";
   open("https://wa.me/"+CFG.telefono+"?text="+encodeURIComponent(t),"_blank");
 }
+/* ------------------------- separar, vender, liberar -------------------------
+   El estado ya no se cambia con un clic: separar, vender o reservar exige el
+   nombre del agente o administrador que lo hace y el del cliente, y no se
+   cierra la ventana hasta que la base de datos lo confirme. La función
+   laureles_cambiar_estado() de Supabase es el ÚNICO camino (ya no hay permiso
+   de escritura directa sobre laureles_lotes), así que ni desde la consola se
+   puede separar un lote sin nombres. El color público cambia sólo cuando la
+   base respondió; el quién y a quién queda en laureles_negocios, que sólo
+   leen los administradores. */
+const NEG = {};                                   /* lote -> último negocio (sólo admin) */
+const escH = t=>String(t==null?"":t).replace(/[<>&"]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]));
 function cambiarEstado(n,e){
   if(!ROL.esVentas()){ avisar("Modo visitante: el estado de los lotes no se puede cambiar."); ROL.hoja(); return; }
-  const f=LOTES.features.find(x=>x.properties.lote===n);
-  f.properties.estado=e;
-  S.cambios[n]=e; guardar("laureles.cambios",S.cambios);
-  mapa.getSource("lotes").setData(LOTES);
-  SB.escribir(n,e);
-  pintarFicha(n); refrescar();
-  avisar("Lote "+n+": "+ESTADOS[e].t);
+  const f=LOTES.features.find(x=>x.properties.lote===n); if(!f) return;
+  const actual=f.properties.estado, neg=NEG[n];
+  if(e===actual && (e==="disponible" || neg)) return;       /* nada que cambiar */
+  const verbo = {separado:"Separar", vendido:"Registrar la venta del", reservado:"Reservar", disponible:"Liberar"}[e];
+  const libera = e==="disponible";
+  const previo = (e===actual && !neg) || (neg && neg.estado===e) ? (neg||{}) : {};
+  document.getElementById("hojaTit").textContent = verbo+" lote "+n;
+  document.getElementById("hojaCuerpo").innerHTML =
+    (libera
+      ? '<div class="pista">El lote vuelve a quedar <b>Disponible</b> para todos. Queda registrado quién lo liberó y por qué.</div>'
+      : '<div class="pista">El lote pasará a <b>'+escH(ESTADOS[e].t)+'</b>. Es obligatorio el nombre de quien hace la '+
+        (e==="vendido"?"venta":e==="reservado"?"reserva":"separación")+' y el del cliente. Estos datos sólo los ven los administradores.</div>')+
+    '<label for="nAg">Agente o administrador que lo hace *</label>'+
+    '<input type="text" id="nAg" autocomplete="name" value="'+escH(previo.agente||CFG.asesor||"")+'" placeholder="Nombre y apellido">'+
+    (libera ? '' :
+      '<label for="nCl">Nombre del cliente *</label><input type="text" id="nCl" value="'+escH(previo.cliente||"")+'" placeholder="Nombre y apellido del cliente">'+
+      '<label for="nDoc">Documento del cliente</label><input type="text" id="nDoc" value="'+escH(previo.cliente_documento||"")+'" placeholder="C.C. o NIT (opcional)">'+
+      '<label for="nTel">Teléfono del cliente</label><input type="text" id="nTel" inputmode="tel" value="'+escH(previo.cliente_telefono||"")+'" placeholder="Opcional">')+
+    '<label for="nNot">'+(libera?"Motivo *":"Notas")+'</label><input type="text" id="nNot" placeholder="'+(libera?"Desistió, error, cambio de lote…":"Etapa, forma de pago, acuerdos (opcional)")+'">'+
+    '<div class="pista" id="nErr" style="color:#A3543F;margin-top:10px"></div>';
+  document.getElementById("hojaPie").innerHTML =
+    '<button class="sec" id="bCancel">Cancelar</button><button class="pri" id="bNeg">'+verbo+'</button>';
+  velo.classList.add("on");
+  document.getElementById("bCancel").onclick=()=>velo.classList.remove("on");
+  document.getElementById("bNeg").onclick=async()=>{
+    const v=id=>{ const el=document.getElementById(id); return el?el.value.trim():""; };
+    const err=document.getElementById("nErr");
+    const ag=v("nAg"), cl=v("nCl"), nt=v("nNot");
+    if(ag.length<3){ err.textContent="Escribe el nombre del agente o administrador."; document.getElementById("nAg").focus(); return; }
+    if(!libera && cl.length<3){ err.textContent="Escribe el nombre del cliente."; document.getElementById("nCl").focus(); return; }
+    if(libera && nt.length<3){ err.textContent="Escribe el motivo."; document.getElementById("nNot").focus(); return; }
+    const b=document.getElementById("bNeg"); b.disabled=true; b.textContent="Guardando…"; err.textContent="";
+    try{
+      const fila = await SB.negocio({p_lote:n, p_estado:e, p_agente:ag, p_cliente:libera?null:cl,
+        p_documento:v("nDoc")||null, p_telefono:v("nTel")||null, p_notas:nt||null});
+      NEG[n]=fila;
+      f.properties.estado=e;
+      delete S.cambios[n]; guardar("laureles.cambios",S.cambios);
+      mapa.getSource("lotes").setData(LOTES);
+      velo.classList.remove("on");
+      pintarFicha(n); refrescar();
+      avisar("Lote "+n+": "+ESTADOS[e].t+(libera?"":" · "+cl));
+    }catch(ex){ err.textContent=ex.message; b.disabled=false; b.textContent=verbo; }
+  };
+  setTimeout(()=>{ const i=document.getElementById(document.getElementById("nAg").value?"nCl":"nAg")||document.getElementById("nAg"); if(i) i.focus(); },50);
 }
 
 /* ================================ QUIÉN ENTRA ==============================
@@ -2190,8 +2309,34 @@ const SB = (()=>{
         if(f&&x.estado&&ESTADOS[x.estado]){ f.properties.estado=x.estado; if(x.notas)f.properties.notas=x.notas; }
       });
       mapa.getSource("lotes").setData(LOTES); refrescar();
+      if(ROL.esVentas()) traerNegocios();
       avisar("Estados sincronizados ("+filas.length+" lotes).");
     }catch(e){ avisar("No se pudo leer Supabase: "+e.message, 5000); }
+  }
+  /* cambia el estado a través de la función de la base (exige nombres) */
+  async function negocio(args){
+    if(!activo()) throw new Error("Falta configurar Supabase en Ajustes.");
+    const t = await ROL.token();
+    if(!t) throw new Error("Hace falta una sesión de administrador.");
+    const r=await fetch(CFG.supabaseUrl.replace(/\/$/,"")+"/rest/v1/rpc/laureles_cambiar_estado",
+      {method:"POST", headers:{"apikey":CFG.supabaseKey,"Authorization":"Bearer "+t,"Content-Type":"application/json"}, body:JSON.stringify(args)});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.message || (r.status+" "+r.statusText));
+    return Array.isArray(j)?j[0]:j;
+  }
+  /* quién separó o vendió cada lote: sólo con sesión de administrador */
+  async function traerNegocios(){
+    if(!activo()) return;
+    const t = await ROL.token(); if(!t) return;
+    try{
+      const r=await fetch(CFG.supabaseUrl.replace(/\/$/,"")+"/rest/v1/laureles_negocios?select=*&order=creado.desc&limit=1000",
+        {headers:{"apikey":CFG.supabaseKey,"Authorization":"Bearer "+t}});
+      if(!r.ok) return;
+      const filas=await r.json();
+      Object.keys(NEG).forEach(k=>delete NEG[k]);
+      filas.forEach(x=>{ if(!NEG[x.lote]) NEG[x.lote]=x; });
+      if(S.sel!=null && document.getElementById("ficha").classList.contains("on")) pintarFicha(S.sel);
+    }catch(e){}
   }
   async function escribir(lote,estado){
     if(!activo())return;
@@ -2214,7 +2359,7 @@ const SB = (()=>{
       {method:"POST", headers:cabAuth(t), body:JSON.stringify([d])});
     if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(j.message || (r.status+" "+r.statusText)); }
   }
-  return {activo, traer, escribir, prospecto};
+  return {activo, traer, escribir, prospecto, negocio, traerNegocios};
 })();
 
 /* ---------------------------------- interfaz -------------------------------- */
@@ -2486,16 +2631,17 @@ window.seleccionarLote = n => {
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png"};</script>
-<script src="datos-analisis.js?v=20260922a"></script>
-<script src="datos-terreno.js?v=20260922a"></script>
-<script src="datos-logo.js?v=20260922a"></script>
-<script src="adaptador.js?v=20260922a"></script>
-<script src="analisis.js?v=20260922a"></script>
-<script src="datos-via.js?v=20260922a"></script>
-<script src="r3d.js?v=20260922a"></script>
-<script src="armazon.js?v=20260922a"></script>
-<script src="acceso.js?v=20260922a"></script>
-<script src="ia.js?v=20260922a"></script>
+<script src="datos-analisis.js?v=20260923d"></script>
+<script src="datos-terreno.js?v=20260923d"></script>
+<script src="datos-logo.js?v=20260923d"></script>
+<script src="adaptador.js?v=20260923d"></script>
+<script src="analisis.js?v=20260923d"></script>
+<script src="datos-via.js?v=20260923d"></script>
+<script src="datos-entrada.js?v=20260923d"></script>
+<script src="r3d.js?v=20260923d"></script>
+<script src="armazon.js?v=20260923d"></script>
+<script src="acceso.js?v=20260923d"></script>
+<script src="ia.js?v=20260923d"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");
