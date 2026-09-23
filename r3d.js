@@ -207,8 +207,8 @@ const R3D = (()=>{
   }
 
   function entrelazar(m){
-    const inter=new Float32Array(NXT*NYT*7);
-    for(let k=0;k<NXT*NYT;k++){
+    const n=m.n, inter=new Float32Array(n*7);
+    for(let k=0;k<n;k++){
       inter[k*7]=m.pos[k*3];inter[k*7+1]=m.pos[k*3+1];inter[k*7+2]=m.pos[k*3+2];
       inter[k*7+3]=m.uv[k*2];inter[k*7+4]=m.uv[k*2+1];
       inter[k*7+5]=m.sl[k*2];inter[k*7+6]=m.sl[k*2+1];
@@ -217,33 +217,120 @@ const R3D = (()=>{
   }
   function rehacerMalla(){
     if(!gl||!vbo)return;
+    const m=malla();
     gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
-    gl.bufferData(gl.ARRAY_BUFFER,entrelazar(malla()),gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER,entrelazar(m),gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ibo);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,m.idx,gl.STATIC_DRAW); nIdx=m.idx.length;
+    faldaSucia=true;
   }
 
-  /* ---------- geometría ---------- */
+  /* ---------- el borde del modelo ----------
+     La malla es una rejilla de 4 m: si el borde se corta por celdas enteras sale
+     en escalera, que es lo que se veía "mordido". Ahora el borde es una curva:
+     se suaviza la máscara de "hay terreno" (gaussiana de ~6 m) y la malla se
+     recorta por su nivel 0,5 con marching squares, interpolando la cota sobre
+     cada arista. Donde el borde suavizado entra a un nodo sin dato, la cota es
+     la del nodo medido más cercano. Debajo del borde va un faldón de tierra,
+     como el canto de una maqueta. */
+  let FB=null, HF=null, FALDA=[], faldaB=null, faldaVE=null, faldaOsc=null, faldaSucia=false;
+  function prepararBorde(){
+    if(FB) return;
+    const NT=NXT*NYT, val=new Float32Array(NT);
+    for(let k=0;k<NT;k++) val[k]=isNaN(H[k])?0:1;
+    const sg=1.4, R=4, w=[]; let sw=0;
+    for(let d=-R;d<=R;d++){ const v=Math.exp(-d*d/(2*sg*sg)); w.push(v); sw+=v; }
+    for(let d=0;d<w.length;d++) w[d]/=sw;
+    const tmp=new Float32Array(NT); FB=new Float32Array(NT);
+    for(let j=0;j<NYT;j++) for(let i=0;i<NXT;i++){ let s=0;
+      for(let d=-R;d<=R;d++){ const a=i+d; if(a>=0&&a<NXT) s+=w[d+R]*val[j*NXT+a]; } tmp[j*NXT+i]=s; }
+    for(let j=0;j<NYT;j++) for(let i=0;i<NXT;i++){ let s=0;
+      for(let d=-R;d<=R;d++){ const b=j+d; if(b>=0&&b<NYT) s+=w[d+R]*tmp[b*NXT+i]; } FB[j*NXT+i]=s; }
+    /* cota de relleno para los nodos sin dato: la del medido más cercano */
+    HF=new Float32Array(NT); const cola=new Int32Array(NT); let ini=0, fin=0;
+    for(let k=0;k<NT;k++){ if(!isNaN(H[k])){ HF[k]=H[k]; cola[fin++]=k; } else HF[k]=NaN; }
+    while(ini<fin){ const k=cola[ini++], j=(k/NXT)|0, i=k-j*NXT;
+      const vec=[[1,0],[-1,0],[0,1],[0,-1]];
+      for(const [di,dj] of vec){ const a=i+di, b=j+dj; if(a<0||b<0||a>=NXT||b>=NYT) continue;
+        const q=b*NXT+a; if(isNaN(HF[q])){ HF[q]=HF[k]; cola[fin++]=q; } } }
+  }
   function malla(){
-    const pos=new Float32Array(NXT*NYT*3), uv=new Float32Array(NXT*NYT*2), sl=new Float32Array(NXT*NYT*2);
+    prepararBorde();
+    const hB=(i,j)=>{ if(i<0||j<0||i>=NXT||j>=NYT) return NaN; const h=alturaBanqueada(i,j); return isNaN(h)?HF[j*NXT+i]:h; };
+    const NT=NXT*NYT;
+    const pos=[], uv=[], sl=[];
     for(let j=0;j<NYT;j++)for(let i=0;i<NXT;i++){
-      const k=j*NXT+i, h=alturaBanqueada(i,j);
+      const h=hB(i,j);
       const wx=TER.x+i*S, wy=TER.y+j*S;
-      pos[k*3]  = wx-CX;
-      pos[k*3+1]= -(wy-CY);
-      pos[k*3+2]= isNaN(h)?0:(h-ZMID);
-      uv[k*2]=i/(NXT-1); uv[k*2+1]=j/(NYT-1);
-      const hx1=alturaBanqueada(i+1,j),hx0=alturaBanqueada(i-1,j),
-            hy1=alturaBanqueada(i,j+1),hy0=alturaBanqueada(i,j-1);
-      const dzdx=(isNaN(hx1)||isNaN(hx0))?0:(hx1-hx0)/(2*S);
-      const dzdY=(isNaN(hy1)||isNaN(hy0))?0:-(hy1-hy0)/(2*S);
-      sl[k*2]=dzdx; sl[k*2+1]=dzdY;
+      pos.push(wx-CX, -(wy-CY), isNaN(h)?0:(h-ZMID));
+      uv.push(i/(NXT-1), j/(NYT-1));
+      const hx1=hB(i+1,j),hx0=hB(i-1,j),hy1=hB(i,j+1),hy0=hB(i,j-1);
+      sl.push((isNaN(hx1)||isNaN(hx0))?0:(hx1-hx0)/(2*S), (isNaN(hy1)||isNaN(hy0))?0:-(hy1-hy0)/(2*S));
     }
-    const idx=[];
+    const cruce=new Map();
+    const punto=(a,b)=>{                         /* vértice sobre la arista a–b donde FB = 0,5 */
+      const key=a<b?a*NT+b:b*NT+a; if(cruce.has(key)) return cruce.get(key);
+      let t=(0.5-FB[a])/(FB[b]-FB[a]); t=Math.min(1,Math.max(0,t));
+      const n=pos.length/3;
+      for(let c=0;c<3;c++) pos.push(pos[a*3+c]+(pos[b*3+c]-pos[a*3+c])*t);
+      for(let c=0;c<2;c++){ uv.push(uv[a*2+c]+(uv[b*2+c]-uv[a*2+c])*t); sl.push(sl[a*2+c]+(sl[b*2+c]-sl[a*2+c])*t); }
+      cruce.set(key,n); return n;
+    };
+    const idx=[]; FALDA=[];
     for(let j=0;j<NYT-1;j++)for(let i=0;i<NXT-1;i++){
       const a=j*NXT+i,b=a+1,c=a+NXT,d=c+1;
-      if(isNaN(H[a])||isNaN(H[b])||isNaN(H[c])||isNaN(H[d]))continue;
-      idx.push(a,c,b, b,c,d);
+      const ia=FB[a]>=0.5, ib=FB[b]>=0.5, ic=FB[c]>=0.5, id=FB[d]>=0.5;
+      if(ia&&ib&&ic&&id){ idx.push(a,c,b, b,c,d); continue; }
+      if(!ia&&!ib&&!ic&&!id) continue;
+      /* recorrido a→b→d→c con los cruces del borde */
+      const ciclo=[a,b,d,c], den=[ia,ib,id,ic];
+      let s0=den.indexOf(true); const poly=[]; let salida=-1;
+      for(let t=0;t<4;t++){
+        const k=(s0+t)%4, k2=(k+1)%4, v=ciclo[k], v2=ciclo[k2];
+        if(den[k]) poly.push(v);
+        if(den[k]!==den[k2]){
+          const x=punto(v,v2); poly.push(x);
+          if(den[k]) salida=x; else if(salida>=0){ FALDA.push([salida,x]); salida=-1; }
+        }
+      }
+      for(let t=1;t<poly.length-1;t++) idx.push(poly[0],poly[t],poly[t+1]);
     }
-    return {pos,uv,sl,idx:new Uint16Array(idx)};
+    const n=pos.length/3;
+    return {pos:new Float32Array(pos),uv:new Float32Array(uv),sl:new Float32Array(sl),
+            idx: new Uint16Array(idx), n};
+  }
+  /* el faldón: una pared de tierra bajo cada tramo del borde, hasta una base común */
+  function construirFalda(oscuro){
+    faldaB=null; if(!FALDA.length) return;
+    let m=null;                                    /* posiciones actuales de la malla */
+    try{ m=malla(); }catch(e){ return; }
+    let zmin=Infinity; FALDA.forEach(([p,q])=>{ zmin=Math.min(zmin,m.pos[p*3+2],m.pos[q*3+2]); });
+    const zb=(zmin-6)*ve;
+    /* el recorrido deja siempre el afuera del mismo lado del tramo: se decide
+       el lado por mayoría una sola vez y vale para todos (así no quedan rayas) */
+    let votos=0;
+    const tramos=FALDA.map(([p,q])=>{
+      const x1=m.pos[p*3],y1=m.pos[p*3+1],z1=m.pos[p*3+2]*ve, x2=m.pos[q*3],y2=m.pos[q*3+1],z2=m.pos[q*3+2]*ve;
+      let nx=y2-y1, ny=-(x2-x1); const L=Math.hypot(nx,ny)||1; nx/=L; ny/=L;
+      const mx=(x1+x2)/2+nx*2+CX, my=-((y1+y2)/2+ny*2)+CY;
+      const ii=Math.round((mx-TER.x)/S), jj=Math.round((my-TER.y)/S);
+      const fuera=(ii<0||jj<0||ii>=NXT||jj>=NYT) ? true : FB[jj*NXT+ii]<0.5;
+      votos += fuera?1:-1;
+      return [x1,y1,z1,x2,y2,z2,nx,ny];
+    });
+    const sgn = votos>=0 ? 1 : -1;
+    const V=[],N=[],I=[];
+    tramos.forEach(([x1,y1,z1,x2,y2,z2,nx,ny])=>{
+      /* normal casi horizontal pero algo inclinada hacia arriba: el canto se lee
+         como tierra iluminada, sin quedar negro del lado de la sombra */
+      const ax=nx*sgn*0.55, ay=ny*sgn*0.55, az=0.83;
+      const k=V.length/3;
+      V.push(x1,y1,z1, x2,y2,z2, x2,y2,zb, x1,y1,zb);
+      for(let r=0;r<4;r++) N.push(ax,ay,az);
+      I.push(k,k+1,k+2, k,k+2,k+3);
+    });
+    if(V.length/3>65535) return;
+    faldaB=subir(V,N,I); faldaVE=ve; faldaOsc=oscuro;
   }
 
   /* ---------- textura: el mismo plano, dibujado en canvas 2D ---------- */
@@ -375,23 +462,34 @@ const R3D = (()=>{
       x.globalAlpha=1; x.lineWidth=Math.max(4,M(1.6)); x.strokeStyle=estilo("--gold")||"#9B7A48"; x.stroke(); }
 
     /* ---------------- la vía, con andén, sardinel y demarcación ---------------- */
-    if(!foto && document.getElementById("cVia").checked && typeof VIAP!=="undefined" && VIAP.calzada){
-      /* Plazoleta de acceso: igual que en el 2D. La calzada sale de datos-entrada.js
-         (corredor fuera de la zona, sardineles del plano 039 dentro) y ahí adentro
-         no se pintan eje ni líneas de borde, sólo la demarcación del plano. */
-      const E = window.__ENTRADA || null;
-      const CALZ = (E && E.asfalto) ? E.asfalto : VIAP.calzada;
+    const E_ = window.__ENTRADA || null, RED_ = !!(E_ && E_.calzada);
+    if(!foto && document.getElementById("cVia").checked && (RED_ || (typeof VIAP!=="undefined" && VIAP && VIAP.calzada))){
+      /* La red del plano 039 (datos-entrada.js): las bandas de la vía como las
+         achura el plano —andén, franja, sardinel, calzada— y el eje recalculado
+         como línea media de la calzada. En la plazoleta de acceso no se pintan eje
+         ni líneas de borde, sólo la demarcación del plano. Sin ese archivo, el
+         corredor viejo (VIAP). */
+      const E = E_;
+      const CALZ = RED_ ? E.calzada : VIAP.calzada;
+      const EJE  = RED_ ? E.eje : VIAP.eje;
       const fueraDeZona = ()=>{ if(!E||!E.zona) return; x.beginPath(); x.rect(0,0,T,T);
         E.zona.forEach((p,i)=>{const q=P(p);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]);}); x.closePath(); x.clip("evenodd"); };
-      /* andén: la franja de 2 m que queda entre el lindero del lote y la calzada */
-      x.fillStyle = oscuro ? "#3A3B36" : "#DAD6C7";
-      VIAP.corredor.forEach(pol=>{ trazaPoli(pol); x.fill("evenodd"); });
-      /* junta del andén cada 1,5 m se pierde a esta escala: en su lugar, un borde */
-      x.strokeStyle = oscuro ? "#4A4B44" : "#C6C2B2"; x.lineWidth=Math.max(1,M(0.4));
-      VIAP.corredor.forEach(pol=>{ trazaPoli(pol); x.stroke(); });
-      /* sardinel: labio claro justo antes del asfalto */
-      x.strokeStyle = oscuro ? "#6A6B62" : "#F2EFE4"; x.lineWidth=Math.max(1.4,M(0.55));
-      CALZ.forEach(pol=>{ trazaPoli(pol); x.stroke(); });
+      const llena=(arr,col)=>{ x.fillStyle=col; (arr||[]).forEach(pol=>{ trazaPoli(pol); x.fill("evenodd"); }); };
+      if(RED_){
+        llena(E.anden, oscuro ? "#3A3B36" : "#DAD6C7");
+        x.strokeStyle = oscuro ? "#4A4B44" : "#C6C2B2"; x.lineWidth=Math.max(1,M(0.2));
+        E.anden.forEach(pol=>{ trazaPoli(pol); x.stroke(); });
+        llena(E.franja, oscuro ? "#44453E" : "#C9C4B2");
+        llena(E.sardinel, oscuro ? "#6A6B62" : "#F2EFE4");
+      } else {
+        /* andén: la franja de 2 m que queda entre el lindero del lote y la calzada */
+        llena(VIAP.corredor, oscuro ? "#3A3B36" : "#DAD6C7");
+        x.strokeStyle = oscuro ? "#4A4B44" : "#C6C2B2"; x.lineWidth=Math.max(1,M(0.4));
+        VIAP.corredor.forEach(pol=>{ trazaPoli(pol); x.stroke(); });
+        /* sardinel: labio claro justo antes del asfalto */
+        x.strokeStyle = oscuro ? "#6A6B62" : "#F2EFE4"; x.lineWidth=Math.max(1.4,M(0.55));
+        CALZ.forEach(pol=>{ trazaPoli(pol); x.stroke(); });
+      }
       /* calzada */
       x.save();
       x.beginPath();
@@ -403,7 +501,7 @@ const R3D = (()=>{
       /* líneas de borde, continuas y blancas, a 0,4 m del sardinel */
       x.strokeStyle="#EFEDE2"; x.globalAlpha=.85; x.lineWidth=Math.max(1,M(0.12));
       x.setLineDash([]);
-      VIAP.eje.forEach(e=>{
+      EJE.forEach(e=>{
         [1,-1].forEach(sgn=>{
           x.beginPath();
           for(let i=0;i<e.length;i++){
@@ -420,7 +518,7 @@ const R3D = (()=>{
       /* eje: línea discontinua */
       x.globalAlpha=.9; x.lineWidth=Math.max(1,M(0.12));
       x.setLineDash([M(3),M(4.5)]);
-      VIAP.eje.forEach(e=>{
+      EJE.forEach(e=>{
         x.beginPath(); e.forEach((p,i)=>{const q=P(p);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]);}); x.stroke();
       });
       x.setLineDash([]); x.globalAlpha=1;
@@ -435,6 +533,7 @@ const R3D = (()=>{
         (arr||[]).forEach(r=>{ traza(r,1); x.stroke(); }); x.setLineDash([]); };
       x.save(); x.globalAlpha=1; x.lineJoin="round";
       relleno(E.social, oscuro?"#4A4638":"#E4DDC8");
+      relleno(E.circulacion, oscuro?"#4E4633":"#D6C8A6");
       relleno(E.parking, oscuro?"#3E403D":"#6A6C69");
       borde(E.parking, "#F4F2EA", 0.15);
       relleno(E.verde, oscuro?"#4F6B45":"#8FAF78");
@@ -443,6 +542,11 @@ const R3D = (()=>{
       relleno(E.porteria, oscuro?"#CFCABB":"#F7F5EE");
       borde((E.mant||[]).concat(E.porteria||[]), "#3B453A", 0.25);
       x.globalAlpha=.8; borde(E.cubierta, "#3B453A", 0.12, [M(1.2),M(1)]); x.globalAlpha=1;
+      /* la cancha del Área Social 2 */
+      relleno(E.cancha, oscuro?"#2F5566":"#4F7F96"); borde(E.cancha, "#F4F2EA", 0.15);
+      x.strokeStyle="#F4F2EA"; x.lineWidth=Math.max(1,M(0.12)); (E.canchaL||[]).forEach(r=>{ traza(r,0); x.stroke(); });
+      /* postes de energía */
+      x.fillStyle="#2E3530"; (E.postes||[]).forEach(p=>{ const q=P(p); x.beginPath(); x.arc(q[0],q[1],Math.max(2,M(0.45)),0,6.2832); x.fill(); });
       /* guía de carril, cebras y flechas */
       x.globalAlpha=.9; x.strokeStyle="#F4F2EA"; x.lineWidth=Math.max(1,M(0.12)); x.setLineDash([M(3),M(4.5)]);
       (E.guia||[]).forEach(r=>{ traza(r,0); x.stroke(); }); x.setLineDash([]);
@@ -1088,6 +1192,10 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
       gl.enableVertexAttribArray(a3);gl.vertexAttribPointer(a3,2,gl.FLOAT,false,st3,20); }
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ibo);
     gl.drawElements(gl.TRIANGLES,nIdx,gl.UNSIGNED_SHORT,0);
+    { const osc = document.documentElement.dataset.theme==="dark" ||
+        (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+      if(!faldaB || faldaVE!==ve || faldaOsc!==osc || faldaSucia) { construirFalda(osc); faldaSucia=false; }
+      pintarSolido(faldaB,M, osc?[0.30,0.26,0.21,1]:[0.60,0.51,0.40,1]); }
     pintarSolido(somB,M,[0.10,0.12,0.09,0.34]);
     piezas.forEach(p=>pintarSolido(p.b,M,p.c));    /* la Casa 30JB, pieza por pieza */
     if(domo){
