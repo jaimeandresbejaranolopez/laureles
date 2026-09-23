@@ -10,12 +10,12 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20260923e">
+<link rel="stylesheet" href="maplibre-gl.css?v=20260923f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20260923e">
-<link rel="stylesheet" href="analisis.css?v=20260923e">
+<link rel="stylesheet" href="armazon.css?v=20260923f">
+<link rel="stylesheet" href="analisis.css?v=20260923f">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -257,6 +257,22 @@ main.en3d .fondos, .stage.en3d .fondos{bottom:70px}
   .ficha.arrastrando .fh{cursor:grabbing}
   .ficha .asa{display:block}
   .ficha.min .fb{display:none}
+  /* RECOGIDA: se desliza la hoja hacia abajo y queda sólo una pestaña con el
+     número y el estado, para ver el lote entero. Un toque la vuelve a abrir. */
+  .ficha.rec{min-height:0}
+  .ficha.rec .fb,.ficha.rec .ff{display:none}
+  .ficha.rec .fh{padding:16px 64px 12px 18px}
+  .ficha.rec .fh .lb{display:inline-block;margin-right:8px;vertical-align:middle}
+  .ficha.rec .fh h2{display:inline-block;font-size:30px;margin:0 12px 0 0;vertical-align:middle}
+  .ficha.rec .fh .badge{vertical-align:middle}
+  .ficha.rec .cerrar{top:50%;transform:translateY(-50%)}
+  /* con la hoja abierta las barras de relieve y de fondos le quedaban encima
+     (tapaban "Imprimir ficha" y "Volar al lote"): se esconden mientras la hoja
+     está abierta y, recogida, se paran justo encima de la pestaña */
+  body.hoja-abierta .ve3d, body.hoja-abierta .fondos{display:none!important}
+  body.hoja-rec .ve3d{bottom:calc(var(--hojaH,70px) + 10px)!important}
+  body.hoja-rec .fondos{bottom:calc(var(--hojaH,70px) + 58px)!important}
+  body.hoja-rec main.en3d .fondos, body.hoja-rec .stage.en3d .fondos{bottom:calc(var(--hojaH,70px) + 58px)!important}
   /* la barra de fondos sube por encima de la escala y de la atribución */
   .fondos{bottom:44px}
   /* con el relieve encendido son tres barras en el mismo rincón: cada una en su
@@ -641,7 +657,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20260923e"></script>
+<script src="maplibre-gl.js?v=20260923f"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -663,7 +679,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20260923e"></script>
+<script src="lotes.js?v=20260923f"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -1802,7 +1818,8 @@ function volarA(centro, zoom){
   });
 }
 function cerrarFicha(){
-  S.sel=null; document.getElementById("ficha").classList.remove("on"); refrescar();
+  S.sel=null; const f=document.getElementById("ficha"); f.classList.remove("on","rec"); refrescar();
+  try{ estadoHoja(); }catch(e){}
 }
 /* ---------------------------------------------------------------------------
    LA HOJA DEL LOTE, ARRASTRABLE.
@@ -1816,8 +1833,18 @@ function cerrarFicha(){
    navegador entra y sale y 100vh no cambia, así que una hoja "al 50 %" acababa
    siendo el 58 % real.
    --------------------------------------------------------------------------- */
-const SNAPS = [0.30, 0.50, 0.92];
-let snapFicha = 1;
+/* 0 = recogida (sólo la pestaña con el número), luego 30 %, 50 % y 92 % */
+const SNAPS = [0, 0.30, 0.50, 0.92];
+let snapFicha = 2;
+/* estado de la hoja para el resto de la página: las barras de abajo se corren */
+function estadoHoja(){
+  const f = document.getElementById("ficha");
+  const on = !!(f && f.classList.contains("on") && hojaMovil());
+  const rec = on && f.classList.contains("rec");
+  document.body.classList.toggle("hoja-rec", rec);
+  document.body.classList.toggle("hoja-abierta", on && !rec);
+  if(f) document.documentElement.style.setProperty("--hojaH", Math.round(on ? f.getBoundingClientRect().height : 0)+"px");
+}
 const hojaMovil = () => innerWidth <= 900;
 const altoVentana = () => Math.round((window.visualViewport && visualViewport.height) || innerHeight);
 /* lo que miden de verdad la cabecera y el pie de ESTA ficha, ahora mismo: el
@@ -1830,7 +1857,8 @@ function medidasHoja(f){
 function ponerAltoHoja(px){
   const f = document.getElementById("ficha"); if(!f) return;
   const H = altoVentana();
-  const v = Math.round(Math.max(0.16*H, Math.min(0.94*H, px)));
+  const minimo = f.classList.contains("rec") || f.classList.contains("arrastrando") ? 56 : 0.16*H;
+  const v = Math.round(Math.max(minimo, Math.min(0.94*H, px)));
   f.style.setProperty("--fichaH", v+"px");
   /* el cuerpo se esconde cuando no le queda sitio: por debajo de 56 px no se
      lee nada y en cambio empuja el pie —precio y botones— fuera de la pantalla.
@@ -1838,6 +1866,7 @@ function ponerAltoHoja(px){
      hoja de 195, y el botón de WhatsApp quedaba debajo del borde. */
   const m = medidasHoja(f);
   f.classList.toggle("min", (v - m.cab - m.pie) < 56);
+  estadoHoja();
   return v;
 }
 function recolocarLote(){
@@ -1895,6 +1924,15 @@ function snapHoja(i, recolocar){
   snapFicha = Math.max(0, Math.min(SNAPS.length-1, i));
   const f = document.getElementById("ficha");
   const H = altoVentana();
+  if(f && snapFicha===0){
+    /* recogida: la pestaña mide lo que mida la cabecera compacta */
+    f.classList.add("rec");
+    const fh = f.querySelector(".fh");
+    ponerAltoHoja((fh ? fh.offsetHeight : 64) + 2);
+    if(recolocar!==false) setTimeout(recolocarLote, 270);
+    return;
+  }
+  if(f) f.classList.remove("rec");
   let px = SNAPS[snapFicha]*H;
   if(f){
     /* Ninguna posición puede cortar el pie: el precio y los botones se ven
@@ -1909,11 +1947,12 @@ function snapHoja(i, recolocar){
 }
 function hojaArrastrable(f){
   const h = f.querySelector(".fh"); if(!h) return;
-  let y0=0, h0=0, activo=false, idp=null;
+  let y0=0, h0=0, activo=false, idp=null, movido=0, eraRec=false;
   h.addEventListener("pointerdown", e=>{
     if(!hojaMovil()) return;
     if(e.target.closest("button, a, input, select")) return;
-    activo=true; idp=e.pointerId; y0=e.clientY;
+    activo=true; idp=e.pointerId; y0=e.clientY; movido=0;
+    eraRec=f.classList.contains("rec");
     h0=f.getBoundingClientRect().height;
     f.classList.add("arrastrando");
     try{ h.setPointerCapture(idp); }catch(err){}
@@ -1921,23 +1960,33 @@ function hojaArrastrable(f){
   h.addEventListener("pointermove", e=>{
     if(!activo || e.pointerId!==idp) return;
     e.preventDefault();
-    ponerAltoHoja(h0 - (e.clientY - y0));
+    const dy = e.clientY - y0; movido = Math.max(movido, Math.abs(dy));
+    /* al subirla desde recogida vuelve a mostrar el cuerpo */
+    if(eraRec && dy < -12) f.classList.remove("rec");
+    ponerAltoHoja(h0 - dy);
   });
   const soltar = e=>{
     if(!activo || (e && e.pointerId!=null && e.pointerId!==idp)) return;
     activo=false; f.classList.remove("arrastrando");
     try{ h.releasePointerCapture(idp); }catch(err){}
-    const fr = f.getBoundingClientRect().height / altoVentana();
-    let mejor=0, d=9;
-    SNAPS.forEach((v,i)=>{ const dd=Math.abs(v-fr); if(dd<d){ d=dd; mejor=i; } });
+    /* un toque sin arrastre sobre la pestaña recogida la abre a la mitad */
+    if(movido < 6){ if(eraRec) snapHoja(2); return; }
+    const alto = f.getBoundingClientRect().height, H = altoVentana();
+    const m = medidasHoja(f);
+    /* por debajo de lo que miden cabecera + pie ya no cabe la hoja abierta:
+       se recoge. Si no, a la posición más cercana. */
+    if(alto < (m.cab + m.pie)*0.8){ snapHoja(0); return; }
+    const fr = alto / H;
+    let mejor=1, d=9;
+    SNAPS.forEach((v,i)=>{ if(i===0) return; const dd=Math.abs(v-fr); if(dd<d){ d=dd; mejor=i; } });
     snapHoja(mejor);
   };
   h.addEventListener("pointerup", soltar);
   h.addEventListener("pointercancel", soltar);
-  /* un toque limpio en la cabecera alterna entre media y completa */
+  /* doble toque en la cabecera: media ↔ completa */
   h.addEventListener("dblclick", e=>{
     if(!hojaMovil() || e.target.closest("button")) return;
-    snapHoja(snapFicha>=2 ? 1 : 2);
+    snapHoja(snapFicha>=3 ? 2 : 3);
   });
 }
 /* si la ventana cambia de alto —girar el teléfono, la barra del navegador— la
@@ -2047,7 +2096,7 @@ function pintarFicha(n){
   ficha.classList.add("on");
   /* la hoja se rehace entera en cada lote, así que el arrastre se vuelve a
      enganchar y la posición vuelve a la de en medio */
-  if(hojaMovil()){ snapHoja(1, false); hojaArrastrable(ficha); }
+  if(hojaMovil()){ ficha.classList.remove("rec"); snapHoja(2, false); hojaArrastrable(ficha); }
   else ficha.style.removeProperty("--fichaH");
   ficha.querySelector(".cerrar").onclick=cerrarFicha;
   ficha.querySelector("#bWa").onclick=()=>whatsapp(p,v,et);
@@ -2660,17 +2709,17 @@ window.seleccionarLote = n => {
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png"};</script>
-<script src="datos-analisis.js?v=20260923e"></script>
-<script src="datos-terreno.js?v=20260923e"></script>
-<script src="datos-logo.js?v=20260923e"></script>
-<script src="adaptador.js?v=20260923e"></script>
-<script src="analisis.js?v=20260923e"></script>
-<script src="datos-via.js?v=20260923e"></script>
-<script src="datos-entrada.js?v=20260923e"></script>
-<script src="r3d.js?v=20260923e"></script>
-<script src="armazon.js?v=20260923e"></script>
-<script src="acceso.js?v=20260923e"></script>
-<script src="ia.js?v=20260923e"></script>
+<script src="datos-analisis.js?v=20260923f"></script>
+<script src="datos-terreno.js?v=20260923f"></script>
+<script src="datos-logo.js?v=20260923f"></script>
+<script src="adaptador.js?v=20260923f"></script>
+<script src="analisis.js?v=20260923f"></script>
+<script src="datos-via.js?v=20260923f"></script>
+<script src="datos-entrada.js?v=20260923f"></script>
+<script src="r3d.js?v=20260923f"></script>
+<script src="armazon.js?v=20260923f"></script>
+<script src="acceso.js?v=20260923f"></script>
+<script src="ia.js?v=20260923f"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

@@ -295,7 +295,7 @@ const ACCESO = (()=>{
       cerrar();
       avisar(ok ? tt("Solicitud registrada. Un asesor le confirma la hora.","Request saved. An advisor will confirm the time.","Demande enregistrée. Un conseiller confirmera l'heure.")
                 : tt("No se pudo guardar la solicitud; le abrimos WhatsApp para que no se pierda.","Could not save the request; opening WhatsApp so it is not lost.","Impossible d'enregistrer ; ouverture de WhatsApp."), 5000);
-      if(CFG.telefono && CFG.telefono!==POR_DEFECTO.telefono)
+      if(CFG.telefono && CFG.telefono!=="573000000000")
         open("https://wa.me/"+CFG.telefono+"?text="+encodeURIComponent(msg),"_blank");
     };
   }
