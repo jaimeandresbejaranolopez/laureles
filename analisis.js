@@ -3170,32 +3170,35 @@ function analisis(n){
      render del tipo, y así va dicho debajo. Lo que sí es de este lote es el
      volumen: sale de la implantación medida sobre su terreno.
      ------------------------------------------------------------------ */
-  '<h3>'+TT("Simulador de diseño de la vivienda",
-            "House design simulator",
-            "Simulateur de conception de la maison")+'</h3>'+
-  '<div class="simCort" id="simCort" style="--cx:72%">'+
-    '<div class="capa vol"><img src="'+VOLUMEN_CASA()+'" alt="" draggable="false"></div>'+
-    '<div class="capa ren"><img src="'+RENDER_CASA()+'" alt="" draggable="false"></div>'+
-    '<div class="tira"></div><div class="asa">\u21C4</div>'+
-    '<div class="etq etqI">'+TT("Esquema volumétrico","Volumetric scheme","Schéma volumétrique")+'</div>'+
-    '<div class="etq etqD">'+TT("Cómo se vería","How it would look","Rendu final")+'</div>'+
-  '</div>'+
+  '<h3>'+TT("La casa de referencia",
+            "The reference house",
+            "La maison de référence")+'</h3>'+
+  /* AVISO: el modelo es ilustrativo; el diseño definitivo aún no se ha entregado */
+  '<div class="avisoModelo" role="note"><b>'+TT("Aviso informativo","Notice","Avis")+'</b> · '+
+    TT("Este modelo es solo informativo. El diseño definitivo se encuentra en proceso de entrega al proyecto.",
+       "This model is for information only. The final design is in the process of being delivered to the project.",
+       "Ce modèle est purement informatif. La conception définitive est en cours de livraison au projet.")+'</div>'+
+  /* LA CASA DE REFERENCIA (septiembre de 2026): concreto a la vista, piedra,
+     acero y vidrio, 316 m². Es una imagen ilustrativa de la casa tipo, no un
+     fotomontaje sobre este lote. Antes aquí había una cortina contra la
+     maqueta de la Casa 30JB con la misma cámara; esta imagen es una vista
+     frontal y no calza con esa maqueta, así que va sola, completa. */
+  '<figure class="casaRef">'+
+    '<img src="'+RENDER_CASA()+'" alt="'+TT("Casa de referencia de Laureles Campestre","Laureles Campestre reference house","Maison de référence de Laureles Campestre")+'" loading="lazy">'+
+    '<div class="etq etqRef">'+TT("Casa de referencia · 316 m²","Reference house · 316 m²","Maison de référence · 316 m²")+'</div>'+
+    '<div class="etq etqInfo">'+TT("Imagen ilustrativa","Illustrative image","Image illustrative")+'</div>'+
+  '</figure>'+
   '<p class="p pie">'+TT(
-     'Arrastra la cortina con el mouse o con el dedo. Es la misma casa desde el mismo punto de '+
-     'vista: a la izquierda el volumen en maqueta, a la derecha la <b>Casa 30JB</b> terminada. El '+
-     'volumen está dibujado con la cámara del render —310° de giro y 26° de altura— para que al '+
-     'arrastrar la cortina las dos imágenes se monten una sobre la otra. Las dos son de la <b>Casa 30JB</b>, '+
-     'la vivienda de referencia del proyecto: la maqueta está a escala real —22,4 × 28,4 m— y el render '+
-     'es su imagen, no un fotomontaje sobre este lote. La implantación medida sobre el terreno de ESTE '+
-     'lote —dónde cae la casa, cómo queda orientada y cuánta tierra se mueve— está más abajo, en '+
-     '«Cómo es el terreno» y «Dónde cabe la casa».',
-     'Drag the curtain with the mouse or your finger. Same house, same viewpoint: the massing on the '+
-     'left, the finished <b>Casa 30JB</b> on the right, both drawn with the render\u2019s camera. Both '+
-     'show the project\u2019s reference house at real scale (22.4 × 28.4 m); the render is not a '+
-     'photomontage of this lot. The implantation measured on THIS lot is further down.',
-     'Faites glisser le rideau. Même maison, même point de vue : la maquette à gauche, la <b>Casa 30JB</b> '+
-     'terminée à droite. Les deux montrent la maison de référence à l\u2019échelle réelle ; le rendu '+
-     'n\u2019est pas un photomontage de ce lot. L\u2019implantation mesurée sur CE lot est plus bas.')+'</p>'+
+     'La casa de referencia del proyecto: <b>316 m²</b> en dos volúmenes, con concreto a la vista, muros de '+
+     'piedra, perfilería negra, grandes ventanales hacia el jardín y parqueadero en gravilla. Es la imagen del '+
+     'lenguaje arquitectónico de Laureles, no un fotomontaje sobre este lote. Dónde cabe una casa en ESTE lote '+
+     '—cómo queda orientada y cuánta tierra se mueve— está más abajo, en «Cómo es el terreno» y «Dónde cabe la casa».',
+     'The project\u2019s reference house: <b>316 m²</b> in two volumes, exposed concrete, stone walls, black steel, '+
+     'large windows to the garden and gravel parking. It illustrates the architectural language of Laureles; it is '+
+     'not a photomontage of this lot. Where a house fits on THIS lot is shown further down.',
+     'La maison de référence du projet : <b>316 m²</b> en deux volumes, béton brut, murs en pierre, acier noir, '+
+     'grandes baies sur le jardin et parking en gravier. Elle illustre le langage architectural de Laureles ; ce '+
+     'n\u2019est pas un photomontage sur ce lot. L\u2019implantation sur CE lot est plus bas.')+'</p>'+
 
   '<h3>'+T("Cómo es el terreno")+'</h3>'+
 

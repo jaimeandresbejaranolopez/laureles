@@ -260,3 +260,11 @@
 .avisoModelo b{color:var(--gold,#9B7A48)}
 .simCort .etqInfo{left:10px;right:auto;top:auto;bottom:10px;background:rgba(20,26,18,.72);color:#F4F2EA;
   font-size:11px;letter-spacing:.04em}
+
+/* casa de referencia (imagen completa, sin cortina) */
+.casaRef{position:relative;margin:0 0 8px;max-width:720px;border-radius:10px;overflow:hidden;border:1px solid var(--line,#D9D4C4);background:#E9E6DC}
+.casaRef img{display:block;width:100%;height:auto;aspect-ratio:1600/727;object-fit:cover}
+.casaRef .etq{position:absolute;font-size:10px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;padding:5px 10px;border-radius:999px;pointer-events:none;white-space:nowrap}
+.casaRef .etqRef{left:10px;top:10px;background:rgba(50,64,47,.88);color:#F4F2EA}
+.casaRef .etqInfo{left:10px;bottom:10px;background:rgba(20,26,18,.72);color:#F4F2EA;font-size:10.5px;letter-spacing:.04em}
+@media (max-width:600px){ .casaRef .etq{font-size:9px;padding:4px 8px} }

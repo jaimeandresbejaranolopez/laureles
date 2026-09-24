@@ -10,12 +10,12 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20260924b">
+<link rel="stylesheet" href="maplibre-gl.css?v=20260924e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20260924b">
-<link rel="stylesheet" href="analisis.css?v=20260924b">
+<link rel="stylesheet" href="armazon.css?v=20260924e">
+<link rel="stylesheet" href="analisis.css?v=20260924e">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -98,6 +98,14 @@ input[type=range]{width:100%;accent-color:var(--forest)}
 .cuenta{font-size:12.5px;color:var(--ink-2)}
 .cuenta b{font-family:var(--serif);font-size:16px}
 
+/* ---------- banderín de la casa existente ---------- */
+.banderin{display:flex;align-items:flex-start;gap:2px;cursor:pointer;user-select:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+.banderin svg{flex:none}
+.banderin span{margin-top:1px;background:rgba(255,253,246,.94);border-radius:8px;padding:3px 8px 4px;
+  font:700 11.5px/1.15 var(--sans);color:#3B2A20;white-space:nowrap}
+.banderin span b{display:block;color:#8E4527}
+.banderin span i{display:block;font-style:normal;font-weight:500;font-size:10px;color:#6B6155}
+@media (max-width:900px){ .banderin span i{display:none} }
 /* ---------- ficha ---------- */
 .ficha .asa{display:none;position:absolute;top:7px;left:50%;transform:translateX(-50%);
   width:44px;height:4px;border-radius:99px;background:rgba(255,255,255,.40)}
@@ -657,7 +665,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20260924b"></script>
+<script src="maplibre-gl.js?v=20260924e"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -679,7 +687,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20260924b"></script>
+<script src="lotes.js?v=20260924e"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -1166,6 +1174,16 @@ function montarViaReal(){
     /* postes de energía: sólo de cerca */
     mapa.addLayer({id:"ent-postes-c",type:"circle",source:"ent-postes",minzoom:17,
       paint:{"circle-radius":["interpolate",["linear"],["zoom"],17,2.2,19,4],"circle-color":"#2E3530","circle-stroke-color":"#F4F2EA","circle-stroke-width":1.2}}, antes);
+    /* construcciones que YA existen en el predio (capa CONSTRUCCION del plano):
+       la casa principal lleva además un banderín, para ubicarse en campo */
+    if(E.existentes){
+      mapa.addSource("ent-exist",{type:"geojson",data:{type:"FeatureCollection",features:E.existentes.map(x=>({type:"Feature",
+        properties:{t:x.t},geometry:{type:"Polygon",coordinates:[x.g]}}))}});
+      mapa.addLayer({id:"ent-exist-f",type:"fill",source:"ent-exist",paint:{"fill-color":["match",["get","t"],"casa","#B5653E","#9C8F7C"],"fill-opacity":.9}}, antes);
+      mapa.addLayer({id:"ent-exist-l",type:"line",source:"ent-exist",paint:{"line-color":"#3B2A20","line-width":m(0.3)}}, antes);
+      VIA_CAPAS.push("ent-exist-f","ent-exist-l");
+    }
+    ponerBanderinCasa(E);
     VIA_CAPAS.push("ent-social-f","ent-circ-f","ent-parq-f","ent-parq-l","ent-verde-f","ent-verde-l","ent-cancha-f","ent-cancha-ll","ent-cancha-b",
       "ent-edif-f","ent-edif-l","ent-cubierta-l","ent-guia-l","ent-marca-f","ent-postes-c");
   }
@@ -1175,6 +1193,28 @@ function montarViaReal(){
   if(c && !c.checked) VIA_CAPAS.forEach(l=>mapa.setLayoutProperty(l,"visibility","none"));
   try{ fondo(S.fondo); }catch(e){}
   return true;
+}
+/* ---------------------- BANDERÍN: la casa que ya existe ----------------------
+   Es la casa principal de la finca, de arquitectura típica, que se ve apenas se
+   entra al predio. Sirve de punto de referencia en campo: "el lote tal queda a
+   tanto de la casa". Sale del plano 039 (rótulo "Casa ppal.", capa CONSTRUCCION). */
+let banderinCasa=null;
+function ponerBanderinCasa(E){
+  if(!E || !E.casaActual || banderinCasa) return;
+  const d=document.createElement("div");
+  d.className="banderin";
+  d.innerHTML='<svg width="30" height="46" viewBox="0 0 30 46" aria-hidden="true">'+
+    '<line x1="4" y1="3" x2="4" y2="45" stroke="#2A241D" stroke-width="2.4" stroke-linecap="round"/>'+
+    '<path d="M5 4 L27 11 L5 18 Z" fill="#B5653E" stroke="#F4F2EA" stroke-width="1.2" stroke-linejoin="round"/>'+
+    '<circle cx="4" cy="44" r="2.6" fill="#2A241D"/></svg>'+
+    '<span><b>Casa actual</b><i>Arquitectura típica · referencia en campo</i></span>';
+  d.title="Casa principal existente, en el lote "+E.casaActual.lote+". Úsela como referencia al recorrer el predio.";
+  d.onclick=ev=>{ ev.stopPropagation();
+    avisar("Casa actual de arquitectura típica, en el lote "+E.casaActual.lote+" ("+Math.round(E.casaActual.area)+" m² construidos). "+
+           "Es el punto de referencia para ubicarse en el predio.", 6000); };
+  banderinCasa=new maplibregl.Marker({element:d, anchor:"bottom-left", offset:[-4,0]}).setLngLat(E.casaActual.p).addTo(mapa);
+  const vis=()=>{ d.style.display = mapa.getZoom()>=14.2 ? "" : "none"; };
+  mapa.on("zoom",vis); vis();
 }
 const VIA_CAPAS=["via-anden","via-anden-l","via-asfalto","via-sardinel","via-bordes-l","via-eje-l"];
 /* sobre fondo oscuro el andén se oscurece, igual que en el 3D */
@@ -2040,12 +2080,14 @@ function pintarFicha(n){
     /* lo primero que pregunta el cliente: cuánto le queda por mes */
     (()=>{ const pp=planPago(v,S.etapa);
       if(pp.contado) return '<div class="plan"><b>De contado.</b> '+
-        'Separa con '+cop(SEPARACION)+' y completa el saldo en 2026.</div>';
+        'Separa con '+cop(SEPARACION)+' y completa el saldo en 2026.'+
+        '<div class="pieplan"><b>Escritura del 100 % de la tierra, no proindiviso.</b> Entrega final del urbanismo: diciembre de 2028.</div></div>';
       return '<div class="plan">'+
         '<div class="fila"><span>Inicial ('+Math.round(pp.frac*100)+' %) en 2026</span><b>'+cop(pp.inicial)+'</b></div>'+
         '<div class="fila"><span>'+pp.n+' cuotas · ene 2027 a nov 2028</span><b>'+cop(pp.cuota)+'</b></div>'+
         '<div class="fila"><span>Cuota final · dic 2028</span><b>'+cop(pp.ultima)+'</b></div>'+
         '<div class="pieplan">Separa con '+cop(SEPARACION)+'. Sin intereses.</div>'+
+        '<div class="pieplan"><b>Escritura del 100 % de la tierra, no proindiviso.</b> Entrega final del urbanismo: diciembre de 2028.</div>'+
       '</div>'; })()+
     '<table class="tabla">'+
       '<tr><td>Área total</td><td>'+m2(p.area_m2)+'</td></tr>'+
@@ -2173,6 +2215,8 @@ function whatsapp(p,v,et){
         : "• Inicial "+Math.round(pp.frac*100)+"% en 2026: "+cop(pp.inicial)+"\n"+
           "• "+pp.n+" cuotas de "+cop(pp.cuota)+" (ene 2027 – nov 2028)\n"+
           "• Cuota final dic 2028: "+cop(pp.ultima)+"\n"; })()+"\n"+
+    "• Escrituración del 100 % de la tierra a nombre del comprador (no es proindiviso)\n"+
+    "• Entrega final del urbanismo: diciembre de 2028\n\n"+
     "¿Le cuadra que lo visitemos?";
   abrirWhatsApp(t);
 }
@@ -2802,18 +2846,18 @@ window.seleccionarLote = n => {
 
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
-<script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png"};</script>
-<script src="datos-analisis.js?v=20260924b"></script>
-<script src="datos-terreno.js?v=20260924b"></script>
-<script src="datos-logo.js?v=20260924b"></script>
-<script src="adaptador.js?v=20260924b"></script>
-<script src="analisis.js?v=20260924b"></script>
-<script src="datos-via.js?v=20260924b"></script>
-<script src="datos-entrada.js?v=20260924b"></script>
-<script src="r3d.js?v=20260924b"></script>
-<script src="armazon.js?v=20260924b"></script>
-<script src="acceso.js?v=20260924b"></script>
-<script src="ia.js?v=20260924b"></script>
+<script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png"};</script>
+<script src="datos-analisis.js?v=20260924e"></script>
+<script src="datos-terreno.js?v=20260924e"></script>
+<script src="datos-logo.js?v=20260924e"></script>
+<script src="adaptador.js?v=20260924e"></script>
+<script src="analisis.js?v=20260924e"></script>
+<script src="datos-via.js?v=20260924e"></script>
+<script src="datos-entrada.js?v=20260924e"></script>
+<script src="r3d.js?v=20260924e"></script>
+<script src="armazon.js?v=20260924e"></script>
+<script src="acceso.js?v=20260924e"></script>
+<script src="ia.js?v=20260924e"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

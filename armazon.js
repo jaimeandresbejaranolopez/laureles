@@ -15,28 +15,89 @@ function cambiarIdioma(l){ if(window.ANALISIS) ANALISIS.idioma(l); LANG=LANGf();
 function fit(){ if(window.encuadrar) encuadrar(); }
 function select(n){ if(window.seleccionarLote) seleccionarLote(n); }
 
+/* ---------------------------------------------------------------------------
+   EL PROYECTO: texto comercial y descriptivo, con las cifras verificadas.
+   Cifras de lotes: lotes.js (86 lotes). Zonas comunes, vía y portería: plano 039.
+   Cuadro de áreas generales: plano 038 (08/09/2026). Tiempos: POIS del mapa.
+   --------------------------------------------------------------------------- */
+function PROY(l){
+  const X = {
+   es:{ eyebrow:"Parcelación campestre · El Caimo, Armenia", titulo:"Laureles Campestre",
+     lead:"Ochenta y seis lotes campestres de más de 3.100 m² sobre 37 hectáreas de ladera cafetera, entre el bosque de una cañada protegida y la vista abierta al paisaje del Quindío. Un lugar para construir la casa de campo con espacio y silencio, a minutos de Armenia y del aeropuerto.",
+     cifras:[["86","lotes campestres"],["3.100 m²","el más pequeño; hasta 9.907 m²"],["37 ha","de predio"],["2,3","lotes por hectárea"]],
+     bh:"Por qué Laureles",
+     b:[["Espacio de verdad","La mitad de los lotes mide más de 3.208 m², con frentes típicos de 32 m. Es baja densidad: poco más de dos lotes por hectárea, para que cada casa tenga aire, jardín y privacidad."],
+        ["La naturaleza se queda","Una cañada de bosque atraviesa el predio y se conserva como área de protección: 28.695 m² que nadie va a construir. A eso se suman las áreas verdes y los guayacanes que ya están."],
+        ["Sol y ladera, medidos","Los lotes están entre 1.205 y 1.235 m s. n. m.; 52 abren su ladera al oriente, al suroriente o al sur. De cada lote se conoce su pendiente, su asoleamiento y dónde cabe la casa, antes de comprar."],
+        ["Acceso con portería","Una sola entrada con portería y plazoleta de acceso, y un anillo vial con calzada de 6 m, sardineles y andenes de 1,5 m que llega a todos los lotes."],
+        ["Vida en común","Tres áreas sociales (1.190, 718 y 2.254 m²), una cancha de 10 × 20 m, un sendero de circulación lateral de 2.510 m² y 82 parqueaderos para visitantes."],
+        ["Cerca de todo","A minutos de la Autopista del Café y del aeropuerto El Edén, y a menos de veinte minutos del centro de Armenia."]],
+     herrT:"Todo el lote, antes de ir", herr:"En este mismo plano cada lote tiene su ficha con precio y forma de pago, el análisis del terreno en PDF, el relieve en 3D, el recorrido del sol y un diseñador de casa con inteligencia artificial. Y en campo, el botón Dónde estoy dice en qué lote está parado.",
+     cerca:"Cerca", precio:"Lotes desde $297 millones de contado (Etapa E1, sujeto a disponibilidad).",
+     verPlano:"Ver los lotes en el plano", wa:"Escribir por WhatsApp",
+     tCifras:"Cifras del proyecto", tA:"Área", tT:"Total", tP:"Protegida", tU:"Útil",
+     filas:[["Lotes","300.357","66.772","233.585"],["Zonas sociales","10.057","1.180","8.877"],["Áreas de protección","28.695,53","28.695,53","0"],["Andenes y vías","30.775","0","30.775"],["Portería","53","0","53"],["<b>Total</b>","<b>369.937,53</b>","<b>96.647,53</b>","<b>273.290</b>"]],
+     nota:"Cifras en m². Cuadro de áreas del plano 038 (08/09/2026). Zonas comunes, vía y portería según el plano 039. Las imágenes de casas en esta página son ilustrativas; el diseño definitivo está en proceso de entrega al proyecto.",
+     wat:"Hola, quiero información de Laureles Campestre (El Caimo, Armenia)." },
+   en:{ eyebrow:"Country lots · El Caimo, Armenia", titulo:"Laureles Campestre",
+     lead:"Eighty-six country lots of over 3,100 m² on 37 hectares of coffee-country hillside, between the woodland of a protected ravine and open views of the Quindío landscape. A place to build your country home with space and quiet, minutes from Armenia and the airport.",
+     cifras:[["86","country lots"],["3,100 m²","smallest; up to 9,907 m²"],["37 ha","property"],["2.3","lots per hectare"]],
+     bh:"Why Laureles",
+     b:[["Real space","Half of the lots are larger than 3,208 m², with typical frontages of 32 m. Low density — just over two lots per hectare — so every house has air, garden and privacy."],
+        ["Nature stays","A wooded ravine crosses the property and is kept as a protection area: 28,695 m² that will never be built on, plus the green areas and the guayacán trees already there."],
+        ["Sun and slope, measured","Lots sit between 1,205 and 1,235 m above sea level; 52 open their slope to the east, south-east or south. Each lot's slope, sun path and building area are known before you buy."],
+        ["Gated access","A single entrance with a gatehouse and entrance plaza, and a ring road with a 6 m carriageway, kerbs and 1.5 m sidewalks reaching every lot."],
+        ["Shared life","Three social areas (1,190, 718 and 2,254 m²), a 10 × 20 m sports court, a 2,510 m² side path and 82 visitor parking spaces."],
+        ["Close to everything","Minutes from the Autopista del Café and El Edén airport, and under twenty minutes from central Armenia."]],
+     herrT:"The whole lot, before you visit", herr:"On this map every lot has its sheet with price and payment plan, the terrain analysis in PDF, the 3D relief, the sun path and an AI house designer. On site, the Where am I button tells you which lot you are standing on.",
+     cerca:"Nearby", precio:"Lots from COP 297 million cash (Stage E1, subject to availability).",
+     verPlano:"See the lots on the map", wa:"Message us on WhatsApp",
+     tCifras:"Project figures", tA:"Area", tT:"Total", tP:"Protected", tU:"Usable",
+     filas:[["Lots","300,357","66,772","233,585"],["Social areas","10,057","1,180","8,877"],["Protection areas","28,695.53","28,695.53","0"],["Sidewalks and roads","30,775","0","30,775"],["Gatehouse","53","0","53"],["<b>Total</b>","<b>369,937.53</b>","<b>96,647.53</b>","<b>273,290</b>"]],
+     nota:"Figures in m². Area schedule from drawing 038 (08/09/2026); common areas, road and gatehouse from drawing 039. House images on this site are illustrative; the final design is being delivered to the project.",
+     wat:"Hello, I would like information about Laureles Campestre (El Caimo, Armenia)." },
+   fr:{ eyebrow:"Lotissement de campagne · El Caimo, Armenia", titulo:"Laureles Campestre",
+     lead:"Quatre-vingt-six lots de campagne de plus de 3 100 m² sur 37 hectares de coteau caféier, entre le bois d'un ravin protégé et la vue ouverte sur le paysage du Quindío. Un lieu pour bâtir sa maison de campagne avec espace et calme, à quelques minutes d'Armenia et de l'aéroport.",
+     cifras:[["86","lots de campagne"],["3 100 m²","le plus petit ; jusqu'à 9 907 m²"],["37 ha","de terrain"],["2,3","lots par hectare"]],
+     bh:"Pourquoi Laureles",
+     b:[["De l'espace, vraiment","La moitié des lots dépasse 3 208 m², avec des façades typiques de 32 m. Faible densité — un peu plus de deux lots par hectare — pour l'air, le jardin et l'intimité de chaque maison."],
+        ["La nature reste","Un ravin boisé traverse le terrain et reste zone protégée : 28 695 m² jamais construits, plus les espaces verts et les guayacans déjà présents."],
+        ["Soleil et pente, mesurés","Les lots sont entre 1 205 et 1 235 m d'altitude ; 52 ouvrent leur pente à l'est, au sud-est ou au sud. Pente, ensoleillement et zone constructible sont connus avant l'achat."],
+        ["Accès gardé","Une seule entrée avec loge de gardien et placette d'accès, et une route en anneau avec chaussée de 6 m, bordures et trottoirs de 1,5 m jusqu'à chaque lot."],
+        ["Vie commune","Trois espaces sociaux (1 190, 718 et 2 254 m²), un terrain de sport de 10 × 20 m, un sentier latéral de 2 510 m² et 82 places pour les visiteurs."],
+        ["Près de tout","À quelques minutes de l'Autopista del Café et de l'aéroport El Edén, et à moins de vingt minutes du centre d'Armenia."]],
+     herrT:"Tout le lot, avant la visite", herr:"Sur ce plan, chaque lot a sa fiche avec prix et plan de paiement, l'analyse du terrain en PDF, le relief 3D, la course du soleil et un concepteur de maison par IA. Sur place, le bouton Où suis-je indique le lot où vous vous trouvez.",
+     cerca:"À proximité", precio:"Lots à partir de 297 millions COP comptant (étape E1, sous réserve de disponibilité).",
+     verPlano:"Voir les lots sur le plan", wa:"Écrire sur WhatsApp",
+     tCifras:"Chiffres du projet", tA:"Surface", tT:"Total", tP:"Protégée", tU:"Utile",
+     filas:[["Lots","300 357","66 772","233 585"],["Espaces sociaux","10 057","1 180","8 877"],["Zones de protection","28 695,53","28 695,53","0"],["Trottoirs et voirie","30 775","0","30 775"],["Loge","53","0","53"],["<b>Total</b>","<b>369 937,53</b>","<b>96 647,53</b>","<b>273 290</b>"]],
+     nota:"Surfaces en m². Tableau du plan 038 (08/09/2026) ; espaces communs, voirie et loge selon le plan 039. Les images de maisons sont illustratives ; la conception définitive est en cours de livraison au projet.",
+     wat:"Bonjour, je souhaite des informations sur Laureles Campestre (El Caimo, Armenia)." }
+  }[l] || null;
+  const x = X;
+  const poi = (window.POIS||[]).slice(0,4).map(([n,d,m])=>`<li><b>${n}</b><span>${m}</span></li>`).join("");
+  return `<div class="proy">
+   <div class="proyHero" style="background-image:linear-gradient(180deg,rgba(20,26,18,.05) 30%,rgba(20,26,18,.78)),url('${MEDIA.hero}')">
+     <div class="eb">${x.eyebrow}</div><h2 class="serif">${x.titulo}</h2></div>
+   <p class="lead">${x.lead}</p>
+   <div class="cifras">${x.cifras.map(([n,t])=>`<div><b>${n}</b><span>${t}</span></div>`).join("")}</div>
+   <h3 class="serif">${x.bh}</h3>
+   <div class="bondades">${x.b.map(([t,d],i)=>`<div class="bd"><div class="num">${String(i+1).padStart(2,"0")}</div><h4>${t}</h4><p>${d}</p></div>`).join("")}</div>
+   <div class="proyDos">
+     <div class="herr"><h4>${x.herrT}</h4><p>${x.herr}</p></div>
+     <div class="cerca"><h4>${x.cerca}</h4><ul>${poi}</ul></div>
+   </div>
+   <div class="proyCta"><p>${x.precio}</p>
+     <div class="bt"><button class="pri" data-accion="plano">${x.verPlano}</button>
+     <button class="sec" data-accion="wa" data-t="${x.wat.replace(/"/g,"&quot;")}">${x.wa}</button></div></div>
+   <h3 class="serif">${x.tCifras}</h3>
+   <table class="tbl"><tr><th>${x.tA}</th><th>${x.tT}</th><th>${x.tP}</th><th>${x.tU}</th></tr>
+   ${x.filas.map(f=>`<tr>${f.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</table>
+   <p class="hint">${x.nota}</p></div>`;
+}
+
 const CONT_ES=()=>({
- proyecto:`<h2 class="serif">El proyecto</h2>
-   <p class="lead">88 lotes campestres sobre un predio de 369.937,53 m² —37 hectáreas— en el polígono de vivienda
-   campestre Marmato, Armenia. Un anillo vial único recorre el filo del terreno y una cañada de bosque protegido
-   lo atraviesa en diagonal.</p>
-   <table class="tbl"><tr><th>Concepto</th><th>Cifra</th></tr>
-   <tr><td>Área del predio</td><td>369.937,53 m²</td></tr>
-   <tr><td>Área en lotes</td><td>300.357 m²</td></tr>
-   <tr><td>Área útil en lotes (sin protección)</td><td>233.585 m²</td></tr>
-   <tr><td>Protección dentro de lotes</td><td>66.772 m²</td></tr>
-   <tr><td>Lote más pequeño / más grande</td><td>3.100 / 6.802 m²</td></tr>
-   <tr><td>Densidad</td><td>2,4 lotes por hectárea</td></tr></table>
-   <h3 class="serif" style="margin-top:22px">Cuadro de áreas generales</h3>
-   <table class="tbl"><tr><th>Área</th><th>Total</th><th>Protegida</th><th>Útil</th></tr>
-   <tr><td>Lotes</td><td>300.357</td><td>66.772</td><td>233.585</td></tr>
-   <tr><td>Zonas sociales</td><td>10.057</td><td>1.180</td><td>8.877</td></tr>
-   <tr><td>Áreas de protección</td><td>28.695,53</td><td>28.695,53</td><td>0</td></tr>
-   <tr><td>Andenes y vías</td><td>30.775</td><td>0</td><td>30.775</td></tr>
-   <tr><td>Portería</td><td>53</td><td>0</td><td>53</td></tr>
-   <tr><td><b>Total</b></td><td><b>369.937,53</b></td><td><b>96.647,53</b></td><td><b>273.290</b></td></tr></table>
-   <p class="hint">Cifras en m², tomadas del cuadro de áreas del plano <b>038</b> del 08/09/2026. La geometría del DXF
-   se verificó lote por lote contra el cuadro: la diferencia mediana entre rótulo y polígono es de 0,1 %.</p>`,
+ proyecto: PROY("es"),
  ubicacion:`<h2 class="serif">Ubicación y entorno</h2>
    <p class="lead">El predio está georreferenciado en MAGNA-SIRGAS / Origen Nacional CTM12. Centro aproximado:
    4°28′27″ N, 75°44′20″ W.</p>
@@ -86,27 +147,7 @@ const CONT_ES=()=>({
    (CRM de Century 21 DAB).</p>`});
 
 const CONT_EN=()=>({
- proyecto:`<h2 class="serif">The project</h2>
-   <p class="lead">88 country lots on a 369,937.53 m² property —37 hectares— inside the Marmato country-housing
-   zone of Armenia. A single ring road runs along the edge of the land and a protected forest ravine crosses it
-   diagonally.</p>
-   <table class="tbl"><tr><th>Item</th><th>Figure</th></tr>
-   <tr><td>Property area</td><td>369,937.53 m²</td></tr>
-   <tr><td>Area in lots</td><td>300,357 m²</td></tr>
-   <tr><td>Usable area in lots (excluding protection)</td><td>233,585 m²</td></tr>
-   <tr><td>Protection inside lots</td><td>66,772 m²</td></tr>
-   <tr><td>Smallest / largest lot</td><td>3,100 / 6,802 m²</td></tr>
-   <tr><td>Density</td><td>2.4 lots per hectare</td></tr></table>
-   <h3 class="serif" style="margin-top:22px">General area schedule</h3>
-   <table class="tbl"><tr><th>Area</th><th>Total</th><th>Protected</th><th>Usable</th></tr>
-   <tr><td>Lots</td><td>300,357</td><td>66,772</td><td>233,585</td></tr>
-   <tr><td>Communal areas</td><td>10,057</td><td>1,180</td><td>8,877</td></tr>
-   <tr><td>Protection areas</td><td>28,695.53</td><td>28,695.53</td><td>0</td></tr>
-   <tr><td>Paths and roads</td><td>30,775</td><td>0</td><td>30,775</td></tr>
-   <tr><td>Gatehouse</td><td>53</td><td>0</td><td>53</td></tr>
-   <tr><td><b>Total</b></td><td><b>369,937.53</b></td><td><b>96,647.53</b></td><td><b>273,290</b></td></tr></table>
-   <p class="hint">Figures in m², from the area schedule of drawing <b>038</b> dated 08/09/2026. The DXF geometry was
-   checked lot by lot against the schedule: the median difference between label and polygon is 0.1%.</p>`,
+ proyecto: PROY("en"),
  ubicacion:`<h2 class="serif">Location and surroundings</h2>
    <p class="lead">The property is georeferenced in MAGNA-SIRGAS / Origen Nacional CTM12. Approximate centre:
    4°28′27″ N, 75°44′20″ W.</p>
@@ -154,27 +195,7 @@ const CONT_EN=()=>({
    <p class="hint">It is not wired up in this demo: the agent's number and the destination for the lead
    (Century 21 DAB's CRM) still have to be decided.</p>`});
 const CONT_FR=()=>({
- proyecto:`<h2 class="serif">Le projet</h2>
-   <p class="lead">88 lots de campagne sur un terrain de 369 937,53 m² —37 hectares— dans la zone d'habitat rural
-   de Marmato, à Armenia. Une voie en anneau unique longe la crête du terrain et un vallon de forêt protégée le
-   traverse en diagonale.</p>
-   <table class="tbl"><tr><th>Poste</th><th>Chiffre</th></tr>
-   <tr><td>Surface du terrain</td><td>369 937,53 m²</td></tr>
-   <tr><td>Surface en lots</td><td>300 357 m²</td></tr>
-   <tr><td>Surface utile en lots (hors protection)</td><td>233 585 m²</td></tr>
-   <tr><td>Protection à l'intérieur des lots</td><td>66 772 m²</td></tr>
-   <tr><td>Lot le plus petit / le plus grand</td><td>3 100 / 6 802 m²</td></tr>
-   <tr><td>Densité</td><td>2,4 lots par hectare</td></tr></table>
-   <h3 class="serif" style="margin-top:22px">Tableau général des surfaces</h3>
-   <table class="tbl"><tr><th>Surface</th><th>Totale</th><th>Protégée</th><th>Utile</th></tr>
-   <tr><td>Lots</td><td>300 357</td><td>66 772</td><td>233 585</td></tr>
-   <tr><td>Espaces communs</td><td>10 057</td><td>1 180</td><td>8 877</td></tr>
-   <tr><td>Zones de protection</td><td>28 695,53</td><td>28 695,53</td><td>0</td></tr>
-   <tr><td>Trottoirs et voies</td><td>30 775</td><td>0</td><td>30 775</td></tr>
-   <tr><td>Loge de gardien</td><td>53</td><td>0</td><td>53</td></tr>
-   <tr><td><b>Total</b></td><td><b>369 937,53</b></td><td><b>96 647,53</b></td><td><b>273 290</b></td></tr></table>
-   <p class="hint">Chiffres en m², repris du tableau des surfaces du plan <b>038</b> du 08/09/2026. La géométrie du
-   DXF a été vérifiée lot par lot contre ce tableau : l'écart médian entre l'étiquette et le polygone est de 0,1 %.</p>`,
+ proyecto: PROY("fr"),
  ubicacion:`<h2 class="serif">Situation et environs</h2>
    <p class="lead">Le terrain est géoréférencé en MAGNA-SIRGAS / Origen Nacional CTM12. Centre approximatif :
    4°28′27″ N, 75°44′20″ O.</p>
@@ -256,6 +277,11 @@ function abrir(k){
   if(!CONT()[k])return;
   mb.innerHTML=`<button class="close" aria-label="${T("Cerrar")}">×</button>`+CONT()[k];
   mb.querySelector(".close").onclick=()=>{devolverIntro();modal.hidden=true;modalActual=null;};
+  mb.classList.toggle("ancha", k==="proyecto");
+  mb.querySelectorAll("[data-accion]").forEach(b=>b.onclick=()=>{
+    if(b.dataset.accion==="plano"){ modal.hidden=true; modalActual=null; fit(); }
+    else if(b.dataset.accion==="wa" && typeof window.abrirWhatsApp==="function") window.abrirWhatsApp(b.dataset.t||"");
+  });
   const grid=mb.querySelector("#galGrid");
   if(grid){
     grid.innerHTML=FOTOS.map((f,i)=>{ const cap=capFoto(f);
