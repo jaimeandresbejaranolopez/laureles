@@ -10,12 +10,12 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20260923h">
+<link rel="stylesheet" href="maplibre-gl.css?v=20260924a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20260923h">
-<link rel="stylesheet" href="analisis.css?v=20260923h">
+<link rel="stylesheet" href="armazon.css?v=20260924a">
+<link rel="stylesheet" href="analisis.css?v=20260924a">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -657,7 +657,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20260923h"></script>
+<script src="maplibre-gl.js?v=20260924a"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -679,7 +679,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20260923h"></script>
+<script src="lotes.js?v=20260924a"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -2077,7 +2077,8 @@ function pintarFicha(n){
             (NEG[p.lote].cliente_telefono?'<tr><td>Teléfono</td><td>'+escH(NEG[p.lote].cliente_telefono)+'</td></tr>':'')+
             '<tr><td>Fecha</td><td>'+new Date(NEG[p.lote].creado).toLocaleString("es-CO",{dateStyle:"medium",timeStyle:"short"})+'</td></tr>'+
             (NEG[p.lote].notas?'<tr><td>Notas</td><td>'+escH(NEG[p.lote].notas)+'</td></tr>':'')+
-            '<tr><td>Registró</td><td>'+escH(NEG[p.lote].correo||"")+'</td></tr>'+
+            '<tr><td>Registró</td><td>'+escH(NEG[p.lote].registrado_por||"")+
+              (NEG[p.lote].correo?'<br><span style="color:var(--muted)">'+escH(NEG[p.lote].correo)+'</span>':'')+'</td></tr>'+
             '</table></div>'
           : '<div class="negocio falta"><b>Sin registro de agente ni cliente.</b> Este lote se marcó '+ESTADOS[p.estado].t.toLowerCase()+
             ' antes de que se pidieran los nombres. <button id="bCompletar">Completar datos</button></div>')
@@ -2188,6 +2189,10 @@ const NEG = {};                                   /* lote -> último negocio (s�
 const escH = t=>String(t==null?"":t).replace(/[<>&"]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]));
 function cambiarEstado(n,e){
   if(!ROL.esVentas()){ avisar("Modo visitante: el estado de los lotes no se puede cambiar."); ROL.hoja(); return; }
+  if(!ROL.nombre()){                        /* primero el nombre de quien lo hace */
+    ROL.asegurarPerfil().then(pf=>{ if(pf && pf.nombre) cambiarEstado(n,e); else ROL.pedirPerfil(()=>cambiarEstado(n,e)); });
+    return;
+  }
   const f=LOTES.features.find(x=>x.properties.lote===n); if(!f) return;
   const actual=f.properties.estado, neg=NEG[n];
   if(e===actual && (e==="disponible" || neg)) return;       /* nada que cambiar */
@@ -2201,7 +2206,8 @@ function cambiarEstado(n,e){
       : '<div class="pista">El lote pasará a <b>'+escH(ESTADOS[e].t)+'</b>. Es obligatorio el nombre de quien hace la '+
         (e==="vendido"?"venta":e==="reservado"?"reserva":"separación")+' y el del cliente. Estos datos sólo los ven los administradores.</div>')+
     '<label for="nAg">Agente o administrador que lo hace *</label>'+
-    '<input type="text" id="nAg" autocomplete="name" value="'+escH(previo.agente||CFG.asesor||"")+'" placeholder="Nombre y apellido">'+
+    '<input type="text" id="nAg" autocomplete="name" value="'+escH(previo.agente||ROL.nombre()||CFG.asesor||"")+'" placeholder="Nombre y apellido">'+
+    '<div class="pista">Queda registrado además que el cambio lo hizo <b>'+escH(ROL.nombre())+'</b>.</div>'+
     (libera ? '' :
       '<label for="nCl">Nombre del cliente *</label><input type="text" id="nCl" value="'+escH(previo.cliente||"")+'" placeholder="Nombre y apellido del cliente">'+
       '<label for="nDoc">Documento del cliente</label><input type="text" id="nDoc" value="'+escH(previo.cliente_documento||"")+'" placeholder="C.C. o NIT (opcional)">'+
@@ -2285,8 +2291,79 @@ const ROL = (()=>{
   async function entrar(email, clave){
     if(!base() || !CFG.supabaseKey) throw new Error("Falta configurar Supabase en Ajustes.");
     await pedirToken({email:email, password:clave}, "password");
+    perfil = null;
     pintar(); avisar("Sesión de administración iniciada: "+correo());
     if(SB.activo()) SB.traer();
+    /* después de que se cierre la ventana de entrada: si no tiene nombre, se le pide */
+    setTimeout(asegurarPerfil, 450);
+  }
+
+  /* --------------------- el nombre de quien administra ---------------------
+     Cada cambio de estado queda firmado en la base con el NOMBRE de quien lo
+     hizo (laureles_negocios.registrado_por), no sólo con su correo. El nombre
+     se pide una sola vez, en el primer inicio de sesión, y queda en la tabla
+     laureles_perfiles. Sin nombre la base no deja separar, vender ni liberar. */
+  let perfil = null, pidiendo = false;
+  const nombre = ()=> (perfil && perfil.nombre) || "";
+  async function rpc(fn, args){
+    const t = await token(); if(!t) throw new Error("Hace falta una sesión de administrador.");
+    const r = await fetch(base()+"/rest/v1/rpc/"+fn, {method:"POST",
+      headers:{ "apikey":CFG.supabaseKey, "Authorization":"Bearer "+t, "Content-Type":"application/json" },
+      body: JSON.stringify(args||{}) });
+    const j = await r.json().catch(()=>null);
+    if(!r.ok) throw new Error((j && (j.message||j.msg)) || (r.status+" "+r.statusText));
+    return j;
+  }
+  async function asegurarPerfil(){
+    if(!esVentas()){ perfil=null; return null; }
+    if(perfil && perfil.nombre) return perfil;
+    try{ const j = await rpc("laureles_mi_perfil"); perfil = (Array.isArray(j) ? j[0] : j) || null; }
+    catch(e){ return null; }                       /* sin red: se vuelve a intentar al cambiar un lote */
+    if(!perfil || !perfil.nombre) pedirPerfil(); else pintar();
+    return perfil;
+  }
+  function pedirPerfil(alListo){
+    if(pidiendo) return; pidiendo = true;
+    const v = document.createElement("div");
+    v.id = "perfilVelo";
+    v.style.cssText = "position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;"+
+      "padding:16px;background:rgba(20,26,18,.62)";
+    v.innerHTML =
+      '<div role="dialog" aria-modal="true" aria-labelledby="pfTit" style="width:100%;max-width:420px;background:var(--surface,#fff);'+
+      'color:var(--ink,#23291F);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.35);overflow:hidden">'+
+        '<div style="background:var(--forest,#32402F);color:var(--on-forest,#F4F2EA);padding:18px 20px 14px">'+
+          '<div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.75">Primer inicio</div>'+
+          '<h2 id="pfTit" style="margin:4px 0 0;font-family:var(--serif,serif);font-size:24px;font-weight:600">¿Cómo te llamas?</h2></div>'+
+        '<div style="padding:16px 20px 6px">'+
+          '<p style="margin:0 0 12px;font-size:13.5px;line-height:1.45">Esta cuenta (<b>'+correo().replace(/[<>&]/g,"")+'</b>) todavía no tiene nombre. '+
+          'Queda registrado en la base de datos cada vez que separes, vendas, reserves o liberes un lote.</p>'+
+          '<label for="pfNom" style="display:block;font-size:12px;font-weight:600;margin:8px 0 4px">Nombre y apellido *</label>'+
+          '<input type="text" id="pfNom" autocomplete="name" placeholder="Ej.: María Fernanda Gómez" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line,#D9D4C4);border-radius:8px;font:inherit">'+
+          '<label for="pfCar" style="display:block;font-size:12px;font-weight:600;margin:12px 0 4px">Cargo</label>'+
+          '<input type="text" id="pfCar" placeholder="Asesora comercial, gerencia… (opcional)" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line,#D9D4C4);border-radius:8px;font:inherit">'+
+          '<div id="pfErr" role="alert" style="color:#A3543F;font-size:12.5px;min-height:18px;margin-top:8px"></div></div>'+
+        '<div style="display:flex;gap:10px;justify-content:flex-end;padding:8px 20px 18px;flex-wrap:wrap">'+
+          '<button id="pfSalir" style="border:1px solid var(--line,#D9D4C4);background:transparent;color:inherit;border-radius:999px;padding:10px 16px;font:inherit;cursor:pointer">Salir de la sesión</button>'+
+          '<button id="pfOk" style="border:1px solid var(--forest,#32402F);background:var(--forest,#32402F);color:#F4F2EA;border-radius:999px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer">Guardar y continuar</button></div>'+
+      '</div>';
+    document.body.appendChild(v);
+    const cerrarV = ()=>{ v.remove(); pidiendo = false; };
+    const err = v.querySelector("#pfErr"), iN = v.querySelector("#pfNom");
+    setTimeout(()=>iN.focus(), 60);
+    v.querySelector("#pfSalir").onclick = ()=>{ cerrarV(); salir(); };
+    const ok = async ()=>{
+      const n = iN.value.trim().replace(/\s+/g," "), c = v.querySelector("#pfCar").value.trim();
+      if(n.length < 5 || n.indexOf(" ") < 0){ err.textContent = "Escribe tu nombre y apellido."; iN.focus(); return; }
+      const b = v.querySelector("#pfOk"); b.disabled = true; b.textContent = "Guardando…"; err.textContent = "";
+      try{
+        const j = await rpc("laureles_guardar_perfil", {p_nombre:n, p_cargo:c||null});
+        perfil = Array.isArray(j) ? j[0] : j;
+        cerrarV(); pintar(); avisar("Listo, "+n.split(" ")[0]+". Tu nombre queda en cada cambio que hagas.", 4200);
+        if(typeof alListo === "function") alListo();
+      }catch(ex){ err.textContent = ex.message; b.disabled = false; b.textContent = "Guardar y continuar"; }
+    };
+    v.querySelector("#pfOk").onclick = ok;
+    iN.onkeydown = ev=>{ if(ev.key==="Enter") ok(); };
   }
 
   function salir(callado){
@@ -2295,7 +2372,7 @@ const ROL = (()=>{
       fetch(base()+"/auth/v1/logout", {method:"POST",
         headers:{ "apikey":CFG.supabaseKey, "Authorization":"Bearer "+(tok||"") }}).catch(()=>{});
     }
-    ses = null; tok = null; tokExp = 0;
+    ses = null; tok = null; tokExp = 0; perfil = null;
     try{ localStorage.removeItem("laureles.sesion"); }catch(e){}
     pintar();
     if(!callado) avisar("Volvió a modo visitante.");
@@ -2305,7 +2382,7 @@ const ROL = (()=>{
     const b = document.getElementById("bRol");
     if(b){ b.textContent = esVentas() ? "Administrador" : "Visitante";
            b.classList.toggle("ventas", esVentas());
-           b.title = esVentas() ? ("Sesión de "+correo()+" — puede cambiar estados y guardar prospectos")
+           b.title = esVentas() ? ("Sesión de "+(nombre()?nombre()+" · ":"")+correo()+" — puede cambiar estados y guardar prospectos")
                                 : "Modo consulta: nada de lo que toque se guarda"; }
     /* si la ficha está abierta, se vuelve a pintar con los permisos nuevos */
     if(S.sel!=null && document.getElementById("ficha").classList.contains("on")) pintarFicha(S.sel);
@@ -2317,7 +2394,7 @@ const ROL = (()=>{
     const cuerpo = document.getElementById("hojaCuerpo");
     if(esVentas()){
       cuerpo.innerHTML =
-        '<p>Sesión abierta como <b>'+correo().replace(/[<>&]/g,"")+'</b>.</p>'+
+        '<p>Sesión abierta como <b>'+(nombre()?nombre().replace(/[<>&]/g,"")+'</b> ('+correo().replace(/[<>&]/g,"")+')':correo().replace(/[<>&]/g,"")+'</b>')+'.</p>'+
         '<p>Con esta sesión puede cambiar el estado de los lotes y enviar la información '+
         'comercial de un prospecto a la base de datos. Los cambios los ve todo el equipo.</p>'+
         '<div class="pista">Si va a mostrarle el mapa a un cliente en su propio equipo, salga '+
@@ -2373,7 +2450,7 @@ const ROL = (()=>{
     document.getElementById("bCancel").onclick=()=>velo.classList.remove("on");
   }
 
-  return {esVentas, correo, token, entrar, salir, pintar, hoja};
+  return {esVentas, correo, token, entrar, salir, pintar, hoja, nombre, asegurarPerfil, pedirPerfil};
 })();
 
 /* ------------------------------- Supabase (opcional) ----------------------- */
@@ -2688,6 +2765,16 @@ if("serviceWorker" in navigator){
   });
 }
 if(SB.activo()) addEventListener("load",()=>SB.traer());
+/* un administrador que ya venía con sesión abierta y todavía no tiene nombre:
+   se le pide en cuanto termine la intro (no encima de ella) */
+addEventListener("load",()=>{
+  if(!ROL.esVentas()) return;
+  let k=0; const t=setInterval(()=>{
+    const intro=document.getElementById("intro");
+    const tapa = intro && getComputedStyle(intro).display!=="none" && !intro.hidden;
+    if(!tapa || ++k>40){ clearInterval(t); ROL.asegurarPerfil(); }
+  }, 800);
+});
 
 /* ------------- puente para el armazón (intro, nav, POI, idioma) ------------ */
 window.POIS = [["Autopista del Café","Conexión regional","1,4 km · 3 min"],
@@ -2716,17 +2803,17 @@ window.seleccionarLote = n => {
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png"};</script>
-<script src="datos-analisis.js?v=20260923h"></script>
-<script src="datos-terreno.js?v=20260923h"></script>
-<script src="datos-logo.js?v=20260923h"></script>
-<script src="adaptador.js?v=20260923h"></script>
-<script src="analisis.js?v=20260923h"></script>
-<script src="datos-via.js?v=20260923h"></script>
-<script src="datos-entrada.js?v=20260923h"></script>
-<script src="r3d.js?v=20260923h"></script>
-<script src="armazon.js?v=20260923h"></script>
-<script src="acceso.js?v=20260923h"></script>
-<script src="ia.js?v=20260923h"></script>
+<script src="datos-analisis.js?v=20260924a"></script>
+<script src="datos-terreno.js?v=20260924a"></script>
+<script src="datos-logo.js?v=20260924a"></script>
+<script src="adaptador.js?v=20260924a"></script>
+<script src="analisis.js?v=20260924a"></script>
+<script src="datos-via.js?v=20260924a"></script>
+<script src="datos-entrada.js?v=20260924a"></script>
+<script src="r3d.js?v=20260924a"></script>
+<script src="armazon.js?v=20260924a"></script>
+<script src="acceso.js?v=20260924a"></script>
+<script src="ia.js?v=20260924a"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");
