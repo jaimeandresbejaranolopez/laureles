@@ -10,12 +10,13 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20260924e">
+<link rel="stylesheet" href="maplibre-gl.css?v=20260924f">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20260924e">
-<link rel="stylesheet" href="analisis.css?v=20260924e">
+<link rel="stylesheet" href="armazon.css?v=20260924f">
+<link rel="stylesheet" href="portada.css?v=20260924f">
+<link rel="stylesheet" href="analisis.css?v=20260924f">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -665,7 +666,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20260924e"></script>
+<script src="maplibre-gl.js?v=20260924f"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -687,7 +688,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20260924e"></script>
+<script src="lotes.js?v=20260924f"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -2846,18 +2847,19 @@ window.seleccionarLote = n => {
 
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
-<script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png"};</script>
-<script src="datos-analisis.js?v=20260924e"></script>
-<script src="datos-terreno.js?v=20260924e"></script>
-<script src="datos-logo.js?v=20260924e"></script>
-<script src="adaptador.js?v=20260924e"></script>
-<script src="analisis.js?v=20260924e"></script>
-<script src="datos-via.js?v=20260924e"></script>
-<script src="datos-entrada.js?v=20260924e"></script>
-<script src="r3d.js?v=20260924e"></script>
-<script src="armazon.js?v=20260924e"></script>
-<script src="acceso.js?v=20260924e"></script>
-<script src="ia.js?v=20260924e"></script>
+<script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png","vida_perfil_vial":"medios/vida_perfil_vial.jpg","vida_ciclorruta":"medios/vida_ciclorruta.jpg","vida_infantil":"medios/vida_infantil.jpg","vida_gimnasio":"medios/vida_gimnasio.jpg","vida_padel":"medios/vida_padel.jpg"};</script>
+<script src="datos-analisis.js?v=20260924f"></script>
+<script src="datos-terreno.js?v=20260924f"></script>
+<script src="datos-logo.js?v=20260924f"></script>
+<script src="adaptador.js?v=20260924f"></script>
+<script src="analisis.js?v=20260924f"></script>
+<script src="datos-via.js?v=20260924f"></script>
+<script src="datos-entrada.js?v=20260924f"></script>
+<script src="r3d.js?v=20260924f"></script>
+<script src="armazon.js?v=20260924f"></script>
+<script src="acceso.js?v=20260924f"></script>
+<script src="portada.js?v=20260924f"></script>
+<script src="ia.js?v=20260924f"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

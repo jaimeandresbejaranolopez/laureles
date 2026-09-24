@@ -10,5 +10,10 @@
  "hero": "medios/hero.jpg",
  "praderas": "medios/praderas.jpg",
  "intro": "medios/intro.mp4",
- "logo": "medios/logo.png"
+ "logo": "medios/logo.png",
+ "vida_ciclorruta": "medios/vida_ciclorruta.jpg",
+ "vida_perfil_vial": "medios/vida_perfil_vial.jpg",
+ "vida_infantil": "medios/vida_infantil.jpg",
+ "vida_gimnasio": "medios/vida_gimnasio.jpg",
+ "vida_padel": "medios/vida_padel.jpg"
 }

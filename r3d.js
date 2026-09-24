@@ -545,6 +545,10 @@ const R3D = (()=>{
       relleno(E.porteria, oscuro?"#CFCABB":"#F7F5EE");
       borde((E.mant||[]).concat(E.porteria||[]), "#3B453A", 0.25);
       x.globalAlpha=.8; borde(E.cubierta, "#3B453A", 0.12, [M(1.2),M(1)]); x.globalAlpha=1;
+      /* construcciones que ya existen; la casa principal en terracota */
+      (E.existentes||[]).forEach(o=>{ traza(o.g,1);
+        x.fillStyle = o.t==="casa" ? (oscuro?"#8A4E32":"#B5653E") : (oscuro?"#6E6658":"#9C8F7C"); x.fill();
+        x.strokeStyle="#3B2A20"; x.lineWidth=Math.max(1,M(0.3)); x.stroke(); });
       /* la cancha del Área Social 2 */
       relleno(E.cancha, oscuro?"#2F5566":"#4F7F96"); borde(E.cancha, "#F4F2EA", 0.15);
       x.strokeStyle="#F4F2EA"; x.lineWidth=Math.max(1,M(0.12)); (E.canchaL||[]).forEach(r=>{ traza(r,0); x.stroke(); });
@@ -607,7 +611,34 @@ const R3D = (()=>{
     if(w<=0.0001)return null;
     return [ (M[0]*x+M[4]*y+M[8]*z+M[12])/w, (M[1]*x+M[5]*y+M[9]*z+M[13])/w ];
   }
+  /* banderín de la casa existente: el asta sale del suelo en el punto de la casa */
+  let banderin3d=null;
+  function ubicarBanderin(M){
+    const E=window.__ENTRADA; if(!E||!E.casaActual) return;
+    if(!banderin3d){
+      banderin3d=document.createElement("div");
+      banderin3d.className="banderin banderin3d";
+      banderin3d.style.cssText="position:absolute;left:0;top:0;pointer-events:auto;transform:translate(-4px,-100%);z-index:3";
+      banderin3d.innerHTML='<svg width="30" height="46" viewBox="0 0 30 46" aria-hidden="true">'+
+        '<line x1="4" y1="3" x2="4" y2="45" stroke="#2A241D" stroke-width="2.4" stroke-linecap="round"/>'+
+        '<path d="M5 4 L27 11 L5 18 Z" fill="#B5653E" stroke="#F4F2EA" stroke-width="1.2" stroke-linejoin="round"/>'+
+        '<circle cx="4" cy="44" r="2.6" fill="#2A241D"/></svg>'+
+        '<span><b>Casa actual</b><i>Arquitectura típica · referencia en campo</i></span>';
+      banderin3d.title="Casa principal existente, en el lote "+E.casaActual.lote;
+      banderin3d.onclick=ev=>{ ev.stopPropagation(); try{ avisar("Casa actual de arquitectura típica, en el lote "+E.casaActual.lote+
+        ". Es el punto de referencia para ubicarse en el predio.", 6000); }catch(e){} };
+      capa.appendChild(banderin3d);
+    }
+    const c=PX(E.casaActual.p); let h=alturaEn(c[0],c[1]); if(isNaN(h)) h=alturaCerca(c[0],c[1]);
+    const r=cv.getBoundingClientRect();
+    const p = isNaN(h) ? null : proyectar(M, c[0]-CX, -(c[1]-CY), (h-ZMID)*ve+0.5);
+    if(!p){ banderin3d.style.display="none"; return; }
+    const sx=(p[0]*0.5+0.5)*r.width, sy=(1-(p[1]*0.5+0.5))*r.height;
+    if(sx<-60||sy<-10||sx>r.width+10||sy>r.height+60){ banderin3d.style.display="none"; return; }
+    banderin3d.style.display=""; banderin3d.style.left=sx.toFixed(1)+"px"; banderin3d.style.top=sy.toFixed(1)+"px";
+  }
   function ubicarGlobos(M,ancho,alto){
+    try{ ubicarBanderin(M); }catch(e){}
     if(!Object.keys(globos).length)return;
     const ver=document.getElementById("cNum").checked;
     const r=cv.getBoundingClientRect();

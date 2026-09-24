@@ -244,3 +244,16 @@ create table if not exists public.laureles_config (
 );
 alter table public.laureles_config enable row level security;
 revoke all on public.laureles_config from anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 2026-09-24 · Nombre de cada administrador (migración laureles_perfiles_nombre_admin)
+-- En el primer inicio de sesión la página pide nombre y apellido (y cargo) y los
+-- guarda con laureles_guardar_perfil(). laureles_cambiar_estado() ya no deja
+-- cambiar un lote sin ese nombre y lo firma en laureles_negocios.registrado_por.
+--   laureles_perfiles(usuario uuid pk → auth.users, correo, nombre ≥5, cargo, creado, actualizado)
+--   RLS: cada quien lee sólo su fila; escritura sólo por la función.
+--   laureles_mi_perfil()                 → nombre, cargo, correo de la sesión
+--   laureles_guardar_perfil(nombre, cargo)
+--   laureles_negocios.registrado_por     → nombre de quien hizo el cambio
+-- Al crear un administrador nuevo basta el correo: el nombre lo pone él al entrar.
+-- ---------------------------------------------------------------------------

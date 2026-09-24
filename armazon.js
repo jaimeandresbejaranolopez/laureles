@@ -25,11 +25,13 @@ function PROY(l){
    es:{ eyebrow:"Parcelación campestre · El Caimo, Armenia", titulo:"Laureles Campestre",
      lead:"Ochenta y seis lotes campestres de más de 3.100 m² sobre 37 hectáreas de ladera cafetera, entre el bosque de una cañada protegida y la vista abierta al paisaje del Quindío. Un lugar para construir la casa de campo con espacio y silencio, a minutos de Armenia y del aeropuerto.",
      cifras:[["86","lotes campestres"],["3.100 m²","el más pequeño; hasta 9.907 m²"],["37 ha","de predio"],["2,3","lotes por hectárea"]],
+     escT:"Escritura individual", escF:"100 % de la tierra", escD:"Cada lote se vende con escrituración del 100 % de su tierra a nombre del comprador. No es proindiviso.",
+     hitoT:"Entrega final del urbanismo", hitoF:"Diciembre de 2028", hitoD:"Fecha de entrega final de las obras de urbanismo del proyecto.",
      bh:"Por qué Laureles",
      b:[["Espacio de verdad","La mitad de los lotes mide más de 3.208 m², con frentes típicos de 32 m. Es baja densidad: poco más de dos lotes por hectárea, para que cada casa tenga aire, jardín y privacidad."],
         ["La naturaleza se queda","Una cañada de bosque atraviesa el predio y se conserva como área de protección: 28.695 m² que nadie va a construir. A eso se suman las áreas verdes y los guayacanes que ya están."],
         ["Sol y ladera, medidos","Los lotes están entre 1.205 y 1.235 m s. n. m.; 52 abren su ladera al oriente, al suroriente o al sur. De cada lote se conoce su pendiente, su asoleamiento y dónde cabe la casa, antes de comprar."],
-        ["Acceso con portería","Una sola entrada con portería y plazoleta de acceso, y un anillo vial con calzada de 6 m, sardineles y andenes de 1,5 m que llega a todos los lotes."],
+        ["Acceso con portería","Una sola entrada con portería y plazoleta de acceso, y un anillo vial que llega a todos los lotes: calzada de 6 m, antejardín de 0,5 m y andén de 1,5 m a cada lado, ciclorruta de 1,5 m a un costado e iluminación baja con bolardos de máximo 1 m."],
         ["Vida en común","Tres áreas sociales (1.190, 718 y 2.254 m²), una cancha de 10 × 20 m, un sendero de circulación lateral de 2.510 m² y 82 parqueaderos para visitantes."],
         ["Cerca de todo","A minutos de la Autopista del Café y del aeropuerto El Edén, y a menos de veinte minutos del centro de Armenia."]],
      herrT:"Todo el lote, antes de ir", herr:"En este mismo plano cada lote tiene su ficha con precio y forma de pago, el análisis del terreno en PDF, el relieve en 3D, el recorrido del sol y un diseñador de casa con inteligencia artificial. Y en campo, el botón Dónde estoy dice en qué lote está parado.",
@@ -42,11 +44,13 @@ function PROY(l){
    en:{ eyebrow:"Country lots · El Caimo, Armenia", titulo:"Laureles Campestre",
      lead:"Eighty-six country lots of over 3,100 m² on 37 hectares of coffee-country hillside, between the woodland of a protected ravine and open views of the Quindío landscape. A place to build your country home with space and quiet, minutes from Armenia and the airport.",
      cifras:[["86","country lots"],["3,100 m²","smallest; up to 9,907 m²"],["37 ha","property"],["2.3","lots per hectare"]],
+     escT:"Individual title deed", escF:"100% of the land", escD:"Each lot is sold with a deed for 100% of its land in the buyer\u2019s name. Not a shared undivided ownership (proindiviso).",
+     hitoT:"Final handover of the site works", hitoF:"December 2028", hitoD:"Date of the final handover of the project\u2019s site works.",
      bh:"Why Laureles",
      b:[["Real space","Half of the lots are larger than 3,208 m², with typical frontages of 32 m. Low density — just over two lots per hectare — so every house has air, garden and privacy."],
         ["Nature stays","A wooded ravine crosses the property and is kept as a protection area: 28,695 m² that will never be built on, plus the green areas and the guayacán trees already there."],
         ["Sun and slope, measured","Lots sit between 1,205 and 1,235 m above sea level; 52 open their slope to the east, south-east or south. Each lot's slope, sun path and building area are known before you buy."],
-        ["Gated access","A single entrance with a gatehouse and entrance plaza, and a ring road with a 6 m carriageway, kerbs and 1.5 m sidewalks reaching every lot."],
+        ["Gated access","A single entrance with a gatehouse and entrance plaza, and a ring road reaching every lot: 6 m carriageway, 0.5 m planting strip and 1.5 m sidewalk on each side, a 1.5 m bike lane on one side, and low lighting with bollards no taller than 1 m."],
         ["Shared life","Three social areas (1,190, 718 and 2,254 m²), a 10 × 20 m sports court, a 2,510 m² side path and 82 visitor parking spaces."],
         ["Close to everything","Minutes from the Autopista del Café and El Edén airport, and under twenty minutes from central Armenia."]],
      herrT:"The whole lot, before you visit", herr:"On this map every lot has its sheet with price and payment plan, the terrain analysis in PDF, the 3D relief, the sun path and an AI house designer. On site, the Where am I button tells you which lot you are standing on.",
@@ -59,11 +63,13 @@ function PROY(l){
    fr:{ eyebrow:"Lotissement de campagne · El Caimo, Armenia", titulo:"Laureles Campestre",
      lead:"Quatre-vingt-six lots de campagne de plus de 3 100 m² sur 37 hectares de coteau caféier, entre le bois d'un ravin protégé et la vue ouverte sur le paysage du Quindío. Un lieu pour bâtir sa maison de campagne avec espace et calme, à quelques minutes d'Armenia et de l'aéroport.",
      cifras:[["86","lots de campagne"],["3 100 m²","le plus petit ; jusqu'à 9 907 m²"],["37 ha","de terrain"],["2,3","lots par hectare"]],
+     escT:"Acte de propriété individuel", escF:"100 % du terrain", escD:"Chaque lot est vendu avec un acte pour 100 % de son terrain au nom de l\u2019acheteur. Pas d\u2019indivision (proindiviso).",
+     hitoT:"Livraison finale de l'aménagement", hitoF:"Décembre 2028", hitoD:"Date de livraison finale des travaux d\u2019aménagement du projet.",
      bh:"Pourquoi Laureles",
      b:[["De l'espace, vraiment","La moitié des lots dépasse 3 208 m², avec des façades typiques de 32 m. Faible densité — un peu plus de deux lots par hectare — pour l'air, le jardin et l'intimité de chaque maison."],
         ["La nature reste","Un ravin boisé traverse le terrain et reste zone protégée : 28 695 m² jamais construits, plus les espaces verts et les guayacans déjà présents."],
         ["Soleil et pente, mesurés","Les lots sont entre 1 205 et 1 235 m d'altitude ; 52 ouvrent leur pente à l'est, au sud-est ou au sud. Pente, ensoleillement et zone constructible sont connus avant l'achat."],
-        ["Accès gardé","Une seule entrée avec loge de gardien et placette d'accès, et une route en anneau avec chaussée de 6 m, bordures et trottoirs de 1,5 m jusqu'à chaque lot."],
+        ["Accès gardé","Une seule entrée avec loge de gardien et placette d'accès, et une route en anneau jusqu'à chaque lot : chaussée de 6 m, bande plantée de 0,5 m et trottoir de 1,5 m de chaque côté, piste cyclable de 1,5 m d'un côté et éclairage bas par bornes de 1 m maximum."],
         ["Vie commune","Trois espaces sociaux (1 190, 718 et 2 254 m²), un terrain de sport de 10 × 20 m, un sentier latéral de 2 510 m² et 82 places pour les visiteurs."],
         ["Près de tout","À quelques minutes de l'Autopista del Café et de l'aéroport El Edén, et à moins de vingt minutes du centre d'Armenia."]],
      herrT:"Tout le lot, avant la visite", herr:"Sur ce plan, chaque lot a sa fiche avec prix et plan de paiement, l'analyse du terrain en PDF, le relief 3D, la course du soleil et un concepteur de maison par IA. Sur place, le bouton Où suis-je indique le lot où vous vous trouvez.",
@@ -81,6 +87,12 @@ function PROY(l){
      <div class="eb">${x.eyebrow}</div><h2 class="serif">${x.titulo}</h2></div>
    <p class="lead">${x.lead}</p>
    <div class="cifras">${x.cifras.map(([n,t])=>`<div><b>${n}</b><span>${t}</span></div>`).join("")}</div>
+   <div class="hitos">
+   <div class="hito"><div class="ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20z"/><path d="M14 3.5V8h4M9.5 12.5h6M9.5 16h6"/></svg></div>
+     <div><span>${x.escT}</span><b>${x.escF}</b><i>${x.escD}</i></div></div>
+   <div class="hito"><div class="ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></div>
+     <div><span>${x.hitoT}</span><b>${x.hitoF}</b><i>${x.hitoD}</i></div></div>
+   </div>
    <h3 class="serif">${x.bh}</h3>
    <div class="bondades">${x.b.map(([t,d],i)=>`<div class="bd"><div class="num">${String(i+1).padStart(2,"0")}</div><h4>${t}</h4><p>${d}</p></div>`).join("")}</div>
    <div class="proyDos">
