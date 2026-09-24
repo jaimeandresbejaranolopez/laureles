@@ -165,3 +165,51 @@ nav button{padding:8px 8px;font-size:11px}
 .sheet .llegar h3{margin:0 0 4px;font-size:18px}
 .sheet .llegar .botones{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px}
 .sheet .llegar .botones a,.sheet .llegar .botones button{text-decoration:none;font-size:13px;display:inline-block}
+
+/* ---------------- EL PROYECTO: presentación comercial ---------------- */
+.sheet.ancha{max-width:860px}
+.proy{padding:0 32px 28px}
+.proy .proyHero{margin:0 -32px 22px;height:250px;background-size:cover;background-position:center 60%;
+  display:flex;flex-direction:column;justify-content:flex-end;padding:24px 36px;border-radius:var(--r) var(--r) 0 0}
+.proy .proyHero .eb{color:#EBD9AE;font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700}
+.proy .proyHero h2{color:#F8F6EF;font-size:42px;margin:6px 0 0}
+.proy .proyHero h2::after{background:#EBD9AE;margin:12px 0 0}
+.proy .lead{font-size:17px}
+.proy .cifras{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0 26px}
+.proy .cifras div{border:1px solid var(--line);border-top:3px solid var(--gold);border-radius:var(--r-sm);padding:12px 12px 10px;background:var(--surface-2,#F6F4EC)}
+.proy .cifras b{display:block;font-family:var(--serif);font-size:26px;font-weight:500;color:var(--forest);line-height:1.1}
+.proy .cifras span{display:block;font-size:12px;color:var(--muted);margin-top:4px;line-height:1.3}
+.proy h3{font-size:22px;font-weight:500;margin:6px 0 12px}
+.proy .bondades{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 18px;margin-bottom:22px}
+.proy .bd{display:grid;grid-template-columns:34px 1fr;column-gap:10px;align-items:start;padding:12px 0;border-top:1px solid var(--line)}
+.proy .bd .num{grid-row:1 / span 2;font-family:var(--serif);font-size:20px;color:var(--gold);line-height:1.1}
+.proy .bd h4{margin:0 0 4px;font-size:15px;color:var(--ink)}
+.proy .bd p{margin:0;font-size:13.5px;line-height:1.5}
+.proy .proyDos{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;margin:0 0 20px}
+.proy .proyDos>div{background:var(--surface-2,#F6F4EC);border:1px solid var(--line);border-radius:var(--r-sm);padding:14px 16px}
+.proy .proyDos h4{margin:0 0 6px;font-size:14px;color:var(--forest)}
+.proy .proyDos p{margin:0;font-size:13.5px;line-height:1.5}
+.proy .cerca ul{list-style:none;margin:0;padding:0}
+.proy .cerca li{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:5px 0;border-bottom:1px dashed var(--line)}
+.proy .cerca li:last-child{border-bottom:0}
+.proy .cerca li span{color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.proy .proyCta{background:var(--forest);color:var(--on-forest,#F4F2EA);border-radius:var(--r-sm);padding:16px 18px;margin:0 0 26px;
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.proy .proyCta p{margin:0;color:var(--on-forest,#F4F2EA);font-family:var(--serif);font-size:16px;flex:1 1 260px}
+.proy .proyCta .bt{display:flex;gap:8px;flex-wrap:wrap}
+.proy .proyCta button{border-radius:999px;padding:10px 16px;font:inherit;font-weight:600;font-size:13px;cursor:pointer}
+.proy .proyCta .pri{background:#EBD9AE;color:#23291F;border:1px solid #EBD9AE}
+.proy .proyCta .sec{background:transparent;color:#F4F2EA;border:1px solid rgba(244,242,234,.6)}
+@media (max-width:700px){
+  .proy{padding:0 20px 22px}
+  .proy .proyHero{margin:0 -20px 18px;height:190px;padding:18px 20px}
+  .proy .proyHero h2{font-size:32px}
+  .proy .cifras{grid-template-columns:repeat(2,1fr)}
+  .proy .bondades,.proy .proyDos{grid-template-columns:1fr}
+}
+.proy .tbl{width:100%;border-collapse:collapse;font-size:13px;margin:0 0 10px;font-variant-numeric:tabular-nums}
+.proy .tbl th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:8px 10px;border-bottom:2px solid var(--gold)}
+.proy .tbl td{padding:7px 10px;border-bottom:1px solid var(--line)}
+.proy .tbl th:not(:first-child),.proy .tbl td:not(:first-child){text-align:right}
+.proy .tbl tr:last-child td{border-bottom:0;background:var(--surface-2,#F6F4EC)}
+.proy .proyHero .eb{text-shadow:0 1px 3px rgba(0,0,0,.4)}

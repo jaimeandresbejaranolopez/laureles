@@ -84,6 +84,9 @@ const R3D = (()=>{
     return TEX_T;
   }
   let ve=2.0, az=-0.62, elv=0.50, dist=1050, panX=0, panY=0;
+  /* cota real del punto de mira: al encuadrar una casa se mira a la altura del
+     lote, no al plano medio del modelo (si no, en ladera la casa quedaba corrida) */
+  let cotaFoco=null;
   /* hasta dónde acerca la rueda: 45 m del punto de mira deja ver la casa de
      cerca (antes 260 m, que se quedaba lejos para juzgar una piscina) */
   const DIST_MIN=45;
@@ -1088,8 +1091,9 @@ const R3D = (()=>{
     return new Float32Array([X[0],Y[0],z[0],0, X[1],Y[1],z[1],0, X[2],Y[2],z[2],0,
       -(X[0]*e[0]+X[1]*e[1]+X[2]*e[2]), -(Y[0]*e[0]+Y[1]*e[1]+Y[2]*e[2]), -(z[0]*e[0]+z[1]*e[1]+z[2]*e[2]), 1]);
   }
-  const ojo=()=>[panX+dist*Math.cos(elv)*Math.sin(az), panY+dist*Math.cos(elv)*Math.cos(az), dist*Math.sin(elv)];
-  const foco=()=>[panX,panY,0];
+  const zFoco=()=> cotaFoco==null ? 0 : (cotaFoco-ZMID)*ve;
+  const ojo=()=>[panX+dist*Math.cos(elv)*Math.sin(az), panY+dist*Math.cos(elv)*Math.cos(az), zFoco()+dist*Math.sin(elv)];
+  const foco=()=>[panX,panY,zFoco()];
 
   /* ---------- WebGL ---------- */
   const VS=`attribute vec3 p;attribute vec2 uv;attribute vec2 sl;
@@ -1169,6 +1173,35 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
     if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h;}
     return [w,h];
   }
+  /* ---------- el lote no queda debajo de la ficha ----------
+     El punto de mira (el centro de la casa del lote escogido) se lleva al centro
+     de la franja de pantalla que la ficha deja libre: arriba de la hoja en el
+     celular, a la izquierda del panel en pantalla ancha. Se hace corriendo la
+     imagen en la proyección —no moviendo la cámara—, así que la perspectiva
+     es la misma y el toque sobre un lote se corrige con el mismo corrimiento. */
+  let OFF=[0,0];
+  function desfaseVista(){
+    const f=document.getElementById("ficha");
+    if(!f || !f.classList.contains("on")) return [0,0];
+    const r=cv.getBoundingClientRect(), rf=f.getBoundingClientRect();
+    if(!r.width||!r.height) return [0,0];
+    if(innerWidth<=900){
+      if(rf.top >= r.bottom-8) return [0,0];
+      const alto=r.top+8, bajo=Math.max(alto+60, rf.top-8);
+      const c=(alto+bajo)/2;
+      return [0, Math.max(-0.9, Math.min(0.9, 1-2*(c-r.top)/r.height))];
+    }
+    if(rf.left <= r.left+40) return [0,0];
+    const c=(r.left+rf.left-10)/2;
+    return [Math.max(-0.9, Math.min(0.9, 2*(c-r.left)/r.width-1)), 0];
+  }
+  function corrimiento(o){ const m=new Float32Array(16); m[0]=m[5]=m[10]=m[15]=1; m[12]=o[0]; m[13]=o[1]; return m; }
+  /* la hoja cambia de alto (arrastre, transición): se vuelve a pintar */
+  (function(){
+    const f=document.getElementById("ficha"); if(!f) return;
+    try{ new ResizeObserver(()=>{ if(activo) pedir(); }).observe(f); }catch(e){}
+    try{ new MutationObserver(()=>{ if(activo) pedir(); }).observe(f,{attributes:true,attributeFilter:["class","style"]}); }catch(e){}
+  })();
   function pintar3d(){
     if(!listo||!activo)return;
     if(texDirty)dibujarTextura();
@@ -1177,7 +1210,8 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
     gl.clearColor(0,0,0,0);   /* transparente: se ve el fondo del plano, claro u oscuro */
     gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     gl.useProgram(prog);
-    const M=mul(persp(0.85,w/h,5,6000),mirar(ojo(),foco(),[0,0,1]));
+    OFF=desfaseVista();
+    const M=mul(corrimiento(OFF), mul(persp(0.85,w/h,5,6000),mirar(ojo(),foco(),[0,0,1])));
     gl.uniformMatrix4fv(gl.getUniformLocation(prog,"M"),false,M);
     gl.uniform1f(gl.getUniformLocation(prog,"VE"),ve);
     gl.uniform3f(gl.getUniformLocation(prog,"L"),LUZ[0],LUZ[1],LUZ[2]);
@@ -1231,7 +1265,7 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
   /* ---------- selección por rayo ---------- */
   function loteEn(px,py){
     const r=cv.getBoundingClientRect();
-    const ndcx=((px-r.left)/r.width)*2-1, ndcy=1-((py-r.top)/r.height)*2;
+    const ndcx=((px-r.left)/r.width)*2-1-OFF[0], ndcy=1-((py-r.top)/r.height)*2-OFF[1];
     const e=ojo(), f=foco();
     const fw=[f[0]-e[0],f[1]-e[1],f[2]-e[2]]; let l=Math.hypot(...fw); const F=fw.map(v=>v/l);
     // derecha = normalize(cross(F,[0,0,1])) ; arriba = cross(derecha,F)
@@ -1320,6 +1354,7 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
       const L=DATA.lotes.find(x=>x.n===n); if(!L)return;
       const c=PX(L.c);
       panX=c[0]-CX; panY=-(c[1]-CY);
+      { const z=alturaEn(c[0],c[1]); cotaFoco = isNaN(z) ? null : z; }
       if(ancho||domo){ dist=RADIO_DOMO*3.0; elv=0.30; }   /* que quepa la bóveda entera */
       else { dist=185; elv=0.44; }
       pedir();
@@ -1331,6 +1366,7 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
       const L=K.L, D=K.Dc||K.A||28.4;
       const c=[K.o[0]+K.ux[0]*L/2+K.uv[0]*D/2, K.o[1]+K.ux[1]*L/2+K.uv[1]*D/2];
       panX=c[0]-CX; panY=-(c[1]-CY);
+      { const z=alturaEn(c[0],c[1]); cotaFoco = isNaN(z) ? (K.z!=null?K.z:null) : z; }
       dist=d||70; elv=(e!=null)?e:0.40;
       /* que la cámara mire desde la vía hacia el fondo: azimut según el eje v */
       az=Math.atan2(-K.uv[1], K.uv[0]) + Math.PI;
@@ -1375,7 +1411,7 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
     },
     ve:()=>ve,
     encuadrar(){
-      az=-0.62; elv=0.50; panX=0; panY=0;
+      az=-0.62; elv=0.50; panX=0; panY=0; cotaFoco=null;
       const r=cv.getBoundingClientRect(); if(!r.width){dist=1050;pedir();return;}
       const reserva = el => {
         if(!el) return 16;
@@ -1476,7 +1512,11 @@ if(b && ctl){
     const prev = window.pintarFicha;
     window.pintarFicha = function(n){
       const r = prev.apply(this, arguments);
-      if(n!==loteEnPie){ loteEnPie=n; if(R3D.activo()) R3D.casa(n,null,null); }
+      if(n!==loteEnPie){ loteEnPie=n;
+        if(R3D.activo()){ R3D.casa(n,null,null);
+          /* la cámara va a la casa de ese lote, mirando desde la vía; la ficha
+             deja libre la franja de arriba y ahí queda (desfaseVista) */
+          if(n!=null && !R3D.enfocarCasa(n, innerWidth<=900?135:110, 0.50)) R3D.irA(n); } }
       else if(R3D.activo()) R3D.refrescar();
       return r;
     };
