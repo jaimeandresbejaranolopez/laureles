@@ -276,7 +276,13 @@ document.querySelectorAll("#nav button").forEach(b=>b.onclick=()=>{
   document.querySelectorAll("#nav button").forEach(c=>c.classList.toggle("on",c===b));
   if(b.dataset.m==="plano"){modal.hidden=true;return;}
   abrir(b.dataset.m);});
-document.getElementById("ctaTop").onclick=()=>abrir("contacto");
+/* CONSULTAR lleva directo al WhatsApp de ventas (el número no está en la
+   página: lo pone la función del servidor). Si hay un lote abierto, va en el mensaje. */
+document.getElementById("ctaTop").onclick=()=>{
+  let lote=null; try{ lote = (typeof S!=="undefined" && S.sel!=null) ? S.sel : null; }catch(e){}
+  const t = "Hola, quiero información de Laureles Campestre (El Caimo, Armenia)"+(lote!=null?", en especial del lote "+lote:"")+".";
+  if(typeof window.abrirWhatsApp==="function") window.abrirWhatsApp(t); else abrir("contacto");
+};
 modal.addEventListener("click",e=>{if(e.target===modal){devolverIntro();modal.hidden=true;}});
 addEventListener("keydown",e=>{if(e.key==="Escape"){if(!modal.hidden){devolverIntro();modal.hidden=true;}else select(null);}});
 

@@ -227,3 +227,20 @@ create policy laureles_visitas_gestion   on public.laureles_visitas for update t
 --   p_documento, p_telefono, p_notas): ÚNICO camino para cambiar el estado.
 --   Exige agente y cliente (>=3 letras) para separado/vendido/reservado.
 -- Se quitaron las políticas de INSERT/UPDATE directas sobre laureles_lotes.
+
+
+-- ---------------------------------------------------------------------------
+-- 2026-09-23 · WhatsApp de ventas privado (migración laureles_config_privada)
+-- El número NO está en el sitio: el botón abre la función laureles-wa, que lo
+-- lee de esta tabla (sin políticas: ni anon ni authenticated la pueden leer) y
+-- redirige a wa.me. Para cambiar el número:
+--   update public.laureles_config set valor='57XXXXXXXXXX', actualizado=now()
+--   where clave='whatsapp_ventas';
+-- ---------------------------------------------------------------------------
+create table if not exists public.laureles_config (
+  clave text primary key,
+  valor text not null,
+  actualizado timestamptz not null default now()
+);
+alter table public.laureles_config enable row level security;
+revoke all on public.laureles_config from anon, authenticated;

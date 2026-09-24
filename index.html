@@ -10,12 +10,12 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20260923f">
+<link rel="stylesheet" href="maplibre-gl.css?v=20260923h">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20260923f">
-<link rel="stylesheet" href="analisis.css?v=20260923f">
+<link rel="stylesheet" href="armazon.css?v=20260923h">
+<link rel="stylesheet" href="analisis.css?v=20260923h">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -657,7 +657,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20260923f"></script>
+<script src="maplibre-gl.js?v=20260923h"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -679,7 +679,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20260923f"></script>
+<script src="lotes.js?v=20260923h"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -691,7 +691,9 @@ window.addEventListener("error", function(ev){
 
 /* ---------------------------------- ajustes -------------------------------- */
 const POR_DEFECTO = {
-  telefono: "573000000000",              // WhatsApp de ventas, sólo dígitos con indicativo
+  /* El WhatsApp de ventas NO va aquí: vive en Supabase (tabla privada
+     laureles_config) y el botón pasa por la función laureles-wa, que redirige
+     a wa.me. Así el número no queda en el código publicado ni en Ajustes. */
   asesor: "",                            // nombre que va en el mensaje
   /* Estado compartido de los lotes. La llave es la PUBLICABLE de Supabase y va
      aquí a propósito: está hecha para viajar en el navegador. Lo que la protege
@@ -704,6 +706,16 @@ const POR_DEFECTO = {
   agendaUrl: ""
 };
 const CFG = Object.assign({}, POR_DEFECTO, leer("laureles.cfg", {}));
+delete CFG.telefono;                     /* por si quedó guardado de versiones viejas */
+/* ESCRIBIR POR WHATSAPP: siempre por la función del servidor, que conoce el
+   número de ventas y redirige a wa.me con el mensaje ya escrito. */
+function abrirWhatsApp(texto){
+  const base = (CFG.supabaseUrl || POR_DEFECTO.supabaseUrl).replace(/\/+$/,"");
+  const url = base + "/functions/v1/laureles-wa" + (texto ? "?t=" + encodeURIComponent(texto) : "");
+  const w = open(url, "_blank");
+  if(!w) location.href = url;              /* si el navegador bloquea la pestaña nueva */
+}
+window.abrirWhatsApp = abrirWhatsApp;
 function leer(k, d){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
 function guardar(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 
@@ -1272,8 +1284,6 @@ mapa.on("load", ()=>{
   mapa.on("mouseenter","lotes-f",()=>mapa.getCanvas().style.cursor="pointer");
   mapa.on("mouseleave","lotes-f",()=>mapa.getCanvas().style.cursor="");
   refrescar();
-  if(CFG.telefono===POR_DEFECTO.telefono)
-    avisar("Falta el número de WhatsApp: póngalo en Ajustes.", 5200);
 });
 mapa.on("error", e=>{ if(e && e.error && /terreno/.test(String(e.error.url||""))) return; });
 
@@ -2149,7 +2159,6 @@ function hojaProspecto(p,v,et){
   };
 }
 function whatsapp(p,v,et){
-  if(CFG.telefono===POR_DEFECTO.telefono){ abrirAjustes(); avisar("Ponga primero el número de WhatsApp."); return; }
   const t = "Hola"+(CFG.asesor?", soy "+CFG.asesor:"")+". Le comparto el lote "+p.lote+
     " de Laureles Campestre (El Caimo, Armenia).\n\n"+
     "• Área total: "+m2(p.area_m2)+"\n"+
@@ -2164,7 +2173,7 @@ function whatsapp(p,v,et){
           "• "+pp.n+" cuotas de "+cop(pp.cuota)+" (ene 2027 – nov 2028)\n"+
           "• Cuota final dic 2028: "+cop(pp.ultima)+"\n"; })()+"\n"+
     "¿Le cuadra que lo visitemos?";
-  open("https://wa.me/"+CFG.telefono+"?text="+encodeURIComponent(t),"_blank");
+  abrirWhatsApp(t);
 }
 /* ------------------------- separar, vender, liberar -------------------------
    El estado ya no se cambia con un clic: separar, vender o reservar exige el
@@ -2591,9 +2600,8 @@ function abrirAjustes(){
     (navigator.serviceWorker && navigator.serviceWorker.controller
       ? " · copia guardada" : " · desde la red");
   document.getElementById("hojaCuerpo").innerHTML =
-    '<label>Número de WhatsApp de ventas</label>'+
-    '<input type="text" id="aTel" value="'+CFG.telefono+'" placeholder="573001234567">'+
-    '<div class="pista">Con indicativo de país y sin signos. Colombia es 57.</div>'+
+    '<div class="pista" style="margin-top:0">El botón de WhatsApp lleva al número de ventas del proyecto. '+
+    'Ese número se cambia en Supabase (tabla <b>laureles_config</b>), no aquí.</div>'+
     '<label>Nombre del asesor</label>'+
     '<input type="text" id="aAse" value="'+(CFG.asesor||"")+'" placeholder="Jaime Bejarano">'+
     (ROL.esVentas()
@@ -2618,7 +2626,6 @@ function abrirAjustes(){
   document.getElementById("bCancel").onclick=()=>velo.classList.remove("on");
   document.getElementById("bAcerca").onclick=acercaDe;
   document.getElementById("bOk").onclick=()=>{
-    CFG.telefono=document.getElementById("aTel").value.replace(/\D/g,"")||POR_DEFECTO.telefono;
     CFG.asesor=document.getElementById("aAse").value.trim();
     const iU=document.getElementById("aUrl"), iK=document.getElementById("aKey");
     if(iU) CFG.supabaseUrl=iU.value.trim();
@@ -2709,17 +2716,17 @@ window.seleccionarLote = n => {
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png"};</script>
-<script src="datos-analisis.js?v=20260923f"></script>
-<script src="datos-terreno.js?v=20260923f"></script>
-<script src="datos-logo.js?v=20260923f"></script>
-<script src="adaptador.js?v=20260923f"></script>
-<script src="analisis.js?v=20260923f"></script>
-<script src="datos-via.js?v=20260923f"></script>
-<script src="datos-entrada.js?v=20260923f"></script>
-<script src="r3d.js?v=20260923f"></script>
-<script src="armazon.js?v=20260923f"></script>
-<script src="acceso.js?v=20260923f"></script>
-<script src="ia.js?v=20260923f"></script>
+<script src="datos-analisis.js?v=20260923h"></script>
+<script src="datos-terreno.js?v=20260923h"></script>
+<script src="datos-logo.js?v=20260923h"></script>
+<script src="adaptador.js?v=20260923h"></script>
+<script src="analisis.js?v=20260923h"></script>
+<script src="datos-via.js?v=20260923h"></script>
+<script src="datos-entrada.js?v=20260923h"></script>
+<script src="r3d.js?v=20260923h"></script>
+<script src="armazon.js?v=20260923h"></script>
+<script src="acceso.js?v=20260923h"></script>
+<script src="ia.js?v=20260923h"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");
