@@ -104,10 +104,10 @@ const SITIO = {
 /* ------------------------------------------------------------------ textos */
 const TX = {
  es:{
-  nav:"Ver disponibilidad", navWa:"WhatsApp",
+  nav:"Mapa dinámico", navWa:"WhatsApp",
   hEb:"Parcelación campestre · El Caimo · Armenia, Quindío",
   hT:"Tierra propia en el corredor que más crece del Quindío",
-  hB1:"Ver disponibilidad en vivo", hB2:"Conoce el proyecto",
+  hB1:"Explora nuestro mapa dinámico", hB2:"Conoce el proyecto",
   hS:[["lotes campestres"],["lote mínimo"],["de predio"],["de la tierra en escritura"]],
   vEb:"Un lugar privilegiado", vT:"En la zona de mayor desarrollo y valorización del Quindío",
   vP:"Laureles está en El Caimo, el corredor campestre del sur de Armenia sobre la vía al aeropuerto El Edén y a La Tebaida. Ahí se concentra el desarrollo residencial campestre de la ciudad, entre el aeropuerto, la Autopista del Café y la Zona Franca del Eje Cafetero.",
@@ -153,14 +153,14 @@ const TX = {
   hEb2:"Herramientas", hT2:"Todo el lote, antes de ir",
   her:[["pin","Plano en vivo","Cada lote con su estado, su precio y su forma de pago."],["cubo","Relieve en 3D","El terreno real, con curvas de nivel cada metro."],["sol","Recorrido del sol","Cómo se asolea cada lote a lo largo del día."],["escritura","Análisis en PDF","El terreno del lote y dónde cabe la casa."]],
   finT:"Escoge tu lote", finP:"Mira la disponibilidad en vivo y agenda tu visita al predio.",
-  bLotes:"Ver disponibilidad en vivo", bWa:"Escribir por WhatsApp", bVis:"Agendar visita",
+  bLotes:"Explora nuestro mapa dinámico", bWa:"Escribir por WhatsApp", bVis:"Agendar visita",
   fuentes:"Fuentes", waTxt:"Hola, quiero información de Laureles Campestre (El Caimo, Armenia)."
  },
  en:{
-  nav:"See availability", navWa:"WhatsApp",
+  nav:"Interactive map", navWa:"WhatsApp",
   hEb:"Country lots · El Caimo · Armenia, Quindío",
   hT:"Your own land in Quindío's fastest-growing corridor",
-  hB1:"See live availability", hB2:"Discover the project",
+  hB1:"Explore our interactive map", hB2:"Discover the project",
   hS:[["country lots"],["minimum lot"],["property"],["of the land on the deed"]],
   vEb:"A privileged location", vT:"In Quindío's area of greatest growth and appreciation",
   vP:"Laureles sits in El Caimo, the country-living corridor south of Armenia on the road to El Edén airport and La Tebaida. This is where the city's country-home development is concentrated, between the airport, the Autopista del Café and the Eje Cafetero Free Trade Zone.",
@@ -206,14 +206,14 @@ const TX = {
   hEb2:"Tools", hT2:"The whole lot, before you go",
   her:[["pin","Live plan","Every lot with its status, price and payment plan."],["cubo","3D terrain","The real land, with 1 m contour lines."],["sol","Sun path","How each lot gets sun through the day."],["escritura","PDF analysis","The lot's terrain and where the house fits."]],
   finT:"Choose your lot", finP:"See live availability and book your visit to the property.",
-  bLotes:"See live availability", bWa:"Message on WhatsApp", bVis:"Book a visit",
+  bLotes:"Explore our interactive map", bWa:"Message on WhatsApp", bVis:"Book a visit",
   fuentes:"Sources", waTxt:"Hi, I would like information about Laureles Campestre (El Caimo, Armenia)."
  },
  fr:{
-  nav:"Voir la disponibilité", navWa:"WhatsApp",
+  nav:"Carte interactive", navWa:"WhatsApp",
   hEb:"Terrains de campagne · El Caimo · Armenia, Quindío",
   hT:"Votre terre dans le corridor qui grandit le plus au Quindío",
-  hB1:"Voir la disponibilité en direct", hB2:"Découvrir le projet",
+  hB1:"Explorez notre carte interactive", hB2:"Découvrir le projet",
   hS:[["terrains"],["terrain minimum"],["de terrain"],["du terrain à l'acte"]],
   vEb:"Un lieu privilégié", vT:"Dans la zone de plus fort développement et de plus forte valorisation du Quindío",
   vP:"Laureles se trouve à El Caimo, le corridor résidentiel de campagne au sud d'Armenia, sur la route de l'aéroport El Edén et de La Tebaida. C'est là que se concentre le développement résidentiel de campagne de la ville, entre l'aéroport, l'Autopista del Café et la Zone franche de l'Eje Cafetero.",
@@ -259,7 +259,7 @@ const TX = {
   hEb2:"Outils", hT2:"Tout le terrain, avant d'y aller",
   her:[["pin","Plan en direct","Chaque terrain avec son état, son prix et son plan de paiement."],["cubo","Relief en 3D","Le terrain réel, courbes de niveau tous les mètres."],["sol","Course du soleil","L'ensoleillement de chaque terrain au fil du jour."],["escritura","Analyse en PDF","Le terrain et l'emplacement de la maison."]],
   finT:"Choisissez votre terrain", finP:"Voyez la disponibilité en direct et planifiez votre visite.",
-  bLotes:"Voir la disponibilité en direct", bWa:"Écrire sur WhatsApp", bVis:"Planifier une visite",
+  bLotes:"Explorez notre carte interactive", bWa:"Écrire sur WhatsApp", bVis:"Planifier une visite",
   fuentes:"Sources", waTxt:"Bonjour, je souhaite des informations sur Laureles Campestre (El Caimo, Armenia)."
  }
 };
@@ -364,7 +364,7 @@ function html(){
       <div class="ptHeroEb">${t.hEb}</div>
       <h1>${t.hT}</h1>
       <div class="ptHeroB">
-        <button class="ptPri ptPriL" data-pt="lotes">${t.hB1}${ic("flecha")}</button>
+        <button class="ptPri ptPriL ptVivo" data-pt="lotes"><i class="ptLive" aria-hidden="true"></i>${t.hB1}${ic("flecha")}</button>
         <button class="ptGhost" data-pt="mas">${t.hB2}${ic("abajo")}</button>
       </div>
     </div>
@@ -444,7 +444,7 @@ function html(){
       <img class="ptLogoFin" src="${"medios/logo_claro.svg"}" alt="Laureles Campestre">
       <h2>${t.finT}</h2><p class="ptLead">${t.finP}</p>
       <div class="ptBotones">
-        <button class="ptPri ptPriL ptPriC" data-pt="lotes">${t.bLotes}${ic("flecha")}</button>
+        <button class="ptPri ptPriL ptVivo" data-pt="lotes"><i class="ptLive" aria-hidden="true"></i>${t.bLotes}${ic("flecha")}</button>
         <button class="ptGhost" data-pt="wa">${ic("chat")}${t.bWa}</button>
         <button class="ptGhost" data-pt="visita">${ic("calendario")}${t.bVis}</button>
       </div>

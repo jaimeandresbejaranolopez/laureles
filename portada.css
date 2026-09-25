@@ -295,3 +295,20 @@
   .ptBarB .ptLang,.ptBarB .ptWa{display:none}
   .ptBotones button{width:100%}
 }
+
+/* ---------- botón principal "mapa dinámico": color que se mueve ---------- */
+.ptRaiz .ptVivo{position:relative;isolation:isolate;color:#1B2419;font-weight:700;letter-spacing:.01em;border:0;
+  background:linear-gradient(110deg,#C9A86B 0%,#EBD9AE 18%,#A9C48E 36%,#E9C77B 54%,#D39A6A 72%,#C9A86B 90%);
+  background-size:300% 100%;animation:ptFluye 7s linear infinite,ptBrillo 3.2s ease-in-out infinite;
+  box-shadow:0 0 0 1px rgba(255,255,255,.25) inset,0 10px 30px rgba(201,168,107,.35)}
+.ptRaiz .ptVivo:hover{background:linear-gradient(110deg,#C9A86B 0%,#EBD9AE 18%,#A9C48E 36%,#E9C77B 54%,#D39A6A 72%,#C9A86B 90%);
+  background-size:300% 100%;transform:translateY(-2px) scale(1.02)}
+.ptRaiz .ptVivo::after{content:"";position:absolute;inset:-3px;border-radius:inherit;z-index:-1;
+  background:inherit;background-size:300% 100%;filter:blur(14px);opacity:.55;animation:inherit}
+@keyframes ptFluye{from{background-position:0% 50%}to{background-position:300% 50%}}
+@keyframes ptBrillo{0%,100%{box-shadow:0 0 0 1px rgba(255,255,255,.25) inset,0 10px 30px rgba(201,168,107,.30)}
+  50%{box-shadow:0 0 0 1px rgba(255,255,255,.35) inset,0 14px 44px rgba(169,196,142,.50)}}
+.ptLive{position:relative;width:9px;height:9px;border-radius:50%;background:#2F7A45;flex:none}
+.ptLive::before{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid #2F7A45;animation:ptOnda 1.8s ease-out infinite}
+@keyframes ptOnda{from{transform:scale(.6);opacity:.9}to{transform:scale(1.9);opacity:0}}
+@media (prefers-reduced-motion:reduce){.ptRaiz .ptVivo,.ptRaiz .ptVivo::after,.ptLive::before{animation:none}}
