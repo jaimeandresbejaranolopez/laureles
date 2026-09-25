@@ -10,13 +10,13 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20260925a">
+<link rel="stylesheet" href="maplibre-gl.css?v=20260925c">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20260925a">
-<link rel="stylesheet" href="portada.css?v=20260925a">
-<link rel="stylesheet" href="analisis.css?v=20260925a">
+<link rel="stylesheet" href="armazon.css?v=20260925c">
+<link rel="stylesheet" href="portada.css?v=20260925c">
+<link rel="stylesheet" href="analisis.css?v=20260925c">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -666,7 +666,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20260925a"></script>
+<script src="maplibre-gl.js?v=20260925c"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -688,7 +688,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20260925a"></script>
+<script src="lotes.js?v=20260925c"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -718,9 +718,14 @@ const CFG = Object.assign({}, POR_DEFECTO, leer("laureles.cfg", {}));
 delete CFG.telefono;                     /* por si quedó guardado de versiones viejas */
 /* ESCRIBIR POR WHATSAPP: siempre por la función del servidor, que conoce el
    número de ventas y redirige a wa.me con el mensaje ya escrito. */
-function abrirWhatsApp(texto){
+function abrirWhatsApp(texto, canal){
+  /* canal: "portada" usa el número del botón de la portada; sin canal, el de ventas.
+     Los números no están aquí: los resuelve la función del servidor. */
   const base = (CFG.supabaseUrl || POR_DEFECTO.supabaseUrl).replace(/\/+$/,"");
-  const url = base + "/functions/v1/laureles-wa" + (texto ? "?t=" + encodeURIComponent(texto) : "");
+  const q = [];
+  if(texto) q.push("t=" + encodeURIComponent(texto));
+  if(canal) q.push("c=" + encodeURIComponent(canal));
+  const url = base + "/functions/v1/laureles-wa" + (q.length ? "?" + q.join("&") : "");
   const w = open(url, "_blank");
   if(!w) location.href = url;              /* si el navegador bloquea la pestaña nueva */
 }
@@ -2848,18 +2853,18 @@ window.seleccionarLote = n => {
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png","vida_perfil_vial":"medios/vida_perfil_vial.jpg","vida_ciclorruta":"medios/vida_ciclorruta.jpg","vida_infantil":"medios/vida_infantil.jpg","vida_gimnasio":"medios/vida_gimnasio.jpg","vida_padel":"medios/vida_padel.jpg"};</script>
-<script src="datos-analisis.js?v=20260925a"></script>
-<script src="datos-terreno.js?v=20260925a"></script>
-<script src="datos-logo.js?v=20260925a"></script>
-<script src="adaptador.js?v=20260925a"></script>
-<script src="analisis.js?v=20260925a"></script>
-<script src="datos-via.js?v=20260925a"></script>
-<script src="datos-entrada.js?v=20260925a"></script>
-<script src="r3d.js?v=20260925a"></script>
-<script src="armazon.js?v=20260925a"></script>
-<script src="acceso.js?v=20260925a"></script>
-<script src="portada.js?v=20260925a"></script>
-<script src="ia.js?v=20260925a"></script>
+<script src="datos-analisis.js?v=20260925c"></script>
+<script src="datos-terreno.js?v=20260925c"></script>
+<script src="datos-logo.js?v=20260925c"></script>
+<script src="adaptador.js?v=20260925c"></script>
+<script src="analisis.js?v=20260925c"></script>
+<script src="datos-via.js?v=20260925c"></script>
+<script src="datos-entrada.js?v=20260925c"></script>
+<script src="r3d.js?v=20260925c"></script>
+<script src="armazon.js?v=20260925c"></script>
+<script src="acceso.js?v=20260925c"></script>
+<script src="portada.js?v=20260925c"></script>
+<script src="ia.js?v=20260925c"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

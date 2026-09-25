@@ -193,7 +193,7 @@
 .ptCred{display:block;padding:8px 20px 16px;font-size:10.5px;color:rgba(246,244,236,.4)}
 
 /* ---------- etapas ---------- */
-.ptEtapas{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.ptEtapas{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .ptEt{background:var(--pt-card);border:1px solid var(--pt-line);border-radius:18px;padding:22px 22px 18px;display:flex;flex-direction:column;gap:14px;transition:transform .3s var(--pt-ease),box-shadow .3s}
 .ptEt:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(28,34,27,.09)}
 .ptEt1{border-color:var(--pt-gold);box-shadow:inset 0 0 0 1px var(--pt-gold)}
@@ -312,3 +312,16 @@
 .ptLive::before{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid #2F7A45;animation:ptOnda 1.8s ease-out infinite}
 @keyframes ptOnda{from{transform:scale(.6);opacity:.9}to{transform:scale(1.9);opacity:0}}
 @media (prefers-reduced-motion:reduce){.ptRaiz .ptVivo,.ptRaiz .ptVivo::after,.ptLive::before{animation:none}}
+
+/* ---------- asesor por WhatsApp: con la paleta de Laureles, no el verde de la app ---------- */
+.ptRaiz .ptAsesor{display:inline-flex;align-items:center;gap:12px;padding:7px 22px 7px 7px;border-radius:999px;text-align:left;
+  background:rgba(246,244,236,.94);color:var(--pt-forest);border:1px solid rgba(201,168,107,.55);
+  box-shadow:0 10px 28px rgba(0,0,0,.22);transition:transform .25s var(--pt-ease),background .25s,box-shadow .25s}
+.ptRaiz .ptAsesor:hover{transform:translateY(-2px);background:#FFFDF7;box-shadow:0 14px 34px rgba(0,0,0,.28)}
+.ptAsesorI{position:relative;width:42px;height:42px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:var(--pt-forest);color:var(--pt-gold-3)}
+.ptAsesorI::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1.5px solid var(--pt-gold-2);opacity:.7}
+.ptAsesorI .ptIc{width:22px;height:22px}
+.ptAsesorT b{display:block;font-size:14.5px;font-weight:700;line-height:1.2}
+.ptAsesorT small{display:block;font-size:11.5px;font-weight:600;letter-spacing:.04em;color:var(--pt-gold)}
+@media (max-width:640px){.ptRaiz .ptAsesor{width:100%;justify-content:center}}

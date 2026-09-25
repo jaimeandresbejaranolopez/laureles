@@ -66,6 +66,7 @@ const IC = {
   chat:'<path d="M20.5 11.5a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-4.4A8.5 8.5 0 1 1 20.5 11.5z"/><path d="M8.5 10.5h7M8.5 13.5h4.5"/>',
   mano:'<path d="M3.5 13.5 7 12l4 3h3.5a1.5 1.5 0 0 1 0 3H10"/><path d="M14.5 18h3.8l2.7-3.3a1.4 1.4 0 0 0-2-1.9L17 14.5"/><path d="M3.5 20.5V11"/><path d="M13 4.5h4.5M15.25 2.5v4.5"/>',
   flecha:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+  wa:'<path d="M12 3.2a8.8 8.8 0 0 0-7.6 13.2L3.2 20.8l4.5-1.2A8.8 8.8 0 1 0 12 3.2z"/><path d="M9 8.6c.3-.6.9-.7 1.2-.1l.8 1.7c.1.3 0 .6-.2.8l-.5.5c.5 1.1 1.4 2 2.5 2.5l.5-.5c.2-.2.5-.3.8-.2l1.7.8c.6.3.5.9-.1 1.2-1.3.8-3 .5-4.8-1.1-1.8-1.7-2.5-3.9-1.9-5.6z"/>',
   abajo:'<path d="M12 5v14M6 13l6 6 6-6"/>'
 };
 const ic = (k, cls="") => `<svg class="ptIc ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]||""}</svg>`;
@@ -107,7 +108,7 @@ const TX = {
   nav:"Mapa dinámico", navWa:"WhatsApp",
   hEb:"Parcelación campestre · El Caimo · Armenia, Quindío",
   hT:"Tierra propia en el corredor que más crece del Quindío",
-  hB1:"Explora nuestro mapa dinámico", hB2:"Conoce el proyecto",
+  hB1:"Explora nuestro mapa dinámico", hB2:"Conoce el proyecto", hW1:"Habla con un asesor", hW2:"Escríbenos por WhatsApp",
   hS:[["lotes campestres"],["lote mínimo"],["de predio"],["de la tierra en escritura"]],
   vEb:"Un lugar privilegiado", vT:"En la zona de mayor desarrollo y valorización del Quindío",
   vP:"Laureles está en El Caimo, el corredor campestre del sur de Armenia sobre la vía al aeropuerto El Edén y a La Tebaida. Ahí se concentra el desarrollo residencial campestre de la ciudad, entre el aeropuerto, la Autopista del Café y la Zona Franca del Eje Cafetero.",
@@ -160,7 +161,7 @@ const TX = {
   nav:"Interactive map", navWa:"WhatsApp",
   hEb:"Country lots · El Caimo · Armenia, Quindío",
   hT:"Your own land in Quindío's fastest-growing corridor",
-  hB1:"Explore our interactive map", hB2:"Discover the project",
+  hB1:"Explore our interactive map", hB2:"Discover the project", hW1:"Talk to an advisor", hW2:"Message us on WhatsApp",
   hS:[["country lots"],["minimum lot"],["property"],["of the land on the deed"]],
   vEb:"A privileged location", vT:"In Quindío's area of greatest growth and appreciation",
   vP:"Laureles sits in El Caimo, the country-living corridor south of Armenia on the road to El Edén airport and La Tebaida. This is where the city's country-home development is concentrated, between the airport, the Autopista del Café and the Eje Cafetero Free Trade Zone.",
@@ -213,7 +214,7 @@ const TX = {
   nav:"Carte interactive", navWa:"WhatsApp",
   hEb:"Terrains de campagne · El Caimo · Armenia, Quindío",
   hT:"Votre terre dans le corridor qui grandit le plus au Quindío",
-  hB1:"Explorez notre carte interactive", hB2:"Découvrir le projet",
+  hB1:"Explorez notre carte interactive", hB2:"Découvrir le projet", hW1:"Parlez à un conseiller", hW2:"Écrivez-nous sur WhatsApp",
   hS:[["terrains"],["terrain minimum"],["de terrain"],["du terrain à l'acte"]],
   vEb:"Un lieu privilégié", vT:"Dans la zone de plus fort développement et de plus forte valorisation du Quindío",
   vP:"Laureles se trouve à El Caimo, le corridor résidentiel de campagne au sud d'Armenia, sur la route de l'aéroport El Edén et de La Tebaida. C'est là que se concentre le développement résidentiel de campagne de la ville, entre l'aéroport, l'Autopista del Café et la Zone franche de l'Eje Cafetero.",
@@ -342,7 +343,8 @@ function html(){
       <div class="ptSitioT">${ic(s.ic,"ptIcG")}<div><h3>${T(n)}</h3><p>${T(dd)}</p></div></div>
       ${s.autor?`<small class="ptCred">${t.sCred}: ${s.autor} · Wikimedia Commons · CC BY-SA 4.0</small>`:""}
     </article>`;}).join("");
-  const et = d.et.map(e=>`
+  /* en la portada solo van E1 a E4; E5 y E6 siguen en el mapa dinámico */
+  const et = d.et.filter(e=>e.n<=4).map(e=>`
     <div class="ptEt${e.n===1?" ptEt1":""}">
       <div class="ptEtH"><b>E${e.n}</b><div><strong>${t.etD[e.n][1]}</strong><span>${t.etD[e.n][0]}</span></div></div>
       <div class="ptEtP"><small>${t.desde}</small><strong>${precio(e.min)}</strong><small class="h">${t.hasta} ${precio(e.max)}</small></div>
@@ -351,10 +353,10 @@ function html(){
   const langs = ["es","en","fr"].map(k=>`<button data-l="${k}" class="${k===l?"on":""}">${k.toUpperCase()}</button>`).join("");
 
   return `
-  <header class="ptBar" id="ptBar">
+  <div class="ptBar" id="ptBar" role="banner">
     <img class="ptBarLogo" src="${"medios/logo_oscuro.svg"}" alt="Laureles Campestre">
     <div class="ptBarB"><div class="ptLang">${langs}</div><button class="ptWa" data-pt="wa">${ic("chat")}<span>${t.navWa}</span></button><button class="ptPri" data-pt="lotes">${t.nav}</button></div>
-  </header>
+  </div>
 
   <section class="ptHero" id="ptHero">
     <div class="ptHeroBg" style="background-image:url('${IMG("hero")}')"></div>
@@ -365,6 +367,7 @@ function html(){
       <h1>${t.hT}</h1>
       <div class="ptHeroB">
         <button class="ptPri ptPriL ptVivo" data-pt="lotes"><i class="ptLive" aria-hidden="true"></i>${t.hB1}${ic("flecha")}</button>
+        <button class="ptAsesor" data-pt="waP"><span class="ptAsesorI">${ic("wa")}</span><span class="ptAsesorT"><b>${t.hW1}</b><small>${t.hW2}</small></span></button>
         <button class="ptGhost" data-pt="mas">${t.hB2}${ic("abajo")}</button>
       </div>
     </div>
@@ -466,6 +469,7 @@ function pintar(){
     if(a==="mas"){ ev.preventDefault(); irA("ptValor"); return; }
     if(a==="lotes"){ const sb=document.getElementById("startBtn"); if(sb) sb.click(); return; }
     if(a==="wa"){ const t=TX[lang()]||TX.es; if(typeof window.abrirWhatsApp==="function") window.abrirWhatsApp(t.waTxt); return; }
+    if(a==="waP"){ const t=TX[lang()]||TX.es; if(typeof window.abrirWhatsApp==="function") window.abrirWhatsApp(t.waTxt, "portada"); return; }
     if(a==="visita"){ if(typeof ACCESO!=="undefined" && ACCESO.agenda) ACCESO.agenda();
                       else { const bv=document.getElementById("bVisita"); if(bv) bv.click(); } }
   }));
