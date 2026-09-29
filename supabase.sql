@@ -300,3 +300,13 @@ revoke all on public.laureles_config from anon, authenticated;
 --   confirmación de cada solicitud de visita. Mientras no, sólo se envía si el
 --   cliente es uno de aviso_correo (para probar).
 -- ============================================================================
+
+-- ============================================================================
+-- 29/09/2026 · Relieve del entorno para el 3D (migración laureles_horizonte_srtm)
+--   laureles_horizonte(g, n, lat_s, lat_n, lon_o, lon_e, z_base, datos, fuente)
+--   Tres rejillas centradas en el predio: g=1 ±0,405° (70×70), g=2 ±0,108°
+--   (100×100), g=3 ±0,027° (100×100). Cota = z_base + int16/4 (m), en base64,
+--   filas de sur a norte. Fuente: NASA SRTM 1" (30 m), dominio público, vía
+--   api.opentopodata.org (dataset srtm30m). Lectura pública (anon), sin escritura.
+--   La usa paisaje.js para dibujar las montañas alrededor del predio.
+-- ============================================================================

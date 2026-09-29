@@ -30,13 +30,13 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20260929a">
+<link rel="stylesheet" href="maplibre-gl.css?v=20260929b">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20260929a">
-<link rel="stylesheet" href="portada.css?v=20260929a">
-<link rel="stylesheet" href="analisis.css?v=20260929a">
+<link rel="stylesheet" href="armazon.css?v=20260929b">
+<link rel="stylesheet" href="portada.css?v=20260929b">
+<link rel="stylesheet" href="analisis.css?v=20260929b">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -144,6 +144,15 @@ input[type=range]{width:100%;accent-color:var(--forest)}
   font-size:12px;font-weight:700;letter-spacing:.02em}
 .fh .compartir:hover,.fh .cerrar:hover{background:rgba(255,255,255,.24)}
 .fh .compartir svg{width:15px;height:15px}
+.fExtras{display:grid;gap:8px;margin:12px 0 4px}
+.fExtras:empty{display:none}
+.fxCard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--line);background:var(--surface-2);
+  border-radius:12px;padding:10px 12px;cursor:pointer;color:var(--ink);font:inherit}
+.fxCard:hover{border-color:var(--gold)}
+.fxCard .ic{flex:none;width:40px;height:40px;border-radius:10px;background:var(--forest);color:#EBD9AE;display:grid;place-items:center}
+.fxCard .ic svg{width:22px;height:22px}
+.fxCard b{display:block;font-size:13.5px}
+.fxCard span{display:block;font-size:11.5px;color:var(--muted);margin-top:1px;line-height:1.35}
 .ficha.rec .compartir{display:none}
 .directo #intro{display:none!important}
 .enlaceLote{display:flex;gap:8px;margin:6px 0 14px}
@@ -878,7 +887,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20260929a"></script>
+<script src="maplibre-gl.js?v=20260929b"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -900,7 +909,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20260929a"></script>
+<script src="lotes.js?v=20260929b"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -1037,6 +1046,13 @@ const estilo = {
        reescala la buena. */
     sat: { type:"raster", tileSize:256, maxzoom:18, attribution:ATRIB,
       tiles:["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"] },
+    /* Ortofoto del vuelo de dron del proyecto: 1,97 cm/pixel en el original
+       (MAGNA-SIRGAS / CTM12), publicada en teselas WebP hasta z21 (7,4 cm/pixel)
+       con transparencia fuera del área volada. Va encima del satélite. */
+    orto: { type:"raster", tileSize:256, minzoom:14, maxzoom:21,
+      bounds:[-75.7437825,4.469276,-75.7340388,4.4772557],
+      attribution:'Ortofoto: vuelo de dron del proyecto',
+      tiles:["orto/{z}/{x}/{y}.webp"] },
     claro: { type:"raster", tileSize:256, maxzoom:19, attribution:ATRIB,
       tiles:["https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
              "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
@@ -1069,6 +1085,7 @@ const estilo = {
   layers: [
     {id:"fondo-color",type:"background",paint:{"background-color":"#E4E6D8"}},
     {id:"f-sat",type:"raster",source:"sat",layout:{visibility:"none"}},
+    {id:"f-orto",type:"raster",source:"orto",layout:{visibility:"none"},paint:{"raster-fade-duration":150}},
     {id:"f-claro",type:"raster",source:"claro",layout:{visibility:"none"}},
     {id:"f-osm",type:"raster",source:"osm",layout:{visibility:"none"}},
     {id:"f-oscuro",type:"raster",source:"oscuro",layout:{visibility:"none"}},
@@ -1124,7 +1141,7 @@ const mapa = new maplibregl.Map({
      y el lote queda centrado, y sigue siendo un límite de sobra para que nadie
      se pierda fuera del predio. Probado a 0°, 38°, 50° y 62°. */
   maxBounds:[[LIM.w-0.15, LIM.s-0.15],[LIM.e+0.15, LIM.n+0.15]],
-  maxZoom:18.5,
+  maxZoom:21,
   maxPitch:78, attributionControl:false, cooperativeGestures:false
 });
 mapa.addControl(new maplibregl.AttributionControl({compact:true}), "bottom-right");
@@ -1875,15 +1892,19 @@ function prenderRelieve(v){
 }
 function fondo(k){
   S.fondo=k; guardar("laureles.fondo",k);
-  [["sat","f-sat"],["claro","f-claro"],["oscuro","f-oscuro"],["osm","f-osm"]].forEach(([n,id])=>
+  [["sat","f-sat"],["sat","f-orto"],["claro","f-claro"],["oscuro","f-oscuro"],["osm","f-osm"]].forEach(([n,id])=>
     mapa.setLayoutProperty(id,"visibility", n===k?"visible":"none"));
   /* sobre una imagen aérea el relleno tiene que aclararse o tapa el terreno */
   const conImagen = (k==="sat");
   mapa.setPaintProperty("lotes-f","fill-opacity",
     ["case",["boolean",["feature-state","oculto"],false],0.04,
-            ["boolean",["feature-state","sel"],false], conImagen?0.62:0.78,
-            conImagen?0.34:0.50]);
+            ["boolean",["feature-state","sel"],false], conImagen?0.50:0.78,
+            conImagen?0.24:0.50]);
   mapa.setPaintProperty("prot-f","fill-opacity", conImagen?0.30:0.42);
+  /* las construcciones que YA existen salen en la ortofoto del dron: sobre la
+     foto sólo se marca el contorno, para ver el techo real */
+  if(mapa.getLayer("ent-exist-f")) mapa.setPaintProperty("ent-exist-f","fill-opacity", conImagen?0.08:0.9);
+  if(mapa.getLayer("ent-exist-l")) mapa.setPaintProperty("ent-exist-l","line-color", conImagen?"#F1DFB6":"#3B2A20");
   mapa.setPaintProperty("soc-f","fill-opacity", conImagen?0.18:0.28);
   const oscuroFondo = (k==="oscuro"||k==="sat");
   /* "Plano" = sin teselas: fondo liso para trabajar el dibujo en sí */
@@ -2294,6 +2315,7 @@ function pintarFicha(n){
   '<div class="fb">'+
     '<div class="precio">'+cop(v)+'</div>'+
     '<div class="precio-sub">Etapa '+et.l+' · '+et.d+' · '+cop(v/p.area_m2)+' por m² bruto</div>'+
+    '<div class="fExtras" id="fExtras"></div>'+
     /* la lista de esta etapa, que es lo que se negocia: el metro útil y el protegido */
     '<div class="tarifa">'+
       '<div><span>m² útil</span><b>'+cop(PRECIO_UTIL[S.etapa])+'</b></div>'+
@@ -2389,6 +2411,9 @@ function pintarFicha(n){
   const bEV=document.getElementById("bEntrarVentas"); if(bEV) bEV.onclick=()=>ROL.hoja();
   const bPr=ficha.querySelector("#bProsp"); if(bPr) bPr.onclick=()=>hojaProspecto(p,v,et);
   const bCo=ficha.querySelector("#bCompletar"); if(bCo) bCo.onclick=()=>cambiarEstado(p.lote,p.estado);
+  /* tarjetas que agregan otros módulos (recorrido 3D, vista 360°) */
+  const fx=ficha.querySelector("#fExtras");
+  (window.FICHA_EXTRAS||[]).forEach(f=>{ try{ f(p, fx); }catch(e){ console.warn(e); } });
 }
 
 /* --------------------- información comercial a la base de datos ---------------
@@ -3114,7 +3139,9 @@ function compartirLote(p){
     let k=0;
     const t=setInterval(()=>{
       const w=document.getElementById("welcome");
-      const listo = mapa.isStyleLoaded ? mapa.isStyleLoaded() : true;
+      /* basta con que existan las capas: isStyleLoaded() espera también a que
+         carguen todas las teselas (foto, relieve), y eso en el celular tarda */
+      let listo=false; try{ listo=!!mapa.getLayer("lotes-f"); }catch(e){}
       if(w && w.hidden && listo){ clearInterval(t); setTimeout(()=>window.seleccionarLote(lote), 600); }
       else if(++k>1200) clearInterval(t);
     }, 500);
@@ -3129,20 +3156,23 @@ function compartirLote(p){
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png","vida_perfil_vial":"medios/vida_perfil_vial.jpg","vida_ciclorruta":"medios/vida_ciclorruta.jpg","vida_infantil":"medios/vida_infantil.jpg","vida_gimnasio":"medios/vida_gimnasio.jpg","vida_padel":"medios/vida_padel.jpg"};</script>
-<script src="datos-analisis.js?v=20260929a"></script>
-<script src="datos-terreno.js?v=20260929a"></script>
-<script src="datos-logo.js?v=20260929a"></script>
-<script src="adaptador.js?v=20260929a"></script>
-<script src="analisis.js?v=20260929a"></script>
-<script src="datos-via.js?v=20260929a"></script>
-<script src="datos-entrada.js?v=20260929a"></script>
-<script src="r3d.js?v=20260929a"></script>
-<script src="sitios-iconos.js?v=20260929a"></script>
-<script src="armazon.js?v=20260929a"></script>
-<script src="acceso.js?v=20260929a"></script>
-<script src="portada.js?v=20260929a"></script>
-<script src="ia.js?v=20260929a"></script>
-<script src="panel.js?v=20260929a"></script>
+<script src="datos-analisis.js?v=20260929b"></script>
+<script src="datos-terreno.js?v=20260929b"></script>
+<script src="datos-logo.js?v=20260929b"></script>
+<script src="adaptador.js?v=20260929b"></script>
+<script src="analisis.js?v=20260929b"></script>
+<script src="datos-via.js?v=20260929b"></script>
+<script src="datos-entrada.js?v=20260929b"></script>
+<script src="r3d.js?v=20260929b"></script>
+<script src="paisaje.js?v=20260929b"></script>
+<script src="recorrido.js?v=20260929b"></script>
+<script src="visor360.js?v=20260929b"></script>
+<script src="sitios-iconos.js?v=20260929b"></script>
+<script src="armazon.js?v=20260929b"></script>
+<script src="acceso.js?v=20260929b"></script>
+<script src="portada.js?v=20260929b"></script>
+<script src="ia.js?v=20260929b"></script>
+<script src="panel.js?v=20260929b"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

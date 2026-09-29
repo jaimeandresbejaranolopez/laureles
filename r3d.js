@@ -91,6 +91,12 @@ const R3D = (()=>{
      cerca (antes 260 m, que se quedaba lejos para juzgar una piscina) */
   const DIST_MIN=45;
   let modoMano=false;            /* arrastrar mueve en vez de girar */
+  /* ---------- extensiones (paisaje.js, recorrido.js) ----------
+     fondo: se pinta antes que el terreno (el cielo). extras: después de la casa
+     (horizonte, árboles). cam: cámara libre {ojo,foco,cerca,fov} para los
+     recorridos; sin ella manda la órbita. niebla: [r,g,b,densidad por metro]. */
+  const EXT3={ fondo:null, extras:[], cam:null, niebla:[0.8,0.85,0.9,0], lejos:6000, sinFalda:false };
+  let camE=null, camF=null, camFov=0.85;
   let H=null, texCv=null, texDirty=true, raf=0;
   let progS=null, progL=null, piezas=[], somB=null, loteCasa=null, LUZ=[-0.42,0.46,0.78];
   let domo=false, arcosB=null, marcasB=null, rayoB=null, solB=null, baseB=null;
@@ -308,7 +314,7 @@ const R3D = (()=>{
     let m=null;                                    /* posiciones actuales de la malla */
     try{ m=malla(); }catch(e){ return; }
     let zmin=Infinity; FALDA.forEach(([p,q])=>{ zmin=Math.min(zmin,m.pos[p*3+2],m.pos[q*3+2]); });
-    const zb=(zmin-6)*ve;
+    const zb=(zmin-(EXT3.faldaHondo||6))*ve;
     /* el recorrido deja siempre el afuera del mismo lado del tramo: se decide
        el lado por mayoría una sola vez y vale para todos (así no quedan rayas) */
     let votos=0;
@@ -415,7 +421,7 @@ const R3D = (()=>{
       const ok=pasa(L);
       traza(L.g,1);
       x.fillStyle=colorDe(L);
-      x.globalAlpha = ok ? (foto ? (state.modo==="estado" ? .26 : .48)
+      x.globalAlpha = ok ? (foto ? (state.modo==="estado" ? .13 : .40)
                                  : (state.modo==="estado" ? .60 : .88)) : (foto?.06:.12);
       x.fill(); x.globalAlpha=1;
     });
@@ -447,7 +453,7 @@ const R3D = (()=>{
     /* separación entre lotes: seto vivo, no una línea de dibujo */
     x.lineJoin="round"; x.lineCap="round";
     if(foto){
-      x.globalAlpha=.85; x.strokeStyle="#FFFFFF"; x.lineWidth=Math.max(1.2,M(0.55));
+      x.globalAlpha=.62; x.strokeStyle="#FFFFFF"; x.lineWidth=Math.max(1.1,M(0.4));
       DATA.lotes.forEach(L=>{ traza(L.g,1); x.stroke(); });
     } else {
       x.strokeStyle = oscuro ? "#1B2619" : "#4C6243";
@@ -466,7 +472,8 @@ const R3D = (()=>{
 
     /* ---------------- la vía, con andén, sardinel y demarcación ---------------- */
     const E_ = window.__ENTRADA || null, RED_ = !!(E_ && E_.calzada);
-    if(!foto && document.getElementById("cVia").checked && (RED_ || (typeof VIAP!=="undefined" && VIAP && VIAP.calzada))){
+    /* la vía se dibuja también sobre la ortofoto: es lo que se va a construir */
+    if(document.getElementById("cVia").checked && (RED_ || (typeof VIAP!=="undefined" && VIAP && VIAP.calzada))){
       /* La red del plano 039 (datos-entrada.js): las bandas de la vía como las
          achura el plano —andén, franja, sardinel, calzada— y el eje recalculado
          como línea media de la calzada. En la plazoleta de acceso no se pintan eje
@@ -582,8 +589,11 @@ const R3D = (()=>{
         x.rect((i*S)*kx - cw/2, (j*S)*ky - ch/2, cw, ch);
       }
       x.clip();
-      x.fillStyle="rgba(214,208,190,.72)"; x.fillRect(0,0,T,T);
-      x.fillStyle=pat; x.fillRect(0,0,T,T);
+      /* sobre la ortofoto la foto manda: sólo un velo leve y las rayas, para no
+         esconder el terreno real pero sí decir que ahí la cota es estimada */
+      if(foto){ x.globalAlpha=.35; x.fillStyle=pat; x.fillRect(0,0,T,T); x.globalAlpha=1; }
+      else { x.fillStyle="rgba(214,208,190,.72)"; x.fillRect(0,0,T,T);
+      x.fillStyle=pat; x.fillRect(0,0,T,T); }
       x.restore();
     }
 
@@ -1128,15 +1138,18 @@ const R3D = (()=>{
 
   /* ---------- WebGL ---------- */
   const VS=`attribute vec3 p;attribute vec2 uv;attribute vec2 sl;
-uniform mat4 M;uniform float VE;varying vec2 vUv;varying vec3 vN;
+uniform mat4 M;uniform float VE;uniform vec3 OJO;uniform float DENS;varying vec2 vUv;varying vec3 vN;varying float vF;
 void main(){vec3 q=vec3(p.x,p.y,p.z*VE);vUv=uv;
-vN=normalize(vec3(-sl.x*VE,-sl.y*VE,1.0));gl_Position=M*vec4(q,1.0);}`;
-  const FS=`precision mediump float;varying vec2 vUv;varying vec3 vN;
-uniform sampler2D T;uniform vec3 L;uniform vec3 CIELO;
+vN=normalize(vec3(-sl.x*VE,-sl.y*VE,1.0));
+float d=length(q-OJO)*DENS; vF=1.0-exp(-d*d);
+gl_Position=M*vec4(q,1.0);}`;
+  const FS=`precision mediump float;varying vec2 vUv;varying vec3 vN;varying float vF;
+uniform sampler2D T;uniform vec3 L;uniform vec3 CIELO;uniform vec3 NIEB;
 void main(){vec4 c=texture2D(T,vUv);
 float d=max(dot(normalize(vN),normalize(L)),0.0);
 float amb=0.46+0.54*d;
 vec3 col=c.rgb*amb+CIELO*0.05*(1.0-d);
+col=mix(col,NIEB,clamp(vF,0.0,1.0));
 gl_FragColor=vec4(col,1.0);}`;
   const VS3=`attribute vec3 p;uniform mat4 M;uniform float SZ;
 void main(){gl_Position=M*vec4(p,1.0);gl_PointSize=SZ;}`;
@@ -1241,9 +1254,19 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
     gl.clearColor(0,0,0,0);   /* transparente: se ve el fondo del plano, claro u oscuro */
     gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     gl.useProgram(prog);
-    OFF=desfaseVista();
-    const M=mul(corrimiento(OFF), mul(persp(0.85,w/h,5,6000),mirar(ojo(),foco(),[0,0,1])));
+    const C3=EXT3.cam;
+    OFF=C3 ? [0,0] : desfaseVista();
+    camE = C3 ? C3.ojo : ojo(); camF = C3 ? C3.foco : foco(); camFov = (C3 && C3.fov) || 0.85;
+    const PR=persp(camFov,w/h,C3?(C3.cerca||0.4):5,EXT3.lejos), VW=mirar(camE,camF,[0,0,1]);
+    const M=mul(corrimiento(OFF), mul(PR,VW));
+    const oscuro3 = document.documentElement.dataset.theme==="dark" ||
+        (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+    const CTX={gl,M,P:PR,V:VW,E:camE,F:camF,fov:camFov,ve,w,h,OFF,oscuro:oscuro3,LUZ};
+    if(EXT3.fondo){ try{ EXT3.fondo(CTX); }catch(e){ console.warn(e); } gl.useProgram(prog); }
     gl.uniformMatrix4fv(gl.getUniformLocation(prog,"M"),false,M);
+    gl.uniform3f(gl.getUniformLocation(prog,"OJO"),camE[0],camE[1],camE[2]);
+    gl.uniform1f(gl.getUniformLocation(prog,"DENS"),EXT3.niebla[3]);
+    gl.uniform3f(gl.getUniformLocation(prog,"NIEB"),EXT3.niebla[0],EXT3.niebla[1],EXT3.niebla[2]);
     gl.uniform1f(gl.getUniformLocation(prog,"VE"),ve);
     gl.uniform3f(gl.getUniformLocation(prog,"L"),LUZ[0],LUZ[1],LUZ[2]);
     gl.uniform3f(gl.getUniformLocation(prog,"CIELO"),0.62,0.70,0.80);
@@ -1260,7 +1283,7 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
     { const osc = document.documentElement.dataset.theme==="dark" ||
         (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
       if(!faldaB || faldaVE!==ve || faldaOsc!==osc || faldaSucia) { construirFalda(osc); faldaSucia=false; }
-      pintarSolido(faldaB,M, osc?[0.30,0.26,0.21,1]:[0.60,0.51,0.40,1]); }
+      if(!EXT3.sinFalda) pintarSolido(faldaB,M, EXT3.faldaColor || (osc?[0.30,0.26,0.21,1]:[0.60,0.51,0.40,1])); }
     pintarSolido(somB,M,[0.10,0.12,0.09,0.34]);
     piezas.forEach(p=>pintarSolido(p.b,M,p.c));    /* la Casa 30JB, pieza por pieza */
     if(domo){
@@ -1271,6 +1294,7 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
       pintarLineas(solB,M,[1.0,0.84,0.35,0.30],gl.POINTS,42);
       pintarLineas(solB,M,[1.0,0.79,0.20,1.0],gl.POINTS,20);
     }
+    EXT3.extras.forEach(f=>{ try{ f(CTX); }catch(e){ console.warn(e); } });
     /* el atributo de la malla del terreno se reengancha para el siguiente cuadro */
     gl.useProgram(prog);
     gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
@@ -1297,12 +1321,12 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
   function loteEn(px,py){
     const r=cv.getBoundingClientRect();
     const ndcx=((px-r.left)/r.width)*2-1-OFF[0], ndcy=1-((py-r.top)/r.height)*2-OFF[1];
-    const e=ojo(), f=foco();
+    const e=camE||ojo(), f=camF||foco();
     const fw=[f[0]-e[0],f[1]-e[1],f[2]-e[2]]; let l=Math.hypot(...fw); const F=fw.map(v=>v/l);
     // derecha = normalize(cross(F,[0,0,1])) ; arriba = cross(derecha,F)
     let D=[F[1]*1-F[2]*0, F[2]*0-F[0]*1, 0]; l=Math.hypot(...D)||1; D=D.map(v=>v/l);
     const U=[D[1]*F[2]-D[2]*F[1], D[2]*F[0]-D[0]*F[2], D[0]*F[1]-D[1]*F[0]];
-    const asp=r.width/r.height, t=Math.tan(0.85/2);
+    const asp=r.width/r.height, t=Math.tan(camFov/2);
     let d=[F[0]+D[0]*ndcx*t*asp+U[0]*ndcy*t,
            F[1]+D[1]*ndcx*t*asp+U[1]*ndcy*t,
            F[2]+D[2]*ndcx*t*asp+U[2]*ndcy*t];
@@ -1356,7 +1380,7 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
   });
   ["pointerup","pointercancel"].forEach(t=>cv.addEventListener(t,e=>{
     const era=pts.size; pts.delete(e.pointerId); if(pts.size<2)pin=null;
-    if(era===1&&!movido){const n=loteEn(e.clientX,e.clientY); if(n!=null)select(n); else select(null);}
+    if(era===1&&!movido&&!EXT3.cam){const n=loteEn(e.clientX,e.clientY); if(n!=null)select(n); else select(null);}
     arr=null;
   }));
   cv.addEventListener("wheel",e=>{e.preventDefault();
@@ -1441,6 +1465,25 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
       malloSolido(); if(domo) mallaSolar(); pedir();
     },
     ve:()=>ve,
+    /* para paisaje.js y recorrido.js */
+    ext:{
+      fondo(f){ EXT3.fondo=f; pedir(); },
+      agregar(f){ if(EXT3.extras.indexOf(f)<0) EXT3.extras.push(f); pedir(); },
+      quitar(f){ EXT3.extras=EXT3.extras.filter(x=>x!==f); pedir(); },
+      camara(c){ EXT3.cam=c||null; pedir(); },
+      niebla(r,g,b,d){ EXT3.niebla=[r,g,b,d]; pedir(); },
+      lejos(v){ EXT3.lejos=v; pedir(); },
+      sinFalda(v){ EXT3.sinFalda=!!v; pedir(); },
+      faldaColor(c,hondo){ EXT3.faldaColor=c||null; EXT3.faldaHondo=hondo||6; faldaSucia=true; pedir(); },
+      luz(v){ LUZ=v; pedir(); },
+      gl:()=>gl, pedir:()=>pedir(), pintarYa:()=>pintar3d(),
+      alturaEn:(wx,wy)=>{ if(!H) decodificar(); return alturaEn(wx,wy); },
+      datos:()=>({ve,CX,CY,ZMID,TER,S,ANCHO,ALTO,KX,KY,lat0,lon0,PX,DATA,texTam:texTam()}),
+      orbita:()=>({az,elv,dist,panX,panY,cotaFoco}),
+      fijarOrbita(o){ if(o.az!=null)az=o.az; if(o.elv!=null)elv=o.elv; if(o.dist!=null)dist=o.dist;
+        if(o.panX!=null)panX=o.panX; if(o.panY!=null)panY=o.panY; if(o.cotaFoco!==undefined)cotaFoco=o.cotaFoco; pedir(); },
+      lienzo:()=>cv
+    },
     encuadrar(){
       az=-0.62; elv=0.50; panX=0; panY=0; cotaFoco=null;
       const r=cv.getBoundingClientRect(); if(!r.width){dist=1050;pedir();return;}
