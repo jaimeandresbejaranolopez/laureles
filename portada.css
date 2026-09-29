@@ -325,3 +325,22 @@
 .ptAsesorT b{display:block;font-size:14.5px;font-weight:700;line-height:1.2}
 .ptAsesorT small{display:block;font-size:11.5px;font-weight:600;letter-spacing:.04em;color:var(--pt-gold)}
 @media (max-width:640px){.ptRaiz .ptAsesor{width:100%;justify-content:center}}
+
+/* ---------- flecha "Inicio" en la barra del mapa dinámico ---------- */
+header .ptVolver{flex:none;display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 10px;margin-right:-10px;
+  border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--forest,#32402F);cursor:pointer;
+  font:700 12px var(--sans);letter-spacing:.08em;text-transform:uppercase;transition:background .2s,border-color .2s,transform .2s}
+header .ptVolver svg{width:18px;height:18px;flex:none;transition:transform .2s}
+header .ptVolver:hover{border-color:var(--gold,#9B7A48);background:#F8F4EA}
+header .ptVolver:hover svg{transform:translateX(-3px)}
+header .ptVolver:focus-visible{outline:2px solid var(--gold,#9B7A48);outline-offset:2px}
+@media (max-width:640px){
+  header .ptVolver{height:34px;width:34px;padding:0;justify-content:center;margin-right:-4px}
+  header #bInicio{order:-1;position:sticky;left:0;z-index:3}
+  header #logo{left:38px}
+  header .ptVolver span{display:none}
+}
+
+.ptFicha{max-width:1200px;margin:70px auto 0;text-align:left;font-size:13px}
+.ptFicha a{color:var(--pt-gold-3);text-decoration:underline;text-underline-offset:3px}
+.ptFicha+.ptFuentes{margin-top:14px}

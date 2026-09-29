@@ -1,7 +1,7 @@
 {
   "name": "Laureles Campestre — Mapa de ventas",
   "short_name": "Laureles",
-  "description": "Mapa de ventas de la parcelación Laureles Campestre, El Caimo, Armenia (Quindío).",
+  "description": "Laureles Campestre: 86 lotes campestres en El Caimo, Armenia (Quindío). Mapa dinámico con disponibilidad y precios.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

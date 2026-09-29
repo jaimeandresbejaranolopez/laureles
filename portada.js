@@ -106,7 +106,7 @@ const SITIO = {
 const TX = {
  es:{
   nav:"Mapa dinámico", navWa:"WhatsApp",
-  hEb:"Parcelación campestre · El Caimo · Armenia, Quindío",
+  hEb:"Lotes campestres · El Caimo · Armenia, Quindío",
   hT:"Tierra propia en el corredor que más crece del Quindío",
   hB1:"Explora nuestro mapa dinámico", hB2:"Conoce el proyecto", hW1:"Habla con un asesor", hW2:"Escríbenos por WhatsApp",
   hS:[["lotes campestres"],["lote mínimo"],["de predio"],["de la tierra en escritura"]],
@@ -362,7 +362,7 @@ function html(){
     <div class="ptHeroBg" style="background-image:url('${IMG("hero")}')"></div>
     <div class="ptHeroTop"><div class="ptLang ptLangC">${langs}</div></div>
     <div class="ptHeroIn">
-      <img class="ptLogoHero" src="${"medios/logo_claro.svg"}" alt="Laureles Campestre">
+      <img class="ptLogoHero" src="medios/logo_claro.svg" alt="Laureles Campestre, lotes campestres en El Caimo, Armenia, Quindío" width="440" height="283" fetchpriority="high">
       <div class="ptHeroEb">${t.hEb}</div>
       <h1>${t.hT}</h1>
       <div class="ptHeroB">
@@ -452,6 +452,7 @@ function html(){
         <button class="ptGhost" data-pt="visita">${ic("calendario")}${t.bVis}</button>
       </div>
     </div>
+    <p class="ptFicha"><a href="proyecto.html">${l==="en"?"Project fact sheet":(l==="fr"?"Fiche du projet":"Ficha completa del proyecto")}</a> · <a href="politica-datos.html">${l==="en"?"Privacy":(l==="fr"?"Confidentialité":"Política de datos")}</a></p>
     <details class="ptFuentes"><summary>${t.fuentes}</summary><ul>${FUENTES.map(([a,u])=>`<li><a href="${u}" target="_blank" rel="noopener">${a}</a></li>`).join("")}</ul></details>
   </section>`;
 }
@@ -480,27 +481,57 @@ function pintar(){
     setTimeout(pintar, 30);
   }));
   barra();
+  textoInicio();
 }
 function barra(){
   const b = document.getElementById("ptBar"), h = document.getElementById("ptHero");
   if(!b || !h) return;
   b.classList.toggle("on", h.offsetHeight > 0 && wel.scrollTop > h.offsetHeight - 90);
 }
+/* flecha en la barra del mapa para volver a la portada */
+const INICIO = {es:"Inicio", en:"Home", fr:"Accueil"};
+const INICIO_T = {es:"Volver a la página de inicio", en:"Back to the home page", fr:"Retour à l'accueil"};
+function volverInicio(){
+  const m = document.getElementById("modal"); if(m) m.hidden = true;
+  wel.hidden = false;
+  wel.style.scrollBehavior = "auto"; wel.scrollTop = 0; wel.style.scrollBehavior = "";
+  pintar();
+}
+function botonInicio(){
+  const hd = document.querySelector("body > .app header, header");
+  if(!hd || document.getElementById("bInicio")) return;
+  const b = document.createElement("button");
+  b.id = "bInicio"; b.className = "ptVolver"; b.type = "button";
+  b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg><span></span>';
+  b.addEventListener("click", volverInicio);
+  hd.insertBefore(b, hd.firstChild);
+  const logo = document.getElementById("logo");
+  if(logo){ logo.style.cursor = "pointer"; logo.addEventListener("click", volverInicio); }
+  textoInicio();
+}
+function textoInicio(){
+  const b = document.getElementById("bInicio"); if(!b) return;
+  const l = INICIO[lang()] ? lang() : "es";
+  b.querySelector("span").textContent = INICIO[l];
+  b.title = INICIO_T[l]; b.setAttribute("aria-label", INICIO_T[l]);
+}
+
 function montar(){
   if(wel.classList.contains("conPortada")) return;
   wel.classList.add("conPortada");
   /* la tarjeta original queda en el DOM, oculta, por sus botones */
   const card = wel.querySelector(".wel");
   if(card){ card.classList.add("ptOculta"); card.setAttribute("aria-hidden","true"); }
-  raiz = document.createElement("div");
-  raiz.className = "ptRaiz";
-  wel.appendChild(raiz);
+  /* si el HTML ya trae la portada prerenderizada (para buscadores), se reutiliza */
+  raiz = wel.querySelector(".ptRaiz");
+  if(!raiz){ raiz = document.createElement("div"); raiz.className = "ptRaiz"; wel.appendChild(raiz); }
   pintar();
   wel.addEventListener("scroll", barra, {passive:true});
+  botonInicio();
   document.addEventListener("click", ev=>{
     if(ev.target.closest(".wel .langs button, .idioma button")) setTimeout(pintar, 30);
   });
 }
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", montar); else montar();
-window.PORTADA = { pintar, datos };
+window.PORTADA = { pintar, datos, volverInicio };
 })();

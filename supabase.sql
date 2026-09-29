@@ -257,3 +257,15 @@ revoke all on public.laureles_config from anon, authenticated;
 --   laureles_negocios.registrado_por     → nombre de quien hizo el cambio
 -- Al crear un administrador nuevo basta el correo: el nombre lo pone él al entrar.
 -- ---------------------------------------------------------------------------
+
+-- ============================================================================
+-- Avisos por correo (29/09/2026): cada inserción en laureles_visitantes o
+-- laureles_visitas llama a la función laureles-aviso (pg_net), que manda un
+-- correo por Resend. Llave: secreto RESEND_API_KEY en Edge Functions → Secrets.
+-- Configuración en laureles_config (privada, sin políticas):
+--   aviso_correo    destinatarios, separados por coma
+--   aviso_remitente opcional, p. ej. 'Laureles Campestre <avisos@laurelescampestre.co>'
+--                   (requiere el dominio verificado en Resend)
+--   aviso_token     secreto compartido entre el disparador y la función
+-- Disparadores: laureles_aviso_visitante, laureles_aviso_visita → laureles_aviso_t()
+-- ============================================================================
