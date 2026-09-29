@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script>/* enlace directo a un lote o al panel: sin intro */if(/[?&](lote=\d|panel=1)/.test(location.search))document.documentElement.classList.add("directo");</script>
 <!--SEO-->
 <title>Laureles Campestre · Lotes campestres en El Caimo, Armenia, Quindío</title>
 <meta name="description" content="86 lotes campestres desde 3.100 m² en El Caimo, Armenia, a 10 minutos del aeropuerto El Edén. Escritura del 100 % de la tierra. Desde $297 millones.">
@@ -29,13 +30,13 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20260925e">
+<link rel="stylesheet" href="maplibre-gl.css?v=20260929a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20260925e">
-<link rel="stylesheet" href="portada.css?v=20260925e">
-<link rel="stylesheet" href="analisis.css?v=20260925e">
+<link rel="stylesheet" href="armazon.css?v=20260929a">
+<link rel="stylesheet" href="portada.css?v=20260929a">
+<link rel="stylesheet" href="analisis.css?v=20260929a">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -136,8 +137,21 @@ input[type=range]{width:100%;accent-color:var(--forest)}
 .fh{flex-shrink:0;padding:16px 18px 14px;background:var(--forest);color:var(--on-forest);position:relative}
 .fh .lb{font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.72}
 .fh h2{margin:2px 0 8px;font-family:var(--serif);font-size:40px;line-height:.95;font-weight:600}
-.fh .cerrar{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:50%;
+.fh .cerrar{position:absolute;z-index:2;top:10px;right:10px;width:30px;height:30px;border-radius:50%;
   border:0;background:rgba(255,255,255,.14);color:var(--on-forest);cursor:pointer;font-size:17px;line-height:1}
+.fh .compartir{position:absolute;z-index:2;top:10px;right:48px;height:30px;border-radius:999px;border:0;padding:0 12px 0 10px;
+  background:rgba(255,255,255,.14);color:var(--on-forest);cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:700;letter-spacing:.02em}
+.fh .compartir:hover,.fh .cerrar:hover{background:rgba(255,255,255,.24)}
+.fh .compartir svg{width:15px;height:15px}
+.ficha.rec .compartir{display:none}
+.directo #intro{display:none!important}
+.enlaceLote{display:flex;gap:8px;margin:6px 0 14px}
+.enlaceLote input{flex:1;min-width:0;font-size:13px}
+.compartirOps{display:grid;gap:8px}
+.compartirOps a,.compartirOps button{display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);
+  background:var(--surface);border-radius:999px;padding:11px 16px;font-weight:700;text-decoration:none;color:var(--ink);cursor:pointer}
+.compartirOps .wa{background:var(--forest);border-color:var(--forest);color:var(--on-forest)}
 .badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 10px;
   font-size:11px;font-weight:700;letter-spacing:.03em}
 .badge .pt{width:7px;height:7px;border-radius:50%;background:currentColor}
@@ -332,6 +346,7 @@ main.en3d .fondos, .stage.en3d .fondos{bottom:70px}
   .maplibregl-ctrl-group button{width:40px!important;height:40px!important}
   .maplibregl-ctrl-attrib-button{width:32px!important;height:32px!important}
   .ficha .cerrar,.rail .cerrar{width:40px;height:40px}
+  .fh .compartir{height:40px;right:58px;padding:0 14px 0 12px}
   #bq{min-height:40px;min-width:44px}
   .rail input[type=range]{height:36px}
   .rail .seg button,#segEtapa button{min-height:40px}
@@ -863,7 +878,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20260925e"></script>
+<script src="maplibre-gl.js?v=20260929a"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -885,7 +900,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20260925e"></script>
+<script src="lotes.js?v=20260929a"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -2268,6 +2283,10 @@ function pintarFicha(n){
   '<div class="fh">'+
     '<div class="asa" aria-hidden="true"></div>'+
     '<button class="cerrar" aria-label="Cerrar">×</button>'+
+    '<button class="compartir" id="bComp" aria-label="Compartir el enlace de este lote">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+      '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>'+
+      '<span>Compartir</span></button>'+
     '<div class="lb">Lote</div><h2>'+p.lote+'</h2>'+
     '<span class="badge b-'+E.k+'"><i class="pt"></i>'+E.t+'</span>'+
     (p.esquina?' <span class="badge b-disp" style="color:#EBD9AE"><i class="pt"></i>Esquinero</span>':'')+
@@ -2355,6 +2374,7 @@ function pintarFicha(n){
   if(hojaMovil()){ ficha.classList.remove("rec"); snapHoja(2, false); hojaArrastrable(ficha); }
   else ficha.style.removeProperty("--fichaH");
   ficha.querySelector(".cerrar").onclick=cerrarFicha;
+  ficha.querySelector("#bComp").onclick=ev=>{ ev.stopPropagation(); compartirLote(p); };
   ficha.querySelector("#bWa").onclick=()=>whatsapp(p,v,et);
   ficha.querySelector("#bImp").onclick=()=>print();
   const bAnl=ficha.querySelector("#bAnl");
@@ -2647,9 +2667,10 @@ const ROL = (()=>{
         '<div class="pista">Si va a mostrarle el mapa a un cliente en su propio equipo, salga '+
         'de la sesión: en modo visitante nada se puede modificar por accidente.</div>';
       document.getElementById("hojaPie").innerHTML =
-        '<button class="sec" id="bCancel">Cerrar</button>'+
-        '<button class="pri" id="bSalir">Salir de la sesión</button>';
+        '<button class="sec" id="bSalir">Salir de la sesión</button>'+
+        '<button class="pri" id="bPanel">Panel de prospectos</button>';
       document.getElementById("bSalir").onclick=()=>{ salir(); velo.classList.remove("on"); };
+      document.getElementById("bPanel").onclick=()=>{ velo.classList.remove("on"); if(window.PANEL) PANEL.abrir(); };
     } else {
       const vis = (window.ACCESO && ACCESO.visitante && ACCESO.visitante()) || null;
       cuerpo.innerHTML =
@@ -2694,7 +2715,7 @@ const ROL = (()=>{
       if(ol) ol.onclick=ev=>{ ev.preventDefault(); if(window.ACCESO) ACCESO.formAdmin(null); setTimeout(()=>{ const a=document.getElementById("aOlvide"); if(a) a.click(); },0); };
     }
     velo.classList.add("on");
-    document.getElementById("bCancel").onclick=()=>velo.classList.remove("on");
+    const bC=document.getElementById("bCancel"); if(bC) bC.onclick=()=>velo.classList.remove("on");
   }
 
   return {esVentas, correo, token, entrar, salir, pintar, hoja, nombre, asegurarPerfil, pedirPerfil};
@@ -3044,24 +3065,84 @@ window.seleccionarLote = n => {
   }catch(e){}
 };
 
+/* --------------------------- compartir un lote ------------------------------
+   Cada lote tiene su propia página, /lote/N/, con la vista previa del lote
+   (plano con el lote resaltado y sus medidas) para WhatsApp, Facebook o correo.
+   Esa página lleva al mapa con el lote abierto: /?lote=N. En el celular sale
+   el menú de compartir del teléfono; en el computador, esta hoja. */
+function compartirLote(p){
+  const url = "https://www.laurelescampestre.co/lote/"+p.lote+"/";
+  const txt = "Mira el lote "+p.lote+" de Laureles Campestre ("+m2(p.area_m2)+", El Caimo, Armenia):";
+  const movil = matchMedia("(pointer:coarse)").matches;
+  if(movil && navigator.share){ navigator.share({title:"Lote "+p.lote+" · Laureles Campestre", text:txt, url:url}).catch(()=>{}); return; }
+  document.getElementById("hojaTit").textContent = "Compartir el lote "+p.lote;
+  document.getElementById("hojaCuerpo").innerHTML =
+    '<p>Quien abra este enlace ve el plano con el lote '+p.lote+' resaltado y entra directo a su ficha en el mapa.</p>'+
+    '<div class="enlaceLote"><input type="text" id="cUrl" readonly value="'+url+'" aria-label="Enlace del lote">'+
+    '<button class="pri" id="cCopiar">Copiar</button></div>'+
+    '<div class="compartirOps">'+
+      '<a class="wa" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(txt+" "+url)+'">Enviar por WhatsApp</a>'+
+      '<a href="mailto:?subject='+encodeURIComponent("Lote "+p.lote+" · Laureles Campestre")+'&body='+encodeURIComponent(txt+"\n"+url)+'">Enviar por correo</a>'+
+      (navigator.share ? '<button id="cMas">Más opciones</button>' : '')+
+    '</div>';
+  document.getElementById("hojaPie").innerHTML = '<button class="sec" id="bCancel">Cerrar</button>';
+  velo.classList.add("on");
+  document.getElementById("bCancel").onclick = ()=>velo.classList.remove("on");
+  document.getElementById("cCopiar").onclick = async ()=>{
+    const i=document.getElementById("cUrl"); let ok=false;
+    try{ await navigator.clipboard.writeText(url); ok=true; }catch(e){ i.select(); try{ ok=document.execCommand("copy"); }catch(_){} }
+    avisar(ok ? "Enlace copiado." : "Selecciona el enlace y cópialo.", 2500);
+  };
+  const m=document.getElementById("cMas");
+  if(m) m.onclick=()=>navigator.share({title:"Lote "+p.lote+" · Laureles Campestre", text:txt, url:url}).catch(()=>{});
+}
+
+/* ------------------ entrar directo: /?lote=N  ·  /?panel=1 ------------------
+   /?lote=N lo usan las páginas /lote/N/ (el enlace que se comparte): salta la
+   intro, pasa por el registro como cualquier visitante y abre la ficha del
+   lote. /?panel=1 lo usa el correo de aviso: abre el panel de prospectos. */
+(function(){
+  const q = new URLSearchParams(location.search);
+  const n = parseInt(q.get("lote"),10);
+  const lote = n>0 && LOTES.features.some(f=>f.properties.lote===n) ? n : null;
+  const panel = q.get("panel")==="1";
+  if(!lote && !panel) return;
+  const arrancar = ()=>{
+    const s=document.getElementById("skipBtn"); if(s) s.click();
+    if(panel){ if(window.PANEL) PANEL.abrir(); return; }
+    const b=document.getElementById("startBtn"); if(b) b.click();
+    let k=0;
+    const t=setInterval(()=>{
+      const w=document.getElementById("welcome");
+      const listo = mapa.isStyleLoaded ? mapa.isStyleLoaded() : true;
+      if(w && w.hidden && listo){ clearInterval(t); setTimeout(()=>window.seleccionarLote(lote), 600); }
+      else if(++k>1200) clearInterval(t);
+    }, 500);
+  };
+  if(document.readyState==="complete") setTimeout(arrancar, 60);
+  else addEventListener("load", ()=>setTimeout(arrancar, 60));
+})();
+
 
 </script>
 
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png","vida_perfil_vial":"medios/vida_perfil_vial.jpg","vida_ciclorruta":"medios/vida_ciclorruta.jpg","vida_infantil":"medios/vida_infantil.jpg","vida_gimnasio":"medios/vida_gimnasio.jpg","vida_padel":"medios/vida_padel.jpg"};</script>
-<script src="datos-analisis.js?v=20260925e"></script>
-<script src="datos-terreno.js?v=20260925e"></script>
-<script src="datos-logo.js?v=20260925e"></script>
-<script src="adaptador.js?v=20260925e"></script>
-<script src="analisis.js?v=20260925e"></script>
-<script src="datos-via.js?v=20260925e"></script>
-<script src="datos-entrada.js?v=20260925e"></script>
-<script src="r3d.js?v=20260925e"></script>
-<script src="armazon.js?v=20260925e"></script>
-<script src="acceso.js?v=20260925e"></script>
-<script src="portada.js?v=20260925e"></script>
-<script src="ia.js?v=20260925e"></script>
+<script src="datos-analisis.js?v=20260929a"></script>
+<script src="datos-terreno.js?v=20260929a"></script>
+<script src="datos-logo.js?v=20260929a"></script>
+<script src="adaptador.js?v=20260929a"></script>
+<script src="analisis.js?v=20260929a"></script>
+<script src="datos-via.js?v=20260929a"></script>
+<script src="datos-entrada.js?v=20260929a"></script>
+<script src="r3d.js?v=20260929a"></script>
+<script src="sitios-iconos.js?v=20260929a"></script>
+<script src="armazon.js?v=20260929a"></script>
+<script src="acceso.js?v=20260929a"></script>
+<script src="portada.js?v=20260929a"></script>
+<script src="ia.js?v=20260929a"></script>
+<script src="panel.js?v=20260929a"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

@@ -237,6 +237,11 @@ const ACCESO = (()=>{
   }
 
   /* ----------------------------- agendar visita -------------------------- */
+  /* Horario de visitas al predio: de 7 a. m. a 12 m. y de 1 a 4 p. m. Cada
+     opción es la hora de llegada; la última de cada franja deja una hora de
+     recorrido antes del cierre. La base de datos acepta sólo estas horas. */
+  const HORAS = ["07:00","08:00","09:00","10:00","11:00","13:00","14:00","15:00"];
+  const hora12 = h => { const n=parseInt(h,10); return (n>12?n-12:n)+":00 "+(n<12?"a. m.":"p. m."); };
   function agenda(){
     const v = visitante() || {};
     const p = (S && S.sel!=null) ? S.sel : null;
@@ -253,17 +258,20 @@ const ACCESO = (()=>{
     const hoy = new Date(); hoy.setDate(hoy.getDate()+1);
     const min = hoy.toISOString().slice(0,10);
     hojaBase(tt("Agendar visita presencial","Book a site visit","Prendre rendez-vous"),
-      '<p>'+tt("Díganos qué día quiere conocer el proyecto y un asesor le confirma la hora.",
-               "Tell us which day you would like to visit and an advisor will confirm the time.",
-               "Dites-nous quel jour vous souhaitez visiter et un conseiller confirmera l'heure.")+'</p>'+
+      '<p>'+tt("Escoja el día y la hora para conocer el predio. Atendemos de 7 a. m. a 12 m. y de 1 a 4 p. m.; un asesor le confirma la cita.",
+               "Choose the day and time to see the site. Visits run from 7 am to 12 pm and from 1 to 4 pm; an advisor will confirm.",
+               "Choisissez le jour et l'heure de la visite. Nous recevons de 7h à 12h et de 13h à 16h ; un conseiller confirmera.")+'</p>'+
       '<label>'+tt("Nombre","Name","Nom")+'</label><input type="text" id="gNom" value="'+esc(v.nombre)+'">'+
       '<label>'+tt("Correo","Email","Courriel")+'</label><input type="text" id="gMail" inputmode="email" value="'+esc(v.correo)+'">'+
       '<label>'+tt("Teléfono","Phone","Téléphone")+'</label><input type="text" id="gTel" inputmode="tel" value="'+esc(v.telefono)+'">'+
       '<div class="dos">'+
         '<div><label>'+tt("Fecha","Date","Date")+'</label><input type="date" id="gFecha" min="'+min+'"></div>'+
-        '<div><label>'+tt("Franja","Time","Créneau")+'</label><select id="gFranja">'+
-          '<option value="manana">'+tt("Mañana (8 a 12)","Morning (8–12)","Matin (8h–12h)")+'</option>'+
-          '<option value="tarde">'+tt("Tarde (2 a 5)","Afternoon (2–5)","Après-midi (14h–17h)")+'</option></select></div>'+
+        '<div><label>'+tt("Hora","Time","Heure")+'</label><select id="gHora">'+
+          '<optgroup label="'+tt("Mañana · 7 a. m. a 12 m.","Morning · 7 am to 12 pm","Matin · 7h à 12h")+'">'+
+            HORAS.filter(h=>h<"12").map(h=>'<option value="'+h+'">'+hora12(h)+'</option>').join("")+'</optgroup>'+
+          '<optgroup label="'+tt("Tarde · 1 a 4 p. m.","Afternoon · 1 to 4 pm","Après-midi · 13h à 16h")+'">'+
+            HORAS.filter(h=>h>"12").map(h=>'<option value="'+h+'">'+hora12(h)+'</option>').join("")+'</optgroup>'+
+          '</select></div>'+
       '</div>'+
       '<label>'+tt("Lote de interés (opcional)","Lot of interest (optional)","Lot d'intérêt (facultatif)")+'</label>'+
       '<input type="text" id="gLote" inputmode="numeric" value="'+(p!=null?p:"")+'" placeholder="'+tt("p. ej. 30","e.g. 30","p. ex. 30")+'">'+
@@ -277,15 +285,17 @@ const ACCESO = (()=>{
                 correo:document.getElementById("gMail").value.trim().toLowerCase(),
                 telefono:document.getElementById("gTel").value.trim().replace(/[^\d+]/g,"")||null,
                 fecha:document.getElementById("gFecha").value,
-                franja:document.getElementById("gFranja").value,
+                hora:document.getElementById("gHora").value,
                 lote: parseInt(document.getElementById("gLote").value,10)||null };
       if(d.nombre.length<2){ err.textContent=tt("Falta el nombre.","Name is missing.","Le nom manque."); return; }
       if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.correo)){ err.textContent=tt("Ese correo no se ve bien.","That email does not look right.","Ce courriel semble incorrect."); return; }
       if(!d.fecha){ err.textContent=tt("Elija la fecha.","Pick a date.","Choisissez la date."); return; }
+      if(HORAS.indexOf(d.hora)<0){ err.textContent=tt("Elija la hora.","Pick a time.","Choisissez l'heure."); return; }
+      d.franja = d.hora<"12" ? "manana" : "tarde";
       const bt=document.getElementById("gIr"); bt.disabled=true; err.textContent="";
       let ok=false;
       try{ const r=await fetch(base()+"/rest/v1/laureles_visitas",{method:"POST",headers:cab(),body:JSON.stringify([d])}); ok=r.ok; }catch(e){}
-      const franja = d.franja==="manana" ? tt("en la mañana","in the morning","le matin") : tt("en la tarde","in the afternoon","l'après-midi");
+      const franja = tt("a las ","at ","à ")+hora12(d.hora);
       const msg = tt("Hola, quiero agendar una visita a Laureles Campestre el "+d.fecha+" "+franja+
                      (d.lote?" (me interesa el lote "+d.lote+")":"")+". Soy "+d.nombre+".",
                      "Hi, I would like to book a visit to Laureles Campestre on "+d.fecha+" "+franja+
@@ -293,7 +303,7 @@ const ACCESO = (()=>{
                      "Bonjour, je souhaite visiter Laureles Campestre le "+d.fecha+" "+franja+
                      (d.lote?" (lot "+d.lote+")":"")+". Je suis "+d.nombre+".");
       cerrar();
-      avisar(ok ? tt("Solicitud registrada. Un asesor le confirma la hora.","Request saved. An advisor will confirm the time.","Demande enregistrée. Un conseiller confirmera l'heure.")
+      avisar(ok ? tt("Solicitud registrada. Un asesor le confirma la cita.","Request saved. An advisor will confirm your visit.","Demande enregistrée. Un conseiller confirmera la visite.")
                 : tt("No se pudo guardar la solicitud; le abrimos WhatsApp para que no se pierda.","Could not save the request; opening WhatsApp so it is not lost.","Impossible d'enregistrer ; ouverture de WhatsApp."), 5000);
       if(typeof window.abrirWhatsApp==="function") window.abrirWhatsApp(msg);
     };

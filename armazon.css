@@ -53,6 +53,10 @@ nav button.on::after{transform:scaleX(1)}
   box-shadow:var(--shadow-sm);min-width:126px;max-width:200px;backdrop-filter:blur(10px);flex:none;
   transition:transform .2s var(--ease),box-shadow .2s var(--ease)}
 .poi .c:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.poi .c{display:flex;align-items:center;gap:10px;padding-left:9px}
+.poi .c .ic{flex:none;width:42px;height:42px;border-radius:50%;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(50,64,47,.14)}
+.poi .c .ic svg{width:100%;height:100%;display:block}
+.poi .c .tx{min-width:0}
 .poi .c .n{font-family:var(--serif);font-variation-settings:"SOFT" 100;font-size:15px;line-height:1.15;font-weight:500}
 .poi .c .d{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.35;white-space:nowrap}
 .poi .c .d em{font-style:normal;color:var(--gold);font-weight:600;letter-spacing:.04em}
@@ -130,7 +134,8 @@ nav button{padding:8px 8px;font-size:11px}
 .idioma button{padding:4px 6px;font-size:10px}
 .cta{padding:8px 14px;font-size:11px}
 .poi{bottom:auto;top:12px;left:12px;right:60px}
-.poi .c{min-width:118px;padding:7px 11px}
+.poi .c{min-width:118px;padding:7px 11px 7px 7px;gap:8px}
+.poi .c .ic{width:34px;height:34px}
 .sheet{padding:26px 22px 24px;max-height:90vh}
 .sheet h2{font-size:28px}
 .wel{padding:30px 24px 26px}

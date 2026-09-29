@@ -269,3 +269,34 @@ revoke all on public.laureles_config from anon, authenticated;
 --   aviso_token     secreto compartido entre el disparador y la función
 -- Disparadores: laureles_aviso_visitante, laureles_aviso_visita → laureles_aviso_t()
 -- ============================================================================
+
+-- ============================================================================
+-- 29/09/2026 · Equipo, seguimiento de prospectos y hora de visita
+-- (migraciones laureles_equipo_y_seguimiento y laureles_revocar_funciones_disparador)
+--
+-- EQUIPO. Supabase Auth tiene el registro abierto: cualquiera podía crearse una
+-- cuenta y, con ella, leer los prospectos o cambiar lotes. Ahora "sesión" no
+-- basta: hay que estar en laureles_equipo.
+--   laureles_equipo(usuario uuid pk → auth.users, correo, rol gerencia|asesor, activo, creado)
+--   laureles_es_equipo() → boolean (security definer)
+--   Todas las políticas de lectura/escritura del equipo (visitantes, visitas,
+--   prospectos, negocios, historial, ia_casas) usan laureles_es_equipo().
+--   laureles_cambiar_estado y laureles_guardar_perfil lo exigen; también las
+--   funciones laureles-ia y laureles-render (403 si la cuenta no es del equipo).
+-- Para dar de alta a alguien: crear el usuario en Authentication y luego
+--   insert into public.laureles_equipo (usuario, correo, rol)
+--   select id, email, 'asesor' from auth.users where email = 'correo@dominio';
+-- Para retirarlo: update public.laureles_equipo set activo = false where correo = '…';
+--
+-- SEGUIMIENTO (panel de prospectos, /?panel=1):
+--   laureles_visitantes + estado_seg (nuevo|contactado|interesado|visita|negociando|cerrado|descartado),
+--                         asesor, notas_seg, seg_actualizado, seg_por
+--   laureles_visitas    + hora ('07:00'…'11:00','13:00'…'15:00'), seguimiento
+--   laureles_seguimiento(tipo 'visitante'|'visita', id, estado, asesor, notas) → firma con el nombre
+--
+-- RESPUESTA AUTOMÁTICA AL CLIENTE (función laureles-aviso v3):
+--   laureles_config.respuesta_cliente = 'si' y aviso_remitente con dominio
+--   verificado en Resend → bienvenida con brochure, mapa y WhatsApp, y
+--   confirmación de cada solicitud de visita. Mientras no, sólo se envía si el
+--   cliente es uno de aviso_correo (para probar).
+-- ============================================================================

@@ -430,7 +430,7 @@ function repintar(){
                        'Welcome to <em>Laureles Campestre</em>',
                        'Bienvenue à <em>Laureles Campestre</em>');
   document.getElementById("poi").innerHTML=POIS.map(([n,d,m])=>
-    `<div class="c"><div class="n">${T(n)}</div><div class="d">${T(d)}<br><em>${T(m)}</em></div></div>`).join("");
+    `<div class="c">${(window.SITIO_ICONO||{})[n]?`<span class="ic">${window.SITIO_ICONO[n]}</span>`:""}<div class="tx"><div class="n">${T(n)}</div><div class="d">${T(d)}<br><em>${T(m)}</em></div></div></div>`).join("");
   if(!modal.hidden && modalActual) abrir(modalActual);
 }
 /* captura de los textos del armazón para poder traducirlos */
@@ -445,7 +445,7 @@ document.querySelectorAll("header, .poi, .wel, .rail, .fondos, .ficha").forEach(
 });
 /* la barra de sitios de interés se llena siempre, no sólo al cambiar de idioma */
 document.getElementById("poi").innerHTML=POIS.map(([n,d,m])=>
-  `<div class="c"><div class="n">${T(n)}</div><div class="d">${T(d)}<br><em>${T(m)}</em></div></div>`).join("");
+  `<div class="c">${(window.SITIO_ICONO||{})[n]?`<span class="ic">${window.SITIO_ICONO[n]}</span>`:""}<div class="tx"><div class="n">${T(n)}</div><div class="d">${T(d)}<br><em>${T(m)}</em></div></div></div>`).join("");
 window.ARMAZON={abrir, repintar, cerrarIntro};
 if(LANG!=="es") repintar();
 marcarIdioma();

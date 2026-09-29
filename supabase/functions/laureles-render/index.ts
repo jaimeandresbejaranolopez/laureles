@@ -85,6 +85,11 @@ Deno.serve(async (req: Request) => {
   const { data: u, error: eU } = await sbUser.auth.getUser(jwt);
   if (eU || !u?.user) return json({ error: "La sesión no es válida o venció." }, 401);
   const usuario = u.user.id, correo = u.user.email || "";
+  /* una cuenta cualquiera de Auth no basta: tiene que estar en laureles_equipo */
+  {
+    const { data: eq } = await createClient(url, servicio).from("laureles_equipo").select("usuario").eq("usuario", usuario).eq("activo", true).maybeSingle();
+    if (!eq) return json({ error: "Esta cuenta no es del equipo de Laureles." }, 403);
+  }
 
   const sb = createClient(url, servicio);
   const hoy = new Date(); hoy.setUTCHours(0, 0, 0, 0);
