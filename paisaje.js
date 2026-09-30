@@ -34,14 +34,22 @@ const merc=(lon,lat)=>{ const s=Math.sin(lat*Math.PI/180); return [(lon+180)/360
 /* ---------------- sombreadores ---------------- */
 const VS_H=`attribute vec3 p;attribute vec2 uv;attribute vec2 sl;attribute vec3 col;
 uniform mat4 M;uniform float VE;uniform vec3 OJO;uniform float DENS;
-varying vec2 vUv;varying vec3 vN;varying vec3 vC;varying float vF;
-void main(){vec3 q=vec3(p.x,p.y,p.z*VE);vUv=uv;vC=col;
+varying vec2 vUv;varying vec3 vN;varying vec3 vC;varying float vF;varying vec2 vXY;
+void main(){vec3 q=vec3(p.x,p.y,p.z*VE);vUv=uv;vC=col;vXY=p.xy;
 vN=normalize(vec3(-sl.x*VE,-sl.y*VE,1.0));
 float d=length(q-OJO)*DENS; vF=1.0-exp(-d*d);
 gl_Position=M*vec4(q,1.0);}`;
-const FS_H=`precision mediump float;varying vec2 vUv;varying vec3 vN;varying vec3 vC;varying float vF;
-uniform sampler2D T;uniform float UT;uniform vec3 L;uniform vec3 NIEB;
-void main(){vec3 b=UT>0.5?texture2D(T,vUv).rgb:vC;
+const FS_H=`#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+varying vec2 vUv;varying vec3 vN;varying vec3 vC;varying float vF;varying vec2 vXY;
+uniform sampler2D T;uniform float UT;uniform vec3 L;uniform vec3 NIEB;uniform sampler2D MKT;uniform vec4 MK;
+void main(){
+vec2 m=vec2((vXY.x+MK.x)/MK.z,(MK.y-vXY.y)/MK.w);
+if(m.x>0.0&&m.x<1.0&&m.y>0.0&&m.y<1.0&&texture2D(MKT,m).r>0.5) discard;   /* donde hay levantamiento, manda el predio */
+vec3 b=UT>0.5?texture2D(T,vUv).rgb:vC;
 float d=max(dot(normalize(vN),normalize(L)),0.0);
 vec3 c=b*(0.50+0.55*d);
 gl_FragColor=vec4(mix(c,NIEB,clamp(vF,0.0,1.0)),1.0);}`;
@@ -255,7 +263,30 @@ function mallaArboles(orto){
   arbolesCuantos=cuantos;
   return trozos;
 }
-let arbolesCuantos=0, arbolesVE=null, ortoMosaico=null;
+let arbolesCuantos=0, arbolesVE=null, ortoMosaico=null, mascara=null;
+/* Máscara del predio: 1 donde hay levantamiento. El relieve del entorno (SRTM,
+   30 m, y con la copa de los árboles incluida) se descarta ahí: en la cañada
+   quedaba por encima del terreno medido y tapaba el predio con manchas oscuras. */
+function hacerMascara(){
+  const paso=2, W=Math.ceil(D.ANCHO/paso), H=Math.ceil(D.ALTO/paso);
+  const c=document.createElement("canvas"); c.width=W; c.height=H;
+  const x=c.getContext("2d"), im=x.createImageData(W,H);
+  const dentro=new Uint8Array(W*H);
+  for(let j=0;j<H;j++) for(let i=0;i<W;i++){
+    const h=X.alturaEn(D.TER.x+(i+0.5)*paso, D.TER.y+(j+0.5)*paso);
+    dentro[j*W+i]=isNaN(h)?0:1; }
+  /* se recorta 2 px (4 m) hacia adentro: en el borde el predio y el entorno se traslapan en vez de dejar hueco */
+  for(let j=0;j<H;j++) for(let i=0;i<W;i++){
+    let v=dentro[j*W+i];
+    for(let dj=-2;dj<=2&&v;dj++) for(let di=-2;di<=2&&v;di++){ const a=i+di,b=j+dj; if(a<0||b<0||a>=W||b>=H||!dentro[b*W+a]) v=0; }
+    const k=(j*W+i)*4; im.data[k]=im.data[k+1]=im.data[k+2]=v?255:0; im.data[k+3]=255; }
+  x.putImageData(im,0,0);
+  const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,c);
+  return t;
+}
 
 /* ---------------- pintar ---------------- */
 function uni(p,n){ return gl.getUniformLocation(p,n); }
@@ -282,6 +313,9 @@ function pintarEntorno(ctx){
     gl.uniform3fv(uni(progH,"OJO"),ctx.E); gl.uniform1f(uni(progH,"DENS"),dens);
     gl.uniform3fv(uni(progH,"L"),luzActual?luzActual.v:[-0.42,0.46,0.78]); gl.uniform3fv(uni(progH,"NIEB"),col.niebla);
     gl.uniform1i(uni(progH,"T"),1);
+    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,mascara);
+    gl.uniform1i(uni(progH,"MKT"),2);
+    gl.uniform4f(uni(progH,"MK"),D.CX-D.TER.x,D.CY-D.TER.y,D.ANCHO,D.ALTO);
     anillos.forEach(a=>{
       gl.bindBuffer(gl.ARRAY_BUFFER,a.v);
       const st=40; [[0,3,0],[1,2,12],[2,2,20],[3,3,28]].forEach(([k,n,o])=>{ gl.enableVertexAttribArray(L[k]); gl.vertexAttribPointer(L[k],n,gl.FLOAT,false,st,o); });
@@ -323,6 +357,7 @@ function aplicarLuz(){
 async function preparar(){
   gl=X.gl(); D=X.datos();
   progH=programa(VS_H,FS_H); progC=programa(VS_C,FS_C); progA=programa(VS_A,FS_A);
+  mascara=hacerMascara();
   cielo=mallaCielo();
   aplicarLuz();
   /* 1. la ortofoto del dron como piel del predio */

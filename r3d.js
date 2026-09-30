@@ -53,6 +53,7 @@ function colorDe(L){
   const M = window.__MAPA;
   if(!M) return GRIS_LOTE;
   const f = M.LOTES.features.find(x=>x.properties.lote===L.n);
+  if(f && typeof window.colorLote==="function") return window.colorLote(f.properties);  /* con el canal, si es administrador */
   const e = f && M.ESTADOS[f.properties.estado];
   /* la textura se pinta en un lienzo 2D: aquí no valen las variables CSS */
   return e ? e.c : GRIS_LOTE;

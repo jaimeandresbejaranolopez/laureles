@@ -30,20 +30,20 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20260929b">
+<link rel="stylesheet" href="maplibre-gl.css?v=20260930a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20260929b">
-<link rel="stylesheet" href="portada.css?v=20260929b">
-<link rel="stylesheet" href="analisis.css?v=20260929b">
+<link rel="stylesheet" href="armazon.css?v=20260930a">
+<link rel="stylesheet" href="portada.css?v=20260930a">
+<link rel="stylesheet" href="analisis.css?v=20260930a">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
   --ink:#1C221B; --ink-2:#3B453A; --muted:#6B7367;
   --paper:#F4F2EA; --surface:#FFFFFF; --surface-2:#F8F7F1;
   --line:#DBD9CD; --line-soft:#ECEAE1;
-  --disp:#4C8862; --sep:#C48A2A; --vend:#8A8F82; --resv:#3E6DB0;
+  --disp:#4C8862; --sep:#C48A2A; --vend:#8A8F82; --resv:#C0392B;
   --on-forest:#F6F4EC;
   --r:13px; --r-sm:9px;
   --sans:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -167,7 +167,19 @@ input[type=range]{width:100%;accent-color:var(--forest)}
 .b-disp{background:rgba(255,255,255,.15);color:#BFE8CD}
 .b-sep{background:rgba(255,255,255,.15);color:#F2CE86}
 .b-vend{background:rgba(255,255,255,.15);color:#D9DCD2}
-.b-resv{background:rgba(255,255,255,.15);color:#B9CFF2}
+.b-resv{background:rgba(255,255,255,.15);color:#F6B4AA}
+.b-fajardo{background:rgba(232,195,30,.22);color:#FBE58A}
+.b-c21{background:rgba(232,115,26,.24);color:#FFC79A}
+.leyCanal{display:none;margin-top:8px;font-size:11.5px;line-height:1.55;color:var(--muted)}
+body.admin .leyCanal{display:block}
+.leyCanal i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.bandera{pointer-events:none;width:22px;height:30px;transform:translateY(-2px)}
+.bandera svg{width:22px;height:30px;display:block;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.45))}
+.canalSel{display:flex;gap:8px;margin:4px 0 2px}
+.canalSel label{flex:1;display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:9px 10px;cursor:pointer;font-size:13px;margin:0}
+.canalSel input{margin:0}
+.canalSel label.on{border-color:var(--forest);box-shadow:0 0 0 2px rgba(50,64,47,.12)}
+.canalSel i{display:inline-block!important;width:12px!important;height:12px!important;border-radius:3px;flex:none}
 .fb{flex:1;min-height:0;overflow-y:auto;padding:16px 18px}
 .ff{flex-shrink:0;padding:12px 18px;border-top:1px solid var(--line-soft);background:var(--surface-2);
   display:flex;flex-direction:column;gap:8px}
@@ -629,6 +641,7 @@ body.baseClara .rotCota{color:#6B5C38;
         <div class="blk">
           <div class="et">Estado</div>
           <div class="chips" id="chips"></div>
+          <div class="leyCanal" id="leyCanal"><b style="color:var(--ink-2)">Canal de venta</b> · sólo administradores<br><i style="background:#E8C31E"></i>Separado por Juan Carlos Fajardo<br><i style="background:#E8731A"></i>Separado por Century 21 DAB<br><i style="background:#C0392B"></i>Firmado: la banderita dice el canal</div>
         </div>
         <div class="blk">
           <div class="et">Afinar</div>
@@ -887,7 +900,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20260929b"></script>
+<script src="maplibre-gl.js?v=20260930a"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -909,7 +922,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20260929b"></script>
+<script src="lotes.js?v=20260930a"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -987,8 +1000,20 @@ const ESTADOS = {
   disponible:{t:"Disponible", c:"#4C8862", k:"disp"},
   separado:  {t:"Separado",   c:"#C48A2A", k:"sep"},
   vendido:   {t:"Vendido",    c:"#8A8F82", k:"vend"},
-  reservado: {t:"Reservado por la empresa", c:"#3E6DB0", k:"resv"}
+  reservado: {t:"Firmado", c:"#C0392B", k:"resv"}
 };
+/* CANAL DE VENTA — sólo lo ven los administradores (sale de laureles_negocios,
+   que el público no puede leer). Separado: el color del canal. Firmado: rojo,
+   con una banderita del color del canal. */
+const CANAL = {
+  fajardo: {t:"Juan Carlos Fajardo", corto:"Fajardo", c:"#E8C31E"},
+  c21:     {t:"Century 21 DAB",      corto:"Century 21", c:"#E8731A"}
+};
+function colorLote(p){
+  if(p && p.estado==="separado" && p.canal && CANAL[p.canal]) return CANAL[p.canal].c;
+  const e=ESTADOS[p&&p.estado]; return e ? e.c : ESTADOS.disponible.c;
+}
+window.colorLote=colorLote; window.CANAL=CANAL;
 
 const S = {
   etapa: leer("laureles.etapa", 1),
@@ -1112,10 +1137,14 @@ const estilo = {
                 15.6,0, 16.2,["case",["get","maestra"],.55,.30],
                 18.5,["case",["get","maestra"],.95,.62]]}},
     {id:"lotes-f",type:"fill",source:"lotes",
-      paint:{"fill-color":["match",["get","estado"],
-               "disponible","#4C8862","separado","#C48A2A","vendido","#8A8F82","reservado","#3E6DB0","#4C8862"],
+      paint:{"fill-color":["case",
+               ["all",["==",["get","estado"],"separado"],["==",["get","canal"],"fajardo"]],"#E8C31E",
+               ["all",["==",["get","estado"],"separado"],["==",["get","canal"],"c21"]],"#E8731A",
+               ["match",["get","estado"],
+               "disponible","#4C8862","separado","#C48A2A","vendido","#8A8F82","reservado","#C0392B","#4C8862"]],
              "fill-opacity":["case",["boolean",["feature-state","oculto"],false],0.04,
-                             ["boolean",["feature-state","sel"],false],0.78,0.50]}},
+                             ["boolean",["feature-state","sel"],false],0.80,
+                             ["!=",["get","estado"],"disponible"],0.72,0.50]}},
     {id:"lotes-l",type:"line",source:"lotes",
       paint:{"line-color":["case",["boolean",["feature-state","sel"],false],"#F1DFB6","#F4F2EA"],
              "line-width":["case",["boolean",["feature-state","sel"],false],3.4,1.1],
@@ -1898,8 +1927,9 @@ function fondo(k){
   const conImagen = (k==="sat");
   mapa.setPaintProperty("lotes-f","fill-opacity",
     ["case",["boolean",["feature-state","oculto"],false],0.04,
-            ["boolean",["feature-state","sel"],false], conImagen?0.50:0.78,
-            conImagen?0.24:0.50]);
+            ["boolean",["feature-state","sel"],false], conImagen?0.62:0.80,
+            ["!=",["get","estado"],"disponible"], conImagen?0.66:0.72,
+            conImagen?0.20:0.50]);
   mapa.setPaintProperty("prot-f","fill-opacity", conImagen?0.30:0.42);
   /* las construcciones que YA existen salen en la ortofoto del dron: sobre la
      foto sólo se marca el contorno, para ver el techo real */
@@ -1941,7 +1971,7 @@ function refrescar(){
     kpi(Math.round((nS+nV)/T*100)+" %","Colocado");
   document.getElementById("cuenta").innerHTML =
     "<b>"+visibles+"</b> lotes visibles de "+T+" &nbsp;·&nbsp; "+
-    nD+" libres · "+nS+" separados · "+nV+" vendidos"+(nR?" · "+nR+" reservados":"");
+    nD+" libres · "+nS+" separados · "+(nR?nR+(nR===1?" firmado · ":" firmados · "):"")+nV+" vendidos";
   if(S.sel) pintarFicha(S.sel);
 }
 const kpi=(v,k)=>'<div class="kpi"><div class="v">'+v+'</div><div class="k">'+k+'</div></div>';
@@ -2309,7 +2339,8 @@ function pintarFicha(n){
       '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>'+
       '<span>Compartir</span></button>'+
     '<div class="lb">Lote</div><h2>'+p.lote+'</h2>'+
-    '<span class="badge b-'+E.k+'"><i class="pt"></i>'+E.t+'</span>'+
+    '<span class="badge b-'+(p.canal&&CANAL[p.canal]&&p.estado!=="disponible"?p.canal:E.k)+'"><i class="pt"></i>'+E.t+
+      (p.canal&&CANAL[p.canal]&&p.estado!=="disponible"?' · '+CANAL[p.canal].corto:'')+'</span>'+
     (p.esquina?' <span class="badge b-disp" style="color:#EBD9AE"><i class="pt"></i>Esquinero</span>':'')+
   '</div>'+
   '<div class="fb">'+
@@ -2355,9 +2386,10 @@ function pintarFicha(n){
       : 'Todo el lote es área útil: no lo toca ninguna faja de protección.')+'</div>'+
     (ROL.esVentas() && p.estado!=="disponible"
       ? (NEG[p.lote] && NEG[p.lote].estado===p.estado
-          ? '<div class="negocio"><div class="et">'+(p.estado==="vendido"?"Venta":p.estado==="reservado"?"Reserva":"Separación")+' · sólo administradores</div>'+
+          ? '<div class="negocio"><div class="et">'+(p.estado==="vendido"?"Venta":p.estado==="reservado"?"Firma":"Separación")+' · sólo administradores</div>'+
+            (NEG[p.lote].canal&&CANAL[NEG[p.lote].canal]?'<div style="margin:2px 0 6px;font-size:12.5px"><i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:'+CANAL[NEG[p.lote].canal].c+';margin-right:6px"></i>Canal: <b>'+CANAL[NEG[p.lote].canal].t+'</b></div>':'')+
             '<table>'+
-            '<tr><td>'+(p.estado==="vendido"?"Vendió":p.estado==="reservado"?"Reservó":"Separó")+'</td><td><b>'+escH(NEG[p.lote].agente)+'</b></td></tr>'+
+            '<tr><td>'+(p.estado==="vendido"?"Vendió":p.estado==="reservado"?"Firmó":"Separó")+'</td><td><b>'+escH(NEG[p.lote].agente)+'</b></td></tr>'+
             '<tr><td>Cliente</td><td><b>'+escH(NEG[p.lote].cliente)+'</b></td></tr>'+
             (NEG[p.lote].cliente_documento?'<tr><td>Documento</td><td>'+escH(NEG[p.lote].cliente_documento)+'</td></tr>':'')+
             (NEG[p.lote].cliente_telefono?'<tr><td>Teléfono</td><td>'+escH(NEG[p.lote].cliente_telefono)+'</td></tr>':'')+
@@ -2373,7 +2405,7 @@ function pintarFicha(n){
       ? '<div class="et" style="margin-top:18px">Cambiar estado</div>'+
         '<div class="seg" id="segEstado">'+
           Object.entries(ESTADOS).map(([k,e])=>
-            '<button data-e="'+k+'"'+(k===p.estado?' class="on"':'')+'>'+(k==="reservado"?"Reservado":e.t)+'</button>').join("")+
+            '<button data-e="'+k+'"'+(k===p.estado?' class="on"':'')+'>'+e.t+'</button>').join("")+
         '</div>'+
         '<div class="pista" style="font-size:11.5px;color:var(--muted);margin-top:6px" id="pistaEstado"></div>'
       : '<div class="soloLectura">Está viendo el plano como <b>visitante</b>: puede recorrerlo entero, '+
@@ -2488,7 +2520,11 @@ function cambiarEstado(n,e){
   const f=LOTES.features.find(x=>x.properties.lote===n); if(!f) return;
   const actual=f.properties.estado, neg=NEG[n];
   if(e===actual && (e==="disponible" || neg)) return;       /* nada que cambiar */
-  const verbo = {separado:"Separar", vendido:"Registrar la venta del", reservado:"Reservar", disponible:"Liberar"}[e];
+  const verbo = {separado:"Separar", vendido:"Registrar la venta del", reservado:"Registrar la firma del", disponible:"Liberar"}[e];
+  const boton = {separado:"Separar", vendido:"Registrar venta", reservado:"Registrar firma", disponible:"Liberar"}[e];
+  const pf=ROL.perfil()||{}, gerencia=pf.rol==="gerencia";
+  let canalSel = (neg && neg.canal) || pf.canal || "c21";
+  if(!gerencia && pf.canal) canalSel=pf.canal;
   const libera = e==="disponible";
   const previo = (e===actual && !neg) || (neg && neg.estado===e) ? (neg||{}) : {};
   document.getElementById("hojaTit").textContent = verbo+" lote "+n;
@@ -2496,7 +2532,12 @@ function cambiarEstado(n,e){
     (libera
       ? '<div class="pista">El lote vuelve a quedar <b>Disponible</b> para todos. Queda registrado quién lo liberó y por qué.</div>'
       : '<div class="pista">El lote pasará a <b>'+escH(ESTADOS[e].t)+'</b>. Es obligatorio el nombre de quien hace la '+
-        (e==="vendido"?"venta":e==="reservado"?"reserva":"separación")+' y el del cliente. Estos datos sólo los ven los administradores.</div>')+
+        (e==="vendido"?"venta":e==="reservado"?"firma":"separación")+' y el del cliente. Estos datos sólo los ven los administradores.</div>')+
+    (libera ? '' :
+      '<label>Canal de venta *</label><div class="canalSel" id="nCanal">'+
+      Object.entries(CANAL).map(([k,c])=>'<label class="'+(k===canalSel?'on':'')+'"><input type="radio" name="nCanal" value="'+k+'"'+(k===canalSel?' checked':'')+
+        (!gerencia&&k!==canalSel?' disabled':'')+'><i style="background:'+c.c+'"></i>'+c.t+'</label>').join("")+'</div>'+
+      (gerencia?'':'<div class="pista">Tu cuenta registra negocios del canal <b>'+escH((CANAL[canalSel]||{}).t||"")+'</b>.</div>'))+
     '<label for="nAg">Agente o administrador que lo hace *</label>'+
     '<input type="text" id="nAg" autocomplete="name" value="'+escH(previo.agente||ROL.nombre()||CFG.asesor||"")+'" placeholder="Nombre y apellido">'+
     '<div class="pista">Queda registrado además que el cambio lo hizo <b>'+escH(ROL.nombre())+'</b>.</div>'+
@@ -2507,7 +2548,7 @@ function cambiarEstado(n,e){
     '<label for="nNot">'+(libera?"Motivo *":"Notas")+'</label><input type="text" id="nNot" placeholder="'+(libera?"Desistió, error, cambio de lote…":"Etapa, forma de pago, acuerdos (opcional)")+'">'+
     '<div class="pista" id="nErr" style="color:#A3543F;margin-top:10px"></div>';
   document.getElementById("hojaPie").innerHTML =
-    '<button class="sec" id="bCancel">Cancelar</button><button class="pri" id="bNeg">'+verbo+'</button>';
+    '<button class="sec" id="bCancel">Cancelar</button><button class="pri" id="bNeg">'+boton+'</button>';
   velo.classList.add("on");
   document.getElementById("bCancel").onclick=()=>velo.classList.remove("on");
   document.getElementById("bNeg").onclick=async()=>{
@@ -2519,19 +2560,52 @@ function cambiarEstado(n,e){
     if(libera && nt.length<3){ err.textContent="Escribe el motivo."; document.getElementById("nNot").focus(); return; }
     const b=document.getElementById("bNeg"); b.disabled=true; b.textContent="Guardando…"; err.textContent="";
     try{
+      const rc=document.querySelector('#nCanal input:checked');
       const fila = await SB.negocio({p_lote:n, p_estado:e, p_agente:ag, p_cliente:libera?null:cl,
-        p_documento:v("nDoc")||null, p_telefono:v("nTel")||null, p_notas:nt||null});
+        p_documento:v("nDoc")||null, p_telefono:v("nTel")||null, p_notas:nt||null, p_canal:libera?null:(rc?rc.value:null)});
       NEG[n]=fila;
       f.properties.estado=e;
+      if(fila && fila.canal) f.properties.canal=fila.canal; else delete f.properties.canal;
+      pintarBanderas();
       delete S.cambios[n]; guardar("laureles.cambios",S.cambios);
       mapa.getSource("lotes").setData(LOTES);
       velo.classList.remove("on");
       pintarFicha(n); refrescar();
       avisar("Lote "+n+": "+ESTADOS[e].t+(libera?"":" · "+cl));
-    }catch(ex){ err.textContent=ex.message; b.disabled=false; b.textContent=verbo; }
+    }catch(ex){ err.textContent=ex.message; b.disabled=false; b.textContent=boton; }
   };
+  document.querySelectorAll('#nCanal input').forEach(r=>r.onchange=()=>
+    document.querySelectorAll('#nCanal label').forEach(l=>l.classList.toggle("on", l.contains(document.querySelector('#nCanal input:checked')))));
   setTimeout(()=>{ const i=document.getElementById(document.getElementById("nAg").value?"nCl":"nAg")||document.getElementById("nAg"); if(i) i.focus(); },50);
 }
+
+/* ---------------- canal de venta en el mapa (sólo administradores) ----------------
+   Los colores por canal y las banderitas de los firmados salen de NEG, que sólo
+   llega con sesión del equipo. Al salir de la sesión se borran. */
+let BANDERAS=[];
+function aplicarCanales(){
+  const admin=ROL.esVentas();
+  document.body.classList.toggle("admin", admin);
+  LOTES.features.forEach(f=>{ const p=f.properties, ng=NEG[p.lote];
+    if(admin && ng && ng.estado===p.estado && ng.canal && p.estado!=="disponible") p.canal=ng.canal; else delete p.canal; });
+  try{ mapa.getSource("lotes").setData(LOTES); }catch(e){}
+  pintarBanderas();
+  try{ if(window.__R3D && __R3D.activo()) __R3D.refrescar(); }catch(e){}
+}
+function pintarBanderas(){
+  BANDERAS.forEach(m=>m.remove()); BANDERAS=[];
+  if(!ROL.esVentas()) return;
+  LOTES.features.forEach(f=>{ const p=f.properties;
+    if(p.estado!=="reservado" || !p.canal || !CANAL[p.canal]) return;
+    const d=document.createElement("div"); d.className="bandera";
+    d.title="Lote "+p.lote+" firmado · "+CANAL[p.canal].t;
+    d.innerHTML='<svg viewBox="0 0 22 30" aria-hidden="true"><line x1="3" y1="2" x2="3" y2="29" stroke="#2A241D" stroke-width="2.2" stroke-linecap="round"/>'+
+      '<path d="M4 3 L20 8 L4 13 Z" fill="'+CANAL[p.canal].c+'" stroke="#FFFFFF" stroke-width="1.1" stroke-linejoin="round"/></svg>';
+    const m=new maplibregl.Marker({element:d, anchor:"bottom-left", offset:[-3,0]}).setLngLat(p.centro).addTo(mapa);
+    BANDERAS.push(m);
+  });
+}
+window.aplicarCanales=aplicarCanales;
 
 /* ================================ QUIÉN ENTRA ==============================
    Dos maneras de usar la página, y la diferencia no es cosmética:
@@ -2666,11 +2740,13 @@ const ROL = (()=>{
     }
     ses = null; tok = null; tokExp = 0; perfil = null;
     try{ localStorage.removeItem("laureles.sesion"); }catch(e){}
+    try{ Object.keys(NEG).forEach(k=>delete NEG[k]); aplicarCanales(); }catch(e){}
     pintar();
     if(!callado) avisar("Volvió a modo visitante.");
   }
 
   function pintar(){
+    document.body.classList.toggle("admin", esVentas());
     const b = document.getElementById("bRol");
     if(b){ b.textContent = esVentas() ? "Administrador" : "Visitante";
            b.classList.toggle("ventas", esVentas());
@@ -2743,7 +2819,7 @@ const ROL = (()=>{
     const bC=document.getElementById("bCancel"); if(bC) bC.onclick=()=>velo.classList.remove("on");
   }
 
-  return {esVentas, correo, token, entrar, salir, pintar, hoja, nombre, asegurarPerfil, pedirPerfil};
+  return {esVentas, correo, token, entrar, salir, pintar, hoja, nombre, asegurarPerfil, pedirPerfil, perfil:()=>perfil};
 })();
 
 /* ------------------------------- Supabase (opcional) ----------------------- */
@@ -2792,6 +2868,7 @@ const SB = (()=>{
       const filas=await r.json();
       Object.keys(NEG).forEach(k=>delete NEG[k]);
       filas.forEach(x=>{ if(!NEG[x.lote]) NEG[x.lote]=x; });
+      aplicarCanales();
       if(S.sel!=null && document.getElementById("ficha").classList.contains("on")) pintarFicha(S.sel);
     }catch(e){}
   }
@@ -2835,7 +2912,7 @@ const chips=document.getElementById("chips");
 Object.entries(ESTADOS).forEach(([k,e])=>{
   const b=document.createElement("button");
   b.className="chip"; b.setAttribute("aria-pressed","true");
-  b.innerHTML='<i class="pt" style="background:'+e.c+'"></i>'+(k==="reservado"?"Reservado":e.t);
+  b.innerHTML='<i class="pt" style="background:'+e.c+'"></i>'+e.t;
   b.onclick=()=>{ const on=b.getAttribute("aria-pressed")==="true";
     b.setAttribute("aria-pressed",String(!on));
     on?S.estados.delete(k):S.estados.add(k); refrescar(); };
@@ -3156,23 +3233,23 @@ function compartirLote(p){
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png","vida_perfil_vial":"medios/vida_perfil_vial.jpg","vida_ciclorruta":"medios/vida_ciclorruta.jpg","vida_infantil":"medios/vida_infantil.jpg","vida_gimnasio":"medios/vida_gimnasio.jpg","vida_padel":"medios/vida_padel.jpg"};</script>
-<script src="datos-analisis.js?v=20260929b"></script>
-<script src="datos-terreno.js?v=20260929b"></script>
-<script src="datos-logo.js?v=20260929b"></script>
-<script src="adaptador.js?v=20260929b"></script>
-<script src="analisis.js?v=20260929b"></script>
-<script src="datos-via.js?v=20260929b"></script>
-<script src="datos-entrada.js?v=20260929b"></script>
-<script src="r3d.js?v=20260929b"></script>
-<script src="paisaje.js?v=20260929b"></script>
-<script src="recorrido.js?v=20260929b"></script>
-<script src="visor360.js?v=20260929b"></script>
-<script src="sitios-iconos.js?v=20260929b"></script>
-<script src="armazon.js?v=20260929b"></script>
-<script src="acceso.js?v=20260929b"></script>
-<script src="portada.js?v=20260929b"></script>
-<script src="ia.js?v=20260929b"></script>
-<script src="panel.js?v=20260929b"></script>
+<script src="datos-analisis.js?v=20260930a"></script>
+<script src="datos-terreno.js?v=20260930a"></script>
+<script src="datos-logo.js?v=20260930a"></script>
+<script src="adaptador.js?v=20260930a"></script>
+<script src="analisis.js?v=20260930a"></script>
+<script src="datos-via.js?v=20260930a"></script>
+<script src="datos-entrada.js?v=20260930a"></script>
+<script src="r3d.js?v=20260930a"></script>
+<script src="paisaje.js?v=20260930a"></script>
+<script src="recorrido.js?v=20260930a"></script>
+<script src="visor360.js?v=20260930a"></script>
+<script src="sitios-iconos.js?v=20260930a"></script>
+<script src="armazon.js?v=20260930a"></script>
+<script src="acceso.js?v=20260930a"></script>
+<script src="portada.js?v=20260930a"></script>
+<script src="ia.js?v=20260930a"></script>
+<script src="panel.js?v=20260930a"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");
