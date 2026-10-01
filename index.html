@@ -30,13 +30,13 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20261001c">
+<link rel="stylesheet" href="maplibre-gl.css?v=20261001d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20261001c">
-<link rel="stylesheet" href="portada.css?v=20261001c">
-<link rel="stylesheet" href="analisis.css?v=20261001c">
+<link rel="stylesheet" href="armazon.css?v=20261001d">
+<link rel="stylesheet" href="portada.css?v=20261001d">
+<link rel="stylesheet" href="analisis.css?v=20261001d">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -900,7 +900,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20261001c"></script>
+<script src="maplibre-gl.js?v=20261001d"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -922,7 +922,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20261001c"></script>
+<script src="lotes.js?v=20261001d"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -1010,6 +1010,7 @@ const CANAL = {
   c21:     {t:"Century 21 DAB",      corto:"Century 21", c:"#E8731A"}
 };
 function colorLote(p){
+  if(p && p.pub && p.estado==="vendido") return "#C0392B";
   if(p && p.estado==="separado" && p.canal && CANAL[p.canal]) return CANAL[p.canal].c;
   const e=ESTADOS[p&&p.estado]; return e ? e.c : ESTADOS.disponible.c;
 }
@@ -1141,7 +1142,7 @@ const estilo = {
                ["all",["==",["get","estado"],"separado"],["==",["get","canal"],"fajardo"]],"#E8C31E",
                ["all",["==",["get","estado"],"separado"],["==",["get","canal"],"c21"]],"#E8731A",
                ["match",["get","estado"],
-               "disponible","#4C8862","separado","#C48A2A","vendido","#8A8F82","reservado","#C0392B","#4C8862"]],
+               "disponible","#4C8862","separado","#C48A2A","vendido",["case",["to-boolean",["get","pub"]],"#C0392B","#8A8F82"],"reservado","#C0392B","#4C8862"]],
              "fill-opacity":["case",["boolean",["feature-state","oculto"],false],0.04,
                              ["boolean",["feature-state","sel"],false],0.80,
                              ["!=",["get","estado"],"disponible"],0.72,0.50]}},
@@ -1972,7 +1973,8 @@ function refrescar(){
     kpi(Math.round((nS+nV)/T*100)+" %","Colocado");
   document.getElementById("cuenta").innerHTML =
     "<b>"+visibles+"</b> lotes visibles de "+T+" &nbsp;·&nbsp; "+
-    nD+" libres · "+nS+" separados · "+(nR?nR+(nR===1?" firmado · ":" firmados · "):"")+nV+" vendidos";
+    (ROL.esVentas() ? nD+" libres · "+nS+" separados · "+(nR?nR+(nR===1?" firmado · ":" firmados · "):"")+nV+" vendidos"
+                    : nD+" libres · "+nV+" vendidos");
   if(S.sel) pintarFicha(S.sel);
 }
 const kpi=(v,k)=>'<div class="kpi"><div class="v">'+v+'</div><div class="k">'+k+'</div></div>';
@@ -2340,7 +2342,7 @@ function pintarFicha(n){
       '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>'+
       '<span>Compartir</span></button>'+
     '<div class="lb">Lote</div><h2>'+p.lote+'</h2>'+
-    '<span class="badge b-'+(p.canal&&CANAL[p.canal]&&p.estado!=="disponible"?p.canal:E.k)+'"><i class="pt"></i>'+E.t+
+    '<span class="badge b-'+(p.canal&&CANAL[p.canal]&&p.estado!=="disponible"?p.canal:(p.pub&&p.estado==="vendido"?"resv":E.k))+'"><i class="pt"></i>'+E.t+
       (p.canal&&CANAL[p.canal]&&p.estado!=="disponible"?' · '+CANAL[p.canal].corto:'')+'</span>'+
     (p.esquina?' <span class="badge b-disp" style="color:#EBD9AE"><i class="pt"></i>Esquinero</span>':'')+
   '</div>'+
@@ -2568,7 +2570,7 @@ function cambiarEstado(n,e){
       const fila = await SB.negocio({p_lote:n, p_estado:e, p_agente:ag, p_cliente:libera?null:cl,
         p_documento:v("nDoc")||null, p_telefono:v("nTel")||null, p_notas:nt||null, p_canal:libera?null:(rc?rc.value:null)});
       NEG[n]=fila;
-      f.properties.estado=e;
+      f.properties.estado=e; f.properties.real=e;
       if(fila && fila.canal) f.properties.canal=fila.canal; else delete f.properties.canal;
       pintarBanderas();
       delete S.cambios[n]; guardar("laureles.cambios",S.cambios);
@@ -2594,12 +2596,21 @@ function conLotes(fn){
                  if(++k<240) setTimeout(ir,250); };
   ir();
 }
+/* VISTA PÚBLICA: al visitante no se le distingue separado / firmado / vendido.
+   Todo lo que no está disponible le sale como VENDIDO y en rojo. El estado real
+   se guarda en p.real y sólo lo ve la sesión de administración. */
 function aplicarCanales(){
   const admin=ROL.esVentas();
   document.body.classList.toggle("admin", admin);
-  LOTES.features.forEach(f=>{ const p=f.properties, ng=NEG[p.lote];
+  LOTES.features.forEach(f=>{ const p=f.properties;
+    if(p.real==null) p.real=p.estado;
+    if(admin){ p.estado=p.real; delete p.pub; }
+    else { p.estado = p.real==="disponible" ? "disponible" : "vendido"; p.pub=true; }
+    const ng=NEG[p.lote];
     if(admin && ng && ng.estado===p.estado && ng.canal && p.estado!=="disponible") p.canal=ng.canal; else delete p.canal; });
-  conLotes(()=>{ mapa.getSource("lotes").setData(LOTES); });
+  ESTADOS.vendido.c = admin ? "#8A8F82" : "#C0392B";
+  pintarChips();
+  conLotes(()=>{ mapa.getSource("lotes").setData(LOTES); try{ refrescar(); }catch(e){} });
   pintarBanderas();
   try{ if(window.__R3D && __R3D.activo()) __R3D.refrescar(); }catch(e){}
 }
@@ -2900,8 +2911,9 @@ const SB = (()=>{
       const filas=await r.json();
       filas.forEach(x=>{
         const f=LOTES.features.find(o=>o.properties.lote===x.lote);
-        if(f&&x.estado&&ESTADOS[x.estado]){ f.properties.estado=x.estado; if(x.notas)f.properties.notas=x.notas; }
+        if(f&&x.estado&&ESTADOS[x.estado]){ f.properties.estado=x.estado; f.properties.real=x.estado; if(x.notas)f.properties.notas=x.notas; }
       });
+      aplicarCanales();          /* visitante: todo lo no disponible se ve como vendido */
       /* el mapa puede seguir cargando (intro, conexión lenta): se pinta cuando exista la capa,
          pero los negocios (canal y banderas) se piden de una vez */
       conLotes(()=>{ mapa.getSource("lotes").setData(LOTES); refrescar(); });
@@ -2972,15 +2984,22 @@ ETAPAS.forEach(e=>{
 document.getElementById("etapaPista").textContent=ETAPAS[S.etapa-1].d;
 
 const chips=document.getElementById("chips");
-Object.entries(ESTADOS).forEach(([k,e])=>{
+function pintarChips(){
+ chips.innerHTML="";
+ const admin=ROL.esVentas();
+ Object.entries(ESTADOS).forEach(([k,e])=>{
+  if(!admin && (k==="separado" || k==="reservado")) return;   /* el visitante sólo ve disponible / vendido */
   const b=document.createElement("button");
   b.className="chip"; b.setAttribute("aria-pressed","true");
   b.innerHTML='<i class="pt" style="background:'+e.c+'"></i>'+e.t;
   b.onclick=()=>{ const on=b.getAttribute("aria-pressed")==="true";
     b.setAttribute("aria-pressed",String(!on));
     on?S.estados.delete(k):S.estados.add(k); refrescar(); };
+  if(!S.estados.has(k)) b.setAttribute("aria-pressed","false");
   chips.appendChild(b);
-});
+ });
+}
+pintarChips();
 
 const fA=document.getElementById("fArea"), vA=document.getElementById("vArea");
 fA.oninput=()=>{ S.minArea=+fA.value; vA.textContent=S.minArea?m2(S.minArea)+" o más":"sin filtro"; refrescar(); };
@@ -3369,23 +3388,23 @@ function compartirLote(p){
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png","vida_perfil_vial":"medios/vida_perfil_vial.jpg","vida_ciclorruta":"medios/vida_ciclorruta.jpg","vida_infantil":"medios/vida_infantil.jpg","vida_gimnasio":"medios/vida_gimnasio.jpg","vida_padel":"medios/vida_padel.jpg"};</script>
-<script src="datos-analisis.js?v=20261001c"></script>
-<script src="datos-terreno.js?v=20261001c"></script>
-<script src="datos-logo.js?v=20261001c"></script>
-<script src="adaptador.js?v=20261001c"></script>
-<script src="analisis.js?v=20261001c"></script>
-<script src="datos-via.js?v=20261001c"></script>
-<script src="datos-entrada.js?v=20261001c"></script>
-<script src="r3d.js?v=20261001c"></script>
-<script src="paisaje.js?v=20261001c"></script>
-<script src="recorrido.js?v=20261001c"></script>
-<script src="visor360.js?v=20261001c"></script>
-<script src="sitios-iconos.js?v=20261001c"></script>
-<script src="armazon.js?v=20261001c"></script>
-<script src="acceso.js?v=20261001c"></script>
-<script src="portada.js?v=20261001c"></script>
-<script src="ia.js?v=20261001c"></script>
-<script src="panel.js?v=20261001c"></script>
+<script src="datos-analisis.js?v=20261001d"></script>
+<script src="datos-terreno.js?v=20261001d"></script>
+<script src="datos-logo.js?v=20261001d"></script>
+<script src="adaptador.js?v=20261001d"></script>
+<script src="analisis.js?v=20261001d"></script>
+<script src="datos-via.js?v=20261001d"></script>
+<script src="datos-entrada.js?v=20261001d"></script>
+<script src="r3d.js?v=20261001d"></script>
+<script src="paisaje.js?v=20261001d"></script>
+<script src="recorrido.js?v=20261001d"></script>
+<script src="visor360.js?v=20261001d"></script>
+<script src="sitios-iconos.js?v=20261001d"></script>
+<script src="armazon.js?v=20261001d"></script>
+<script src="acceso.js?v=20261001d"></script>
+<script src="portada.js?v=20261001d"></script>
+<script src="ia.js?v=20261001d"></script>
+<script src="panel.js?v=20261001d"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");
