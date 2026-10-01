@@ -310,3 +310,33 @@ revoke all on public.laureles_config from anon, authenticated;
 --   api.opentopodata.org (dataset srtm30m). Lectura pública (anon), sin escritura.
 --   La usa paisaje.js para dibujar las montañas alrededor del predio.
 -- ============================================================================
+
+-- ===========================================================================
+-- 30/09/2026 · Canal de venta y altas de equipo por correo pre-autorizado
+-- (migraciones laureles_canal_de_venta y laureles_equipo_pendiente)
+-- laureles_equipo.canal ('fajardo'|'c21'); laureles_negocios.canal;
+-- laureles_cambiar_estado(..., p_canal); laureles_mi_perfil() devuelve canal.
+--
+-- laureles_equipo_pendiente(correo, rol, canal): correos autorizados que aún
+-- no tienen cuenta. Sin políticas RLS: sólo se toca desde el panel/SQL.
+-- Trigger laureles_activar_pendiente en auth.users (insert / update de
+-- email_confirmed_at): cuando la cuenta existe Y está confirmada, la pasa a
+-- laureles_equipo con ese rol y canal, y la borra de pendientes.
+-- Alta de alguien nuevo:
+--   insert into laureles_equipo_pendiente(correo,rol,canal) values ('x@y.com','asesor','c21');
+--   luego Authentication → Users → Add user → Create new user (Auto Confirm).
+-- =====================================================================
+
+-- =====================================================================
+-- 01/10/2026 · Asesores de Century 21 y quién libera lotes
+-- laureles_equipo.puede_liberar: sólo la cuenta de Jaime Andrés Bejarano.
+--   laureles_cambiar_estado rechaza pasar un lote a 'disponible' si quien lo
+--   pide no tiene puede_liberar. laureles_puede_liberar() lo dice al navegador.
+-- laureles_equipo_pendiente: + nombre, doc_hash (cédula con bcrypt $2a$),
+--   intentos, bloqueado_hasta, activado.
+-- laureles_verificar_alta(correo, cédula): sólo con rol service_role; 5 fallos
+--   bloquean 30 min. La usa la función laureles-alta (verify_jwt=false), que
+--   crea la cuenta confirmada con la contraseña que escoge el asesor.
+-- laureles_activar_pendiente (trigger en auth.users): pasa al equipo, deja el
+--   perfil con el nombre y marca 'activado' (la cédula cifrada se borra).
+-- =====================================================================

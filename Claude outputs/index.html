@@ -30,13 +30,13 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20261001c">
+<link rel="stylesheet" href="maplibre-gl.css?v=20260930c">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20261001c">
-<link rel="stylesheet" href="portada.css?v=20261001c">
-<link rel="stylesheet" href="analisis.css?v=20261001c">
+<link rel="stylesheet" href="armazon.css?v=20260930c">
+<link rel="stylesheet" href="portada.css?v=20260930c">
+<link rel="stylesheet" href="analisis.css?v=20260930c">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -900,7 +900,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20261001c"></script>
+<script src="maplibre-gl.js?v=20260930c"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -922,7 +922,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20261001c"></script>
+<script src="lotes.js?v=20260930c"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -1198,10 +1198,9 @@ mapa.addControl(new maplibregl.AttributionControl({compact:true}), "bottom-right
   setTimeout(plegar, 1500);
 })();
 mapa.addControl(new maplibregl.NavigationControl({visualizePitch:true}), "top-right");
-const GEO = new maplibregl.GeolocateControl({
+mapa.addControl(new maplibregl.GeolocateControl({
   positionOptions:{enableHighAccuracy:true}, trackUserLocation:true, showAccuracyCircle:true
-});
-mapa.addControl(GEO, "top-right");
+}), "top-right");
 mapa.addControl(new maplibregl.ScaleControl({maxWidth:110, unit:"metric"}), "bottom-left");
 
 const rotulos = {};
@@ -2405,9 +2404,8 @@ function pintarFicha(n){
     (ROL.esVentas()
       ? '<div class="et" style="margin-top:18px">Cambiar estado</div>'+
         '<div class="seg" id="segEstado">'+
-          Object.entries(ESTADOS).map(([k,e])=>{
-            const bloq = k==="disponible" && p.estado!=="disponible" && !!ROL.perfil() && !ROL.puedeLiberar();
-            return '<button data-e="'+k+'"'+(k===p.estado?' class="on"':'')+(bloq?' disabled title="Sólo la gerencia técnica puede liberar un lote" style="opacity:.4;cursor:not-allowed"':'')+'>'+e.t+'</button>'; }).join("")+
+          Object.entries(ESTADOS).map(([k,e])=>
+            '<button data-e="'+k+'"'+(k===p.estado?' class="on"':'')+'>'+e.t+'</button>').join("")+
         '</div>'+
         '<div class="pista" style="font-size:11.5px;color:var(--muted);margin-top:6px" id="pistaEstado"></div>'
       : '<div class="soloLectura">Está viendo el plano como <b>visitante</b>: puede recorrerlo entero, '+
@@ -2522,8 +2520,6 @@ function cambiarEstado(n,e){
   const f=LOTES.features.find(x=>x.properties.lote===n); if(!f) return;
   const actual=f.properties.estado, neg=NEG[n];
   if(e===actual && (e==="disponible" || neg)) return;       /* nada que cambiar */
-  if(e==="disponible" && actual!=="disponible" && !ROL.puedeLiberar()){
-    avisar("Sólo la gerencia técnica puede liberar un lote. Pídeselo a Jaime Andrés Bejarano.", 6000); return; }
   const verbo = {separado:"Separar", vendido:"Registrar la venta del", reservado:"Registrar la firma del", disponible:"Liberar"}[e];
   const boton = {separado:"Separar", vendido:"Registrar venta", reservado:"Registrar firma", disponible:"Liberar"}[e];
   const pf=ROL.perfil()||{}, gerencia=pf.rol==="gerencia";
@@ -2680,7 +2676,7 @@ const ROL = (()=>{
      hizo (laureles_negocios.registrado_por), no sólo con su correo. El nombre
      se pide una sola vez, en el primer inicio de sesión, y queda en la tabla
      laureles_perfiles. Sin nombre la base no deja separar, vender ni liberar. */
-  let perfil = null, pidiendo = false, libera = false;
+  let perfil = null, pidiendo = false;
   const nombre = ()=> (perfil && perfil.nombre) || "";
   async function rpc(fn, args){
     const t = await token(); if(!t) throw new Error("Hace falta una sesión de administrador.");
@@ -2695,9 +2691,7 @@ const ROL = (()=>{
     if(!esVentas()){ perfil=null; return null; }
     if(perfil && perfil.nombre) return perfil;
     try{ const j = await rpc("laureles_mi_perfil"); perfil = (Array.isArray(j) ? j[0] : j) || null; }
-    catch(e){ return null; }
-    /* sólo la gerencia técnica libera lotes; la base lo exige igual, esto es para no mostrar el botón */
-    try{ libera = (await rpc("laureles_puede_liberar")) === true; }catch(e){ libera = false; }                       /* sin red: se vuelve a intentar al cambiar un lote */
+    catch(e){ return null; }                       /* sin red: se vuelve a intentar al cambiar un lote */
     if(!perfil || !perfil.nombre) pedirPerfil(); else pintar();
     return perfil;
   }
@@ -2751,7 +2745,7 @@ const ROL = (()=>{
       fetch(base()+"/auth/v1/logout", {method:"POST",
         headers:{ "apikey":CFG.supabaseKey, "Authorization":"Bearer "+(tok||"") }}).catch(()=>{});
     }
-    ses = null; tok = null; tokExp = 0; perfil = null; libera = false;
+    ses = null; tok = null; tokExp = 0; perfil = null;
     try{ localStorage.removeItem("laureles.sesion"); }catch(e){}
     try{ Object.keys(NEG).forEach(k=>delete NEG[k]); aplicarCanales(); }catch(e){}
     pintar();
@@ -2805,8 +2799,7 @@ const ROL = (()=>{
         '<label>Contraseña</label>'+
         '<input type="password" id="rClave" autocomplete="current-password" placeholder="••••••••">'+
         '<div class="pista" id="rErr" style="color:#A3543F"></div>'+
-        '<div class="pista" style="margin-top:14px"><a href="#" id="rOlvide">Olvidé mi contraseña</a> · '+
-        '<a href="#" id="rNuevo">Soy asesor nuevo: crear mi contraseña</a></div>'+
+        '<div class="pista" style="margin-top:14px"><a href="#" id="rOlvide">Olvidé mi contraseña</a></div>'+
         '<div class="pista">No hay ninguna contraseña guardada en esta página ni en el repositorio.</div>';
       document.getElementById("hojaPie").innerHTML =
         '<button class="sec" id="bCancel">Seguir como visitante</button>'+
@@ -2828,8 +2821,6 @@ const ROL = (()=>{
       const olv=document.getElementById("rOlvidar");
       if(olv) olv.onclick=ev=>{ ev.preventDefault(); try{ localStorage.removeItem("laureles.visitante"); }catch(e){}
         velo.classList.remove("on"); if(window.ACCESO) ACCESO.puerta(null); };
-      const nu=document.getElementById("rNuevo");
-      if(nu) nu.onclick=ev=>{ ev.preventDefault(); if(window.ACCESO && ACCESO.formAlta) ACCESO.formAlta(null); };
       const ol=document.getElementById("rOlvide");
       if(ol) ol.onclick=ev=>{ ev.preventDefault(); if(window.ACCESO) ACCESO.formAdmin(null); setTimeout(()=>{ const a=document.getElementById("aOlvide"); if(a) a.click(); },0); };
     }
@@ -2880,7 +2871,7 @@ const ROL = (()=>{
     setTimeout(()=>{ const i=document.getElementById("cClave1"); if(i) i.focus(); },50);
   }
 
-  return {esVentas, correo, token, entrar, salir, pintar, hoja, nombre, asegurarPerfil, pedirPerfil, cambiarClave, perfil:()=>perfil, puedeLiberar:()=>libera};
+  return {esVentas, correo, token, entrar, salir, pintar, hoja, nombre, asegurarPerfil, pedirPerfil, cambiarClave, perfil:()=>perfil};
 })();
 
 /* ------------------------------- Supabase (opcional) ----------------------- */
@@ -3230,79 +3221,6 @@ window.seleccionarLote = n => {
   }catch(e){}
 };
 
-/* ------------------------------ Dónde estoy ---------------------------------
-   El menú "Dónde estoy" llamaba a ubicar(), que se quedó en el plano viejo y aquí
-   no existía: el botón no hacía nada. Ahora el GPS del celular se cruza con los
-   linderos del plano 039 (lon/lat) y se dice en qué lote está la persona, a
-   cuántos metros del borde, o si está en vía / zona común o fuera del predio.
-   El mismo cálculo corre con el botón de ubicación del mapa (⊙), y avisa cada
-   vez que la persona cambia de lote mientras camina. */
-(function(){
-  const LAT0=4.4743, LON0=-75.7388, KY=111320, KX=111320*Math.cos(LAT0*Math.PI/180);
-  const xy=c=>[(c[0]-LON0)*KX,(c[1]-LAT0)*KY];
-  const anillos=g=>(g.type==="Polygon"?[g.coordinates]:g.coordinates).map(pl=>pl[0].map(xy));
-  function dentro(p,r){ let d=false;
-    for(let i=0,j=r.length-1;i<r.length;j=i++){ const a=r[i],b=r[j];
-      if(((a[1]>p[1])!==(b[1]>p[1])) && (p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])) d=!d; }
-    return d; }
-  function dSeg(p,a,b){ const dx=b[0]-a[0],dy=b[1]-a[1];
-    let t=((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(dx*dx+dy*dy||1); t=Math.max(0,Math.min(1,t));
-    return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy); }
-  function dBorde(p,r){ let m=1e9; for(let i=1;i<r.length;i++) m=Math.min(m,dSeg(p,r[i-1],r[i])); return m; }
-  const LIND = anillos(LAURELES.lindero.features[0].geometry);
-  const LOTS = LOTES.features.map(f=>({n:f.properties.lote, r:anillos(f.geometry)}));
-  function dondeEstoy(lon,lat){
-    const p=xy([lon,lat]);
-    if(!LIND.some(r=>dentro(p,r))) return {fuera:true, d:Math.min(...LIND.map(r=>dBorde(p,r)))};
-    let cerca=null;
-    for(const L of LOTS){ for(const r of L.r){ const d=dBorde(p,r);
-      if(dentro(p,r)) return {lote:L.n, borde:d};
-      if(!cerca||d<cerca.d) cerca={n:L.n,d}; } }
-    return {comun:true, cerca};
-  }
-  window.__DONDE_ESTOY = dondeEstoy;
-  const m0 = v => Math.round(v).toLocaleString("es-CO")+" m";
-  function texto(R,acc){
-    const pm = acc ? " (GPS ±"+m0(acc)+")" : "";
-    if(R.fuera) return "Estás fuera del predio, a "+m0(R.d)+" del lindero"+pm+".";
-    if(R.comun) return "Estás dentro del predio, en vía o zona común; el lote más cercano es el "+R.cerca.n+", a "+m0(R.cerca.d)+pm+".";
-    const duda = acc && R.borde < acc ? " Estás a "+m0(R.borde)+" del borde: con este margen del GPS puede ser el lote vecino." : " A "+m0(R.borde)+" del borde.";
-    return "Estás en el lote "+R.lote+pm+"."+duda;
-  }
-  let mk=null, ultimo=null;
-  function marcar(lon,lat){
-    if(!mk){ const d=document.createElement("div");
-      d.style.cssText="width:16px;height:16px;border-radius:50%;background:#1E88E5;border:3px solid #fff;box-shadow:0 0 0 2px rgba(30,136,229,.35),0 1px 4px rgba(0,0,0,.4)";
-      mk=new maplibregl.Marker({element:d}).setLngLat([lon,lat]).addTo(mapa); }
-    else mk.setLngLat([lon,lat]);
-  }
-  function resolver(c, mover){
-    const R=dondeEstoy(c.longitude,c.latitude), acc=c.accuracy||0, t=texto(R,acc);
-    const clave = R.lote ? "L"+R.lote : (R.fuera?"F":"C");
-    if(mover || clave!==ultimo){ avisar(t, 7000); }
-    if(mover){
-      if(R.lote) window.seleccionarLote(R.lote);
-      else mapa.flyTo({center:[c.longitude,c.latitude], zoom:Math.max(mapa.getZoom(),17)});
-    }
-    ultimo=clave;
-    return R;
-  }
-  window.ubicar = function(){
-    try{ const md=document.getElementById("modal"); if(md) md.hidden=true; }catch(e){}
-    if(!navigator.geolocation){ avisar("Este navegador no entrega la ubicación.", 5000); return; }
-    avisar("Buscando tu ubicación…", 15000);
-    navigator.geolocation.getCurrentPosition(pos=>{
-      try{ const md=document.getElementById("modal"); if(md) md.hidden=true; }catch(e){}
-      marcar(pos.coords.longitude,pos.coords.latitude);
-      resolver(pos.coords, true);
-    }, err=>{
-      avisar(err.code===1 ? "El celular no dio permiso de ubicación. Actívalo para este sitio y vuelve a intentar."
-                          : "No se pudo obtener la ubicación. Inténtalo al aire libre.", 7000);
-    }, {enableHighAccuracy:true, timeout:15000, maximumAge:0});
-  };
-  GEO.on("geolocate", e=>{ try{ resolver(e.coords, false); }catch(_){} });
-})();
-
 /* --------------------------- compartir un lote ------------------------------
    Cada lote tiene su propia página, /lote/N/, con la vista previa del lote
    (plano con el lote resaltado y sus medidas) para WhatsApp, Facebook o correo.
@@ -3369,23 +3287,23 @@ function compartirLote(p){
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png","vida_perfil_vial":"medios/vida_perfil_vial.jpg","vida_ciclorruta":"medios/vida_ciclorruta.jpg","vida_infantil":"medios/vida_infantil.jpg","vida_gimnasio":"medios/vida_gimnasio.jpg","vida_padel":"medios/vida_padel.jpg"};</script>
-<script src="datos-analisis.js?v=20261001c"></script>
-<script src="datos-terreno.js?v=20261001c"></script>
-<script src="datos-logo.js?v=20261001c"></script>
-<script src="adaptador.js?v=20261001c"></script>
-<script src="analisis.js?v=20261001c"></script>
-<script src="datos-via.js?v=20261001c"></script>
-<script src="datos-entrada.js?v=20261001c"></script>
-<script src="r3d.js?v=20261001c"></script>
-<script src="paisaje.js?v=20261001c"></script>
-<script src="recorrido.js?v=20261001c"></script>
-<script src="visor360.js?v=20261001c"></script>
-<script src="sitios-iconos.js?v=20261001c"></script>
-<script src="armazon.js?v=20261001c"></script>
-<script src="acceso.js?v=20261001c"></script>
-<script src="portada.js?v=20261001c"></script>
-<script src="ia.js?v=20261001c"></script>
-<script src="panel.js?v=20261001c"></script>
+<script src="datos-analisis.js?v=20260930c"></script>
+<script src="datos-terreno.js?v=20260930c"></script>
+<script src="datos-logo.js?v=20260930c"></script>
+<script src="adaptador.js?v=20260930c"></script>
+<script src="analisis.js?v=20260930c"></script>
+<script src="datos-via.js?v=20260930c"></script>
+<script src="datos-entrada.js?v=20260930c"></script>
+<script src="r3d.js?v=20260930c"></script>
+<script src="paisaje.js?v=20260930c"></script>
+<script src="recorrido.js?v=20260930c"></script>
+<script src="visor360.js?v=20260930c"></script>
+<script src="sitios-iconos.js?v=20260930c"></script>
+<script src="armazon.js?v=20260930c"></script>
+<script src="acceso.js?v=20260930c"></script>
+<script src="portada.js?v=20260930c"></script>
+<script src="ia.js?v=20260930c"></script>
+<script src="panel.js?v=20260930c"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

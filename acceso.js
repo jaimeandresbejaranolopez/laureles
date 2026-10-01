@@ -144,7 +144,8 @@ const ACCESO = (()=>{
       '<label>'+tt("Contraseña","Password","Mot de passe")+'</label>'+
       '<input type="password" id="aClave" autocomplete="current-password" placeholder="••••••••">'+
       '<div class="pista" id="aErr" style="color:#A3543F"></div>'+
-      '<div class="pista" style="margin-top:12px"><a href="#" id="aOlvide">'+tt("Olvidé mi contraseña","I forgot my password","J'ai oublié mon mot de passe")+'</a></div>',
+      '<div class="pista" style="margin-top:12px"><a href="#" id="aOlvide">'+tt("Olvidé mi contraseña","I forgot my password","J'ai oublié mon mot de passe")+'</a></div>'+
+      '<div class="pista" style="margin-top:6px"><a href="#" id="aNuevo">'+tt("Soy asesor nuevo: crear mi contraseña","New agent: create my password","Nouvel agent : créer mon mot de passe")+'</a></div>',
       '<button class="sec" id="aAtras">'+tt("Atrás","Back","Retour")+'</button>'+
       '<button class="pri" id="aIr">'+tt("Entrar","Enter","Entrer")+'</button>');
     document.getElementById("aAtras").onclick = ()=> puerta(alTerminar);
@@ -161,7 +162,50 @@ const ACCESO = (()=>{
     document.getElementById("aIr").onclick = ir;
     document.getElementById("aClave").onkeydown = ev=>{ if(ev.key==="Enter") ir(); };
     document.getElementById("aOlvide").onclick = ev=>{ ev.preventDefault(); formRecuperar(alTerminar, document.getElementById("aMail").value.trim()); };
+    document.getElementById("aNuevo").onclick = ev=>{ ev.preventDefault(); formAlta(alTerminar, document.getElementById("aMail").value.trim()); };
     setTimeout(()=>{ const i=document.getElementById("aMail"); if(i) i.focus(); }, 60);
+  }
+
+  /* Asesor nuevo: gerencia autoriza el correo (y la cédula, cifrada) en la base;
+     el asesor escribe correo + cédula y escoge su contraseña. La función
+     laureles-alta verifica y crea la cuenta; luego se entra de una vez. */
+  function formAlta(alTerminar, correo0){
+    hojaBase(tt("Crear mi contraseña","Create my password","Créer mon mot de passe"),
+      '<p>'+tt("Para asesores que gerencia ya autorizó. Escribe tu correo, tu cédula y la contraseña que quieras usar.",
+               "For agents already authorised by management. Enter your email, your ID number and the password you want.",
+               "Pour les agents déjà autorisés. Saisissez votre courriel, votre numéro d'identité et le mot de passe choisi.")+'</p>'+
+      '<label>'+tt("Correo","Email","Courriel")+'</label>'+
+      '<input type="text" id="nMail" autocomplete="username" inputmode="email" value="'+esc(correo0||"")+'">'+
+      '<label>'+tt("Cédula (sólo números)","ID number (digits only)","N° d'identité (chiffres)")+'</label>'+
+      '<input type="text" id="nCed" inputmode="numeric" autocomplete="off">'+
+      '<label>'+tt("Contraseña nueva (mínimo 8 caracteres)","New password (8+ characters)","Nouveau mot de passe (8 caractères min.)")+'</label>'+
+      '<input type="password" id="nC1" autocomplete="new-password">'+
+      '<label>'+tt("Repítela","Repeat it","Répétez-le")+'</label>'+
+      '<input type="password" id="nC2" autocomplete="new-password">'+
+      '<div class="pista" id="nErr" style="color:#A3543F"></div>',
+      '<button class="sec" id="nAtras">'+tt("Atrás","Back","Retour")+'</button>'+
+      '<button class="pri" id="nIr">'+tt("Crear y entrar","Create and sign in","Créer et entrer")+'</button>');
+    document.getElementById("nAtras").onclick = ()=> formAdmin(alTerminar);
+    const err=document.getElementById("nErr");
+    const ir = async ()=>{
+      const m=document.getElementById("nMail").value.trim(), ced=document.getElementById("nCed").value.replace(/\D/g,""),
+            c1=document.getElementById("nC1").value, c2=document.getElementById("nC2").value;
+      if(!m || ced.length<5){ err.textContent=tt("Escribe el correo y la cédula.","Enter your email and ID number.","Saisissez courriel et identité."); return; }
+      if(c1.length<8){ err.textContent=tt("La contraseña debe tener mínimo 8 caracteres.","Password must be 8+ characters.","8 caractères minimum."); return; }
+      if(c1!==c2){ err.textContent=tt("Las dos contraseñas no coinciden.","Passwords do not match.","Les mots de passe ne correspondent pas."); return; }
+      const bt=document.getElementById("nIr"); bt.disabled=true; bt.textContent=tt("Creando…","Creating…","Création…"); err.textContent="";
+      try{
+        const r=await fetch(base()+"/functions/v1/laureles-alta",{method:"POST",
+          headers:{"apikey":CFG.supabaseKey,"Content-Type":"application/json"},
+          body:JSON.stringify({correo:m, cedula:ced, clave:c1})});
+        const j=await r.json().catch(()=>({}));
+        if(!r.ok) throw new Error(j.error||("Error "+r.status));
+        await ROL.entrar(m,c1); cerrar(); if(alTerminar) alTerminar();
+        avisar(tt("Listo: tu cuenta quedó creada y ya entraste.","Done: your account is ready and you are signed in.","C'est fait : compte créé, vous êtes connecté."),6000);
+      }catch(ex){ err.textContent=ex.message; bt.disabled=false; bt.textContent=tt("Crear y entrar","Create and sign in","Créer et entrer"); }
+    };
+    document.getElementById("nIr").onclick=ir;
+    document.getElementById("nC2").onkeydown=ev=>{ if(ev.key==="Enter") ir(); };
   }
 
   /* Olvidé mi contraseña: Supabase manda un correo con un enlace que vuelve a
@@ -325,5 +369,7 @@ const ACCESO = (()=>{
   }
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", instalar); else instalar();
 
-  return { puerta, agenda, visitante, identificado, formAdmin };
+  return { puerta, agenda, visitante, identificado, formAdmin, formAlta };
 })();
+/* const no llega a window: el mapa (index.html) lo busca como window.ACCESO */
+window.ACCESO = ACCESO;

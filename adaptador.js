@@ -30,6 +30,8 @@
    {n:6,l:"E6",d:"Lista +20%"}];
   const EST_A={DISPONIBLE:{c:"var(--disp)",k:"d",t:"Disponible"},
                RESERVADO:{c:"var(--resv)",k:"r",t:"Reservado"},
+               SEPARADO:{c:"var(--sep)",k:"s",t:"Separado"},
+               FIRMADO:{c:"var(--resv)",k:"f",t:"Firmado"},
                VENDIDO:{c:"var(--vend)",k:"v",t:"Vendido"}};
   const POIS_A=[["Autopista del Café","Conexión regional","1,4 km · 3 min"],
                 ["Aeropuerto El Edén","Vuelos nacionales","6,2 km · 10 min"],
@@ -38,8 +40,8 @@
                 ["Parque del Café","Entorno turístico","22,7 km · 30 min"]];
 
   /* el mapa maneja los estados en minúscula; el análisis, en mayúscula */
-  const AMAYUS={disponible:"DISPONIBLE", separado:"RESERVADO",
-                vendido:"VENDIDO", reservado:"RESERVADO"};
+  const AMAYUS={disponible:"DISPONIBLE", separado:"SEPARADO",
+                vendido:"VENDIDO", reservado:"FIRMADO"};
   const estadoDe = L => {
     try{ const f=LOTES.features.find(x=>x.properties.lote===L.n);
          return (f && AMAYUS[f.properties.estado]) || L.base; }
