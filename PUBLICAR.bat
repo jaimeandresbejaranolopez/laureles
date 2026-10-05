@@ -28,6 +28,8 @@ if errorlevel 1 (
 echo  --- Archivos que van a subir ---
 git status --short
 echo.
+rem La carpeta "Claude outputs" es de trabajo interno: no se publica.
+git rm -r -q --cached --ignore-unmatch "Claude outputs" >nul 2>nul
 git add -A
 git diff --cached --quiet
 if not errorlevel 1 (

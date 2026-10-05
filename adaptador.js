@@ -41,7 +41,7 @@
 
   /* el mapa maneja los estados en minúscula; el análisis, en mayúscula */
   const AMAYUS={disponible:"DISPONIBLE", separado:"SEPARADO",
-                vendido:"VENDIDO", reservado:"FIRMADO"};
+                vendido:"VENDIDO", reservado:"VENDIDO"};
   const estadoDe = L => {
     try{ const f=LOTES.features.find(x=>x.properties.lote===L.n);
          return (f && AMAYUS[f.properties.estado]) || L.base; }

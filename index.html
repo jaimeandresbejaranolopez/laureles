@@ -30,13 +30,13 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20261001d">
+<link rel="stylesheet" href="maplibre-gl.css?v=20261005a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20261001d">
-<link rel="stylesheet" href="portada.css?v=20261001d">
-<link rel="stylesheet" href="analisis.css?v=20261001d">
+<link rel="stylesheet" href="armazon.css?v=20261005a">
+<link rel="stylesheet" href="portada.css?v=20261005a">
+<link rel="stylesheet" href="analisis.css?v=20261005a">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -236,6 +236,26 @@ main.en3d .fondos, .stage.en3d .fondos{bottom:70px}
 .ficha .negocio.falta button{display:block;margin-top:8px;border:1px solid var(--forest);background:var(--forest);color:var(--on-forest,#F4F2EA);border-radius:999px;padding:6px 12px;font:inherit;font-weight:600;cursor:pointer}
 .hoja label{display:block;font-size:12px;font-weight:600;color:var(--ink);margin:14px 0 5px}
 .hoja input[type=text]{width:100%;border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 11px;font-size:13px}
+/* comparador de propuestas (comparador.js) */
+.hoja.ancha{width:min(880px,100%)}
+.cmpCab{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.cmpCab label{margin-top:0}
+.hoja select,.hoja input[type=month]{width:100%;border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 9px;font-size:13px;background:var(--surface);color:var(--ink)}
+.cmpFila{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
+.cmpFila .cmpC{flex:2 1 170px}.cmpFila .cmpT{flex:0 1 110px;width:auto}.cmpFila .cmpV,.cmpFila .cmpQV{flex:1 1 120px;text-align:right}
+.cmpFila input[type=month]{flex:0 1 150px;width:auto}
+.cmpFila .cmpQN{flex:0 0 64px}.cmpPor{font-size:12px;color:var(--muted)}
+.cmpX{border:0;background:transparent;font-size:20px;line-height:1;color:var(--muted);cursor:pointer;padding:0 6px}
+.cmpAdd{display:flex;gap:8px;margin:4px 0 6px}.cmpAdd button{padding:7px 12px;font-size:12.5px}
+.cmpTab{width:100%;border-collapse:collapse;margin-top:14px;font-size:12.5px}
+.cmpTab th{background:var(--forest,#32402F);color:#fff;padding:7px;font-weight:600;font-size:11.5px}
+.cmpTab td{padding:7px;border-bottom:1px solid var(--line-soft);text-align:right;color:var(--ink)}
+.cmpTab td:first-child{text-align:left}.cmpTab td small{display:block;color:var(--muted);font-size:10.5px}
+.cmpTab td:nth-child(2){background:rgba(76,136,98,.08)}.cmpTab tr.fuerte td{font-weight:700;border-top:1.5px solid var(--ink-2)}
+.cmpTab td.neg{color:#B03A2E}.cmpTab td.pos{color:#8A6A2E}
+.cmpVer{margin:12px 0 4px;padding:8px 12px;border-radius:var(--r-sm);font-weight:700}
+.cmpVer.ok{background:rgba(46,125,79,.12);color:#2E7D4F}.cmpVer.no{background:rgba(176,58,46,.10);color:#B03A2E}
+.cmpObs{margin:6px 0 0;padding-left:18px;font-size:12.5px}.cmpObs li{margin:3px 0}
 .hoja .pista{font-size:11.5px;color:var(--muted);margin-top:4px}
 /* puerta de entrada y formularios de acceso */
 .hoja input[type=password],.hoja input[type=date],.hoja select{width:100%;border:1px solid var(--line);
@@ -641,7 +661,7 @@ body.baseClara .rotCota{color:#6B5C38;
         <div class="blk">
           <div class="et">Estado</div>
           <div class="chips" id="chips"></div>
-          <div class="leyCanal" id="leyCanal"><b style="color:var(--ink-2)">Canal de venta</b> · sólo administradores<br><i style="background:#E8C31E"></i>Separado por Juan Carlos Fajardo<br><i style="background:#E8731A"></i>Separado por Century 21 DAB<br><i style="background:#C0392B"></i>Firmado: la banderita dice el canal</div>
+          <div class="leyCanal" id="leyCanal"><b style="color:var(--ink-2)">Canal de venta</b> · sólo administradores<br><i style="background:#E8C31E"></i>Separado por Juan Carlos Fajardo<br><i style="background:#E8731A"></i>Separado por Century 21 DAB<br><i style="background:#C0392B"></i>Vendido: la banderita dice el canal</div>
         </div>
         <div class="blk">
           <div class="et">Afinar</div>
@@ -900,7 +920,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20261001d"></script>
+<script src="maplibre-gl.js?v=20261005a"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -922,7 +942,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20261001d"></script>
+<script src="lotes.js?v=20261005a"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -999,9 +1019,12 @@ const ETAPAS = [
 const ESTADOS = {
   disponible:{t:"Disponible", c:"#4C8862", k:"disp"},
   separado:  {t:"Separado",   c:"#C48A2A", k:"sep"},
-  vendido:   {t:"Vendido",    c:"#8A8F82", k:"vend"},
-  reservado: {t:"Firmado", c:"#C0392B", k:"resv"}
+  vendido:   {t:"Vendido",    c:"#C0392B", k:"resv"}
 };
+/* TRES ESTADOS: disponible, separado y vendido. "reservado" (firmado) se usó
+   unos días y se confundía con vendido: en la base puede seguir apareciendo y
+   aquí se lee como vendido —rojo y con la banderita del canal—. */
+const normEstado = e => e==="reservado" ? "vendido" : e;
 /* CANAL DE VENTA — sólo lo ven los administradores (sale de laureles_negocios,
    que el público no puede leer). Separado: el color del canal. Firmado: rojo,
    con una banderita del color del canal. */
@@ -1142,7 +1165,7 @@ const estilo = {
                ["all",["==",["get","estado"],"separado"],["==",["get","canal"],"fajardo"]],"#E8C31E",
                ["all",["==",["get","estado"],"separado"],["==",["get","canal"],"c21"]],"#E8731A",
                ["match",["get","estado"],
-               "disponible","#4C8862","separado","#C48A2A","vendido",["case",["to-boolean",["get","pub"]],"#C0392B","#8A8F82"],"reservado","#C0392B","#4C8862"]],
+               "disponible","#4C8862","separado","#C48A2A","vendido","#C0392B","reservado","#C0392B","#4C8862"]],
              "fill-opacity":["case",["boolean",["feature-state","oculto"],false],0.04,
                              ["boolean",["feature-state","sel"],false],0.80,
                              ["!=",["get","estado"],"disponible"],0.72,0.50]}},
@@ -1398,7 +1421,10 @@ function montarViaReal(){
   mapa.addSource("via-eje",{type:"geojson",data:{type:"FeatureCollection",features:trozos.map(e=>linea(e.map(p=>[p[0],p[1]])))}});
   mapa.addLayer({id:"via-anden",type:"fill",source:"via-corredor",paint:{"fill-color":"#DAD6C7","fill-opacity":.95}}, antes);
   mapa.addLayer({id:"via-anden-l",type:"line",source:"via-corredor",paint:{"line-color":"#C6C2B2","line-width":m(0.12)}}, antes);
-  mapa.addLayer({id:"via-franja-f",type:"fill",source:"via-franja",paint:{"fill-color":"#C9C4B2","fill-opacity":.95}}, antes);
+  /* la "franja" de 1,50 m del plano 039 es la CICLORRUTA (un solo costado): azul claro con su borde blanco */
+  mapa.addLayer({id:"via-franja-f",type:"fill",source:"via-franja",paint:{"fill-color":"#8CC8E8","fill-opacity":.95}}, antes);
+  mapa.addLayer({id:"via-franja-l",type:"line",source:"via-franja",layout:{"line-join":"round"},
+    paint:{"line-color":"#FFFFFF","line-opacity":.9,"line-width":m(0.10)}}, antes);
   mapa.addLayer({id:"via-sard-f",type:"fill",source:"via-sard",paint:{"fill-color":"#F2EFE4","fill-opacity":1}}, antes);
   mapa.addLayer({id:"via-asfalto",type:"fill",source:"via-calzada",paint:{"fill-color":"#4A4C4A","fill-opacity":1}}, antes);
   mapa.addLayer({id:"via-sardinel",type:"line",source:"via-calzada",paint:{"line-color":"#F2EFE4","line-width":m(red?0.12:0.35)}}, antes);
@@ -1406,7 +1432,7 @@ function montarViaReal(){
     paint:{"line-color":"#EFEDE2","line-opacity":.85,"line-width":m(0.12)}}, antes);
   mapa.addLayer({id:"via-eje-l",type:"line",source:"via-eje",layout:{"line-join":"round"},
     paint:{"line-color":"#F4F2EA","line-opacity":.9,"line-width":m(0.12),"line-dasharray":[25,37.5]}}, antes);
-  VIA_CAPAS.push("via-franja-f","via-sard-f");
+  VIA_CAPAS.push("via-franja-f","via-franja-l","via-sard-f");
   /* ---- áreas comunes, parqueaderos, cancha y portería, del plano 039 ---- */
   if(E){
     mapa.addSource("ent-social",{type:"geojson",data:fc(E.social)});
@@ -1498,7 +1524,7 @@ function colorVia(oscuro){
     mapa.setPaintProperty("ent-edif-f","fill-color", ["match",["get","t"],"porteria", oscuro?"#CFCABB":"#F7F5EE", oscuro?"#6E6A5C":"#D9D3C2"]);
     mapa.setPaintProperty("ent-circ-f","fill-color", oscuro?"#4E4633":"#D6C8A6");
     mapa.setPaintProperty("ent-cancha-f","fill-color", oscuro?"#2F5566":"#4F7F96");
-    mapa.setPaintProperty("via-franja-f","fill-color", oscuro?"#44453E":"#C9C4B2");
+    mapa.setPaintProperty("via-franja-f","fill-color", oscuro?"#3E6E87":"#8CC8E8");
     mapa.setPaintProperty("via-sard-f","fill-color", oscuro?"#6A6B62":"#F2EFE4");
   }
 }
@@ -1973,7 +1999,7 @@ function refrescar(){
     kpi(Math.round((nS+nV)/T*100)+" %","Colocado");
   document.getElementById("cuenta").innerHTML =
     "<b>"+visibles+"</b> lotes visibles de "+T+" &nbsp;·&nbsp; "+
-    (ROL.esVentas() ? nD+" libres · "+nS+" separados · "+(nR?nR+(nR===1?" firmado · ":" firmados · "):"")+nV+" vendidos"
+    (ROL.esVentas() ? nD+" libres · "+nS+" separados · "+(nV+nR)+" vendidos"
                     : nD+" libres · "+nV+" vendidos");
   if(S.sel) pintarFicha(S.sel);
 }
@@ -2423,7 +2449,8 @@ function pintarFicha(n){
   '<div class="ff">'+
     '<button class="wa" id="bWa">Escribir por WhatsApp</button>'+
     '<button class="anlBtn" id="bAnl">Análisis del lote y ficha PDF</button>'+
-    (ROL.esVentas() ? '<button class="anlBtn" id="bProsp">Enviar información comercial</button>' : '')+
+    (ROL.esVentas() ? '<button class="anlBtn" id="bProsp">Enviar información comercial</button>'+
+                      '<button class="anlBtn" id="bComparar">Comparar propuesta de pago</button>' : '')+
     '<div class="gh"><button id="bImp">Imprimir ficha</button><button id="bVer">Volar al lote</button></div>'+
   '</div>';
   ficha.classList.add("on");
@@ -2446,6 +2473,7 @@ function pintarFicha(n){
                 : "Modo local: el cambio sólo se ve en este dispositivo. Conecte Supabase en Ajustes para compartirlo.";
   const bEV=document.getElementById("bEntrarVentas"); if(bEV) bEV.onclick=()=>ROL.hoja();
   const bPr=ficha.querySelector("#bProsp"); if(bPr) bPr.onclick=()=>hojaProspecto(p,v,et);
+  const bCm=ficha.querySelector("#bComparar"); if(bCm) bCm.onclick=()=>{ if(window.COMPARADOR) COMPARADOR.abrir(p.lote); };
   const bCo=ficha.querySelector("#bCompletar"); if(bCo) bCo.onclick=()=>cambiarEstado(p.lote,p.estado);
   /* tarjetas que agregan otros módulos (recorrido 3D, vista 360°) */
   const fx=ficha.querySelector("#fExtras");
@@ -2569,6 +2597,7 @@ function cambiarEstado(n,e){
       const rc=document.querySelector('#nCanal input:checked');
       const fila = await SB.negocio({p_lote:n, p_estado:e, p_agente:ag, p_cliente:libera?null:cl,
         p_documento:v("nDoc")||null, p_telefono:v("nTel")||null, p_notas:nt||null, p_canal:libera?null:(rc?rc.value:null)});
+      if(fila) fila.estado=normEstado(fila.estado);
       NEG[n]=fila;
       f.properties.estado=e; f.properties.real=e;
       if(fila && fila.canal) f.properties.canal=fila.canal; else delete f.properties.canal;
@@ -2608,7 +2637,6 @@ function aplicarCanales(){
     else { p.estado = p.real==="disponible" ? "disponible" : "vendido"; p.pub=true; }
     const ng=NEG[p.lote];
     if(admin && ng && ng.estado===p.estado && ng.canal && p.estado!=="disponible") p.canal=ng.canal; else delete p.canal; });
-  ESTADOS.vendido.c = admin ? "#8A8F82" : "#C0392B";
   pintarChips();
   conLotes(()=>{ mapa.getSource("lotes").setData(LOTES); try{ refrescar(); }catch(e){} });
   pintarBanderas();
@@ -2618,9 +2646,9 @@ function pintarBanderas(){
   BANDERAS.forEach(m=>m.remove()); BANDERAS=[];
   if(!ROL.esVentas()) return;
   LOTES.features.forEach(f=>{ const p=f.properties;
-    if(p.estado!=="reservado" || !p.canal || !CANAL[p.canal]) return;
+    if(p.estado!=="vendido" || !p.canal || !CANAL[p.canal]) return;
     const d=document.createElement("div"); d.className="bandera";
-    d.title="Lote "+p.lote+" firmado · "+CANAL[p.canal].t;
+    d.title="Lote "+p.lote+" vendido · "+CANAL[p.canal].t;
     d.innerHTML='<svg viewBox="0 0 22 30" aria-hidden="true"><line x1="3" y1="2" x2="3" y2="29" stroke="#2A241D" stroke-width="2.2" stroke-linecap="round"/>'+
       '<path d="M4 3 L20 8 L4 13 Z" fill="'+CANAL[p.canal].c+'" stroke="#FFFFFF" stroke-width="1.1" stroke-linejoin="round"/></svg>';
     const m=new maplibregl.Marker({element:d, anchor:"bottom-left", offset:[-3,0]}).setLngLat(p.centro).addTo(mapa);
@@ -2911,7 +2939,8 @@ const SB = (()=>{
       const filas=await r.json();
       filas.forEach(x=>{
         const f=LOTES.features.find(o=>o.properties.lote===x.lote);
-        if(f&&x.estado&&ESTADOS[x.estado]){ f.properties.estado=x.estado; f.properties.real=x.estado; if(x.notas)f.properties.notas=x.notas; }
+        const ex=normEstado(x.estado);
+        if(f&&ex&&ESTADOS[ex]){ f.properties.estado=ex; f.properties.real=ex; if(x.notas)f.properties.notas=x.notas; }
       });
       aplicarCanales();          /* visitante: todo lo no disponible se ve como vendido */
       /* el mapa puede seguir cargando (intro, conexión lenta): se pinta cuando exista la capa,
@@ -2942,7 +2971,7 @@ const SB = (()=>{
       if(!r.ok) return;
       const filas=await r.json();
       Object.keys(NEG).forEach(k=>delete NEG[k]);
-      filas.forEach(x=>{ if(!NEG[x.lote]) NEG[x.lote]=x; });
+      filas.forEach(x=>{ x.estado=normEstado(x.estado); if(!NEG[x.lote]) NEG[x.lote]=x; });
       aplicarCanales();
       if(S.sel!=null && document.getElementById("ficha").classList.contains("on")) pintarFicha(S.sel);
     }catch(e){}
@@ -3388,23 +3417,24 @@ function compartirLote(p){
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png","vida_perfil_vial":"medios/vida_perfil_vial.jpg","vida_ciclorruta":"medios/vida_ciclorruta.jpg","vida_infantil":"medios/vida_infantil.jpg","vida_gimnasio":"medios/vida_gimnasio.jpg","vida_padel":"medios/vida_padel.jpg"};</script>
-<script src="datos-analisis.js?v=20261001d"></script>
-<script src="datos-terreno.js?v=20261001d"></script>
-<script src="datos-logo.js?v=20261001d"></script>
-<script src="adaptador.js?v=20261001d"></script>
-<script src="analisis.js?v=20261001d"></script>
-<script src="datos-via.js?v=20261001d"></script>
-<script src="datos-entrada.js?v=20261001d"></script>
-<script src="r3d.js?v=20261001d"></script>
-<script src="paisaje.js?v=20261001d"></script>
-<script src="recorrido.js?v=20261001d"></script>
-<script src="visor360.js?v=20261001d"></script>
-<script src="sitios-iconos.js?v=20261001d"></script>
-<script src="armazon.js?v=20261001d"></script>
-<script src="acceso.js?v=20261001d"></script>
-<script src="portada.js?v=20261001d"></script>
-<script src="ia.js?v=20261001d"></script>
-<script src="panel.js?v=20261001d"></script>
+<script src="datos-analisis.js?v=20261005a"></script>
+<script src="datos-terreno.js?v=20261005a"></script>
+<script src="datos-logo.js?v=20261005a"></script>
+<script src="adaptador.js?v=20261005a"></script>
+<script src="analisis.js?v=20261005a"></script>
+<script src="datos-via.js?v=20261005a"></script>
+<script src="datos-entrada.js?v=20261005a"></script>
+<script src="r3d.js?v=20261005a"></script>
+<script src="paisaje.js?v=20261005a"></script>
+<script src="recorrido.js?v=20261005a"></script>
+<script src="visor360.js?v=20261005a"></script>
+<script src="sitios-iconos.js?v=20261005a"></script>
+<script src="armazon.js?v=20261005a"></script>
+<script src="acceso.js?v=20261005a"></script>
+<script src="portada.js?v=20261005a"></script>
+<script src="ia.js?v=20261005a"></script>
+<script src="panel.js?v=20261005a"></script>
+<script src="comparador.js?v=20261005a"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

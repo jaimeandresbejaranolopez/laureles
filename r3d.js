@@ -490,7 +490,10 @@ const R3D = (()=>{
         llena(E.anden, oscuro ? "#3A3B36" : "#DAD6C7");
         x.strokeStyle = oscuro ? "#4A4B44" : "#C6C2B2"; x.lineWidth=Math.max(1,M(0.2));
         E.anden.forEach(pol=>{ trazaPoli(pol); x.stroke(); });
-        llena(E.franja, oscuro ? "#44453E" : "#C9C4B2");
+        /* ciclorruta (la "franja" de 1,50 m del plano 039): azul claro con borde blanco */
+        llena(E.franja, oscuro ? "#3E6E87" : "#8CC8E8");
+        x.strokeStyle = "rgba(255,255,255,.9)"; x.lineWidth=Math.max(1,M(0.12));
+        (E.franja||[]).forEach(pol=>{ trazaPoli(pol); x.stroke(); });
         llena(E.sardinel, oscuro ? "#6A6B62" : "#F2EFE4");
       } else {
         /* andén: la franja de 2 m que queda entre el lindero del lote y la calzada */
