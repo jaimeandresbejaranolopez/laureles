@@ -29,6 +29,8 @@ const GERENCIA = window.GERENCIA = (()=>{
   const LIM_INI = "2026-12", CUO_INI = "2027-01", FINAL = "2028-12";
   const C_REAL = "#1F7A4D", C_PROG = "#C7891F";        /* validados: CVD ΔE 12,2 · normal 22,8 */
   const SIN = "NO_DISPONIBLE";
+  const E1_CUPO = 0.30;                                /* la etapa 1 es el 30 % del área vendible */
+  const m2f = v => Math.round(v).toLocaleString("es-CO")+" m²";
   const esc = s => String(s==null?"":s).replace(/[<>&"]/g, c=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]));
   const num = s => { const n=Number(String(s==null?"":s).replace(/[^\d]/g,"")); return isFinite(n)?n:0; };
   const fmtN = n => n ? Math.round(n).toLocaleString("es-CO") : "";
@@ -157,6 +159,14 @@ const GERENCIA = window.GERENCIA = (()=>{
       T.tipos[k]=(T.tipos[k]||0)+1; });
     /* planes de lotes que hoy están disponibles (liberados después de registrar el plan) */
     T.huerfanos = D.planes.filter(pl=>{ const e=estado[pl.lote]; return !e || e==="disponible"; }).map(pl=>pl.lote);
+    /* cupo de la etapa 1: sólo el 30 % del área vendible (área total de los 86 lotes) se vende a precio E1 */
+    const areaTot = LOTES.features.reduce((x,f)=>x+(f.properties.area_m2||0),0);
+    const e1 = {total:areaTot, cupo:areaTot*E1_CUPO, ven:0, sep:0, sinEt:0, nVen:0, nSep:0, nSin:0, lotes:[]};
+    filas.forEach(r=>{ const a=r.p.area_m2||0;
+      if(r.etapa===1){ if(r.e==="vendido"){ e1.ven+=a; e1.nVen++; } else { e1.sep+=a; e1.nSep++; } e1.lotes.push(r.n); }
+      else if(!r.etapa){ e1.sinEt+=a; e1.nSin++; } });
+    e1.usado=e1.ven+e1.sep; e1.libre=Math.max(0,e1.cupo-e1.usado); e1.prom=areaTot/LOTES.features.length;
+    T.e1=e1;
     M = {filas, T, hoyM, cerrado};
   }
   /* series por mes, filtradas por canal */
@@ -336,6 +346,7 @@ const GERENCIA = window.GERENCIA = (()=>{
       '<div class="gzLey"><span><i style="background:#C0392B"></i>Vendidos '+T.ven+'</span><span><i style="background:#C48A2A"></i>Separados '+T.sep+'</span><span><i style="background:#4C8862"></i>Disponibles '+T.disp+'</span></div></section>';
     function seg(n,c,t){ return n ? '<i style="flex:'+n+';background:'+c+'" title="'+t+': '+n+'">'+(n>=4?n:"")+'</i>' : ""; }
 
+    h+=seccionE1();
     h+='<div class="gzG2"><section class="gzSec"><h3>Por canal</h3><p class="gzSub">Precio pactado y recaudo sólo de los negocios que tienen el precio registrado.</p><div class="gzTb"><table class="media"><thead><tr><th>Canal</th><th class="n">Separados</th><th class="n">Vendidos</th><th class="n">Total</th><th class="n">Pactado</th><th class="n">Recaudado</th></tr></thead><tbody>'+
       ["fajardo","c21","sin"].filter(k=>k!=="sin"||T.canal.sin.sep+T.canal.sin.ven).map(k=>{ const c=T.canal[k];
         return '<tr><td>'+(CANAL[k]?'<i class="gzDot" style="background:'+CANAL[k].c+'"></i>'+esc(CANAL[k].corto):'Sin canal')+'</td><td class="n">'+c.sep+'</td><td class="n">'+c.ven+'</td><td class="n"><b>'+(c.sep+c.ven)+'</b></td>'+
@@ -370,6 +381,24 @@ const GERENCIA = window.GERENCIA = (()=>{
     return h;
   }
 
+  function seccionE1(){
+    const e=M.T.e1, pc=v=>(v/e.cupo*100);
+    const seg2=(v,c,t,extra)=>v>0?'<i style="flex:'+v.toFixed(0)+';background:'+c+(extra||'')+'" title="'+t+': '+m2f(v)+'">'+(pc(v)>=9?Math.round(pc(v))+' %':'')+'</i>':'';
+    return '<section class="gzSec"><h3>Cupo de la etapa 1</h3><p class="gzSub">La etapa 1 (contado, −20 %) es sólo el 30 % del área vendible: '+m2f(e.cupo)+' de '+m2f(e.total)+'. Así se va gastando, con los negocios registrados en etapa 1.</p>'+
+      '<div class="gzK">'+
+        kpi("Usado en etapa 1", Math.round(pc(e.usado))+" %", m2f(e.usado)+" en "+(e.nVen+e.nSep)+" lotes ("+e.nVen+" vendidos, "+e.nSep+" separados)", pc(e.usado)>=85?"mal":"")+
+        kpi("Queda del cupo", m2f(e.libre), "≈ "+(e.libre/e.prom).toLocaleString("es-CO",{maximumFractionDigits:1})+" lotes de tamaño promedio ("+m2f(e.prom)+")", e.libre<=0?"mal":"ok")+
+        kpi("Sin etapa registrada", e.nSin, e.nSin?m2f(e.sinEt)+" separados o vendidos sin etapa: si fueran etapa 1 usarían "+Math.round(e.sinEt/e.cupo*100)+" % del cupo":"Todos los negocios tienen etapa")+
+      '</div>'+
+      '<div style="margin-top:14px" class="gzBar" role="img" aria-label="Cupo de etapa 1: '+Math.round(pc(e.usado))+' por ciento usado">'+
+        seg2(e.ven,"#C0392B","Vendido en E1")+seg2(e.sep,"#C48A2A","Separado en E1")+
+        seg2(e.libre,"#4C8862","Libre")+'</div>'+
+      '<div class="gzLey"><span><i style="background:#C0392B"></i>Vendido E1 '+m2f(e.ven)+'</span><span><i style="background:#C48A2A"></i>Separado E1 '+m2f(e.sep)+'</span>'+
+        '<span><i style="background:#4C8862"></i>Libre '+m2f(e.libre)+'</span></div>'+
+      (e.usado>e.cupo?'<div class="gzAviso rojo" style="margin-top:10px">El cupo de etapa 1 está excedido en '+m2f(e.usado-e.cupo)+'.</div>':'')+
+      (e.lotes.length?'<p class="gzSub" style="margin:10px 0 0">Lotes en etapa 1: '+e.lotes.join(", ")+'.</p>':'')+
+    '</section>';
+  }
   function vCartera(){
     let f=M.filas.filter(r=>(filtroC==="todos"||(r.canal||"sin")===filtroC) && (filtroE==="todos"||r.e===filtroE) &&
       (filtroP==="todos" || (filtroP==="sin" && !r.q.length) || (filtroP==="mora" && r.mora>0) || (filtroP==="mes" && r.prox && r.prox.mes<=M.hoyM)));
@@ -447,6 +476,7 @@ const GERENCIA = window.GERENCIA = (()=>{
     M.filas.filter(r=>r.mora>0).forEach(r=>A.push({nivel:"rojo", lote:r.n, t:"Lote "+r.n+" en mora: "+cop(r.mora)+" vencidos sin pagar desde "+mesLargo(primerVencido(r))+".", v:r.mora}));
     M.filas.filter(r=>r.prox && r.prox.mes===M.hoyM && r.mora===0).forEach(r=>A.push({nivel:"amar", lote:r.n, t:"Lote "+r.n+" debe pagar este mes "+cop(r.prox.valor)+" ("+MEDIOS[r.prox.medio]+(r.prox.concepto?", "+r.prox.concepto:"")+").", v:r.prox.valor}));
     M.filas.filter(r=>r.prox && r.prox.mes===sumaMes(M.hoyM,1) && r.mora===0).forEach(r=>A.push({nivel:"info", lote:r.n, t:"Lote "+r.n+" paga el próximo mes "+cop(r.prox.valor)+".", v:r.prox.valor}));
+    const e1=M.T.e1; if(e1.usado>=e1.cupo*0.85) A.push({nivel:e1.usado>e1.cupo?"rojo":"amar", t:"Cupo de etapa 1 al "+Math.round(e1.usado/e1.cupo*100)+" %: quedan "+m2f(e1.libre)+"."});
     const sinPlan=M.filas.filter(r=>!r.q.length);
     if(sinPlan.length) A.push({nivel:"amar", t:sinPlan.length+" negocios sin forma de pago registrada: lotes "+sinPlan.map(r=>r.n).join(", ")+"."});
     const sinCli=M.filas.filter(r=>r.clientePend);
@@ -698,7 +728,7 @@ const GERENCIA = window.GERENCIA = (()=>{
       '<div class="cab">'+logo+'<div class="d"><b>Century 21 DAB · Gerencia técnica</b><br>Corte: '+D.cuando.toLocaleString("es-CO",{dateStyle:"long",timeStyle:"short"})+'</div></div>'+
       '<h1>Informe gerencial · Laureles Campestre</h1><div class="gzSub">Inventario, cartera y recaudo de la parcelación</div>'+
       '<h2>Inventario</h2><div class="ks">'+k("Disponibles",T.disp,"de 86 lotes")+k("Separados",T.sep,"Fajardo "+T.canal.fajardo.sep+" · C21 "+T.canal.c21.sep)+k("Vendidos",T.ven,"Fajardo "+T.canal.fajardo.ven+" · C21 "+T.canal.c21.ven)+k("Comprometido",Math.round((T.sep+T.ven)/86*100)+" %",(T.sep+T.ven)+" lotes")+'</div>'+
-      '<h2>Recaudo</h2>'+(T.conPlan<T.neg?'<div class="av">Forma de pago registrada en '+T.conPlan+' de '+T.neg+' negocios: las proyecciones sólo suman esos. Los demás figuran como '+SIN+'.</div>':'')+
+      '<h2>Cupo de la etapa 1 (30 % del área vendible)</h2><div class="ks">'+k("Cupo E1",m2f(T.e1.cupo),"de "+m2f(T.e1.total))+k("Usado",Math.round(T.e1.usado/T.e1.cupo*100)+" %",m2f(T.e1.usado)+" · "+(T.e1.nVen+T.e1.nSep)+" lotes")+k("Queda",m2f(T.e1.libre),"≈ "+(T.e1.libre/T.e1.prom).toLocaleString("es-CO",{maximumFractionDigits:1})+" lotes promedio")+k("Sin etapa",T.e1.nSin,m2f(T.e1.sinEt))+'</div>'+'<h2>Recaudo</h2>'+(T.conPlan<T.neg?'<div class="av">Forma de pago registrada en '+T.conPlan+' de '+T.neg+' negocios: las proyecciones sólo suman esos. Los demás figuran como '+SIN+'.</div>':'')+
       '<div class="ks">'+k("Recaudado a hoy",mm(T.recaudado))+k("Por recaudar a dic-"+String(a).slice(2),mm(T.pend1))+k("Por recaudar en "+(a+1),mm(T.pend2))+k("En mora",mm(T.mora))+'</div>'+
       '<table style="margin-top:8px"><thead><tr><th>Año</th><th class="n">Programado</th><th class="n">Recibido</th><th class="n">Por recaudar</th></tr></thead><tbody>'+
         Object.keys(anios).sort().map(y=>'<tr><td>'+y+'</td><td class="n">'+cop(anios[y].prog)+'</td><td class="n">'+cop(anios[y].real)+'</td><td class="n">'+cop(+y===a?T.pend1:+y===a+1?T.pend2:+y===a+2?T.pend3:0)+'</td></tr>').join("")+'</tbody></table>'+
