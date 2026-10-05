@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<script>/* enlace directo a un lote o al panel: sin intro */if(/[?&](lote=\d|panel=1)/.test(location.search))document.documentElement.classList.add("directo");</script>
+<script>/* enlace directo a un lote o al panel: sin intro */if(/[?&](lote=\d|panel=1|gerencia=1)/.test(location.search))document.documentElement.classList.add("directo");</script>
 <!--SEO-->
 <title>Laureles Campestre · Lotes campestres en El Caimo, Armenia, Quindío</title>
 <meta name="description" content="86 lotes campestres desde 3.100 m² en El Caimo, Armenia, a 10 minutos del aeropuerto El Edén. Escritura del 100 % de la tierra. Desde $297 millones.">
@@ -30,13 +30,13 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20261005a">
+<link rel="stylesheet" href="maplibre-gl.css?v=20261005c">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20261005a">
-<link rel="stylesheet" href="portada.css?v=20261005a">
-<link rel="stylesheet" href="analisis.css?v=20261005a">
+<link rel="stylesheet" href="armazon.css?v=20261005c">
+<link rel="stylesheet" href="portada.css?v=20261005c">
+<link rel="stylesheet" href="analisis.css?v=20261005c">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -73,6 +73,9 @@ header .sp{flex:1}
 .hbtn.on{background:var(--forest);border-color:var(--forest);color:var(--on-forest)}
 .hbtn#bRol{font-weight:600}
 .hbtn#bRol.ventas{background:var(--gold);border-color:var(--gold);color:#2A2208}
+.hbtn#bGer{background:var(--forest);border-color:var(--forest);color:var(--on-forest);font-weight:600}
+.hbtn#bGer:hover{background:var(--forest-2);color:var(--on-forest)}
+.hbtn#bGer[hidden]{display:none}
 .soloLectura{margin-top:14px;border:1px dashed var(--line);border-radius:var(--r-sm);
   padding:10px 12px;font-size:12px;line-height:1.55;color:var(--muted);background:var(--surface-2)}
 .soloLectura b{color:var(--ink)}
@@ -601,6 +604,7 @@ body.baseClara .rotCota{color:#6B5C38;
     <button class="hbtn" id="bEncuadre" title="Ver todo el predio">Ver todo</button>
     <button class="hbtn" id="bRelieve">Relieve</button>
     <button class="hbtn" id="b3d" title="Ver el terreno en relieve 3D">3D</button>
+    <button class="hbtn ger" id="bGer" title="Tablero gerencial: inventario, cartera y recaudo" hidden>Gerencia</button>
     <button class="hbtn" id="bRol" title="Quién está usando la página">Visitante</button>
     <button class="hbtn" id="bConfig">Ajustes</button>
     <button class="cta" id="ctaTop">Consultar</button>
@@ -920,7 +924,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20261005a"></script>
+<script src="maplibre-gl.js?v=20261005c"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -942,7 +946,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20261005a"></script>
+<script src="lotes.js?v=20261005c"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -2800,6 +2804,8 @@ const ROL = (()=>{
   function pintar(){
     document.body.classList.toggle("admin", esVentas());
     const b = document.getElementById("bRol");
+    const bg = document.getElementById("bGer");
+    if(bg) bg.hidden = !(esVentas() && (libera || (perfil && perfil.rol==="gerencia")));
     if(b){ b.textContent = esVentas() ? "Administrador" : "Visitante";
            b.classList.toggle("ventas", esVentas());
            b.title = esVentas() ? ("Sesión de "+(nombre()?nombre()+" · ":"")+correo()+" — puede cambiar estados y guardar prospectos")
@@ -2822,9 +2828,11 @@ const ROL = (()=>{
         '<div class="pista" style="margin-top:12px"><a href="#" id="rCambiar">Cambiar mi contraseña</a></div>';
       document.getElementById("hojaPie").innerHTML =
         '<button class="sec" id="bSalir">Salir de la sesión</button>'+
+        ((libera || (perfil && perfil.rol==="gerencia")) ? '<button class="sec" id="bGerH">Tablero gerencial</button>' : '')+
         '<button class="pri" id="bPanel">Panel de prospectos</button>';
       document.getElementById("bSalir").onclick=()=>{ salir(); velo.classList.remove("on"); };
       document.getElementById("bPanel").onclick=()=>{ velo.classList.remove("on"); if(window.PANEL) PANEL.abrir(); };
+      const bgh=document.getElementById("bGerH"); if(bgh) bgh.onclick=()=>{ velo.classList.remove("on"); if(window.GERENCIA) GERENCIA.abrir(); };
       document.getElementById("rCambiar").onclick=ev=>{ ev.preventDefault(); cambiarClave(); };
     } else {
       const vis = (window.ACCESO && ACCESO.visitante && ACCESO.visitante()) || null;
@@ -2923,6 +2931,7 @@ const ROL = (()=>{
 })();
 
 /* ------------------------------- Supabase (opcional) ----------------------- */
+document.getElementById("bGer").onclick=()=>{ if(window.GERENCIA) GERENCIA.abrir(); };
 const SB = (()=>{
   const activo = ()=> !!(CFG.supabaseUrl && CFG.supabaseKey);
   /* Lectura: basta la llave publicable. Escritura: hace falta el token de la
@@ -3391,10 +3400,11 @@ function compartirLote(p){
   const q = new URLSearchParams(location.search);
   const n = parseInt(q.get("lote"),10);
   const lote = n>0 && LOTES.features.some(f=>f.properties.lote===n) ? n : null;
-  const panel = q.get("panel")==="1";
-  if(!lote && !panel) return;
+  const panel = q.get("panel")==="1", ger = q.get("gerencia")==="1";
+  if(!lote && !panel && !ger) return;
   const arrancar = ()=>{
     const s=document.getElementById("skipBtn"); if(s) s.click();
+    if(ger){ if(window.GERENCIA) GERENCIA.abrir(); return; }
     if(panel){ if(window.PANEL) PANEL.abrir(); return; }
     const b=document.getElementById("startBtn"); if(b) b.click();
     let k=0;
@@ -3417,24 +3427,25 @@ function compartirLote(p){
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png","vida_perfil_vial":"medios/vida_perfil_vial.jpg","vida_ciclorruta":"medios/vida_ciclorruta.jpg","vida_infantil":"medios/vida_infantil.jpg","vida_gimnasio":"medios/vida_gimnasio.jpg","vida_padel":"medios/vida_padel.jpg"};</script>
-<script src="datos-analisis.js?v=20261005a"></script>
-<script src="datos-terreno.js?v=20261005a"></script>
-<script src="datos-logo.js?v=20261005a"></script>
-<script src="adaptador.js?v=20261005a"></script>
-<script src="analisis.js?v=20261005a"></script>
-<script src="datos-via.js?v=20261005a"></script>
-<script src="datos-entrada.js?v=20261005a"></script>
-<script src="r3d.js?v=20261005a"></script>
-<script src="paisaje.js?v=20261005a"></script>
-<script src="recorrido.js?v=20261005a"></script>
-<script src="visor360.js?v=20261005a"></script>
-<script src="sitios-iconos.js?v=20261005a"></script>
-<script src="armazon.js?v=20261005a"></script>
-<script src="acceso.js?v=20261005a"></script>
-<script src="portada.js?v=20261005a"></script>
-<script src="ia.js?v=20261005a"></script>
-<script src="panel.js?v=20261005a"></script>
-<script src="comparador.js?v=20261005a"></script>
+<script src="datos-analisis.js?v=20261005c"></script>
+<script src="datos-terreno.js?v=20261005c"></script>
+<script src="datos-logo.js?v=20261005c"></script>
+<script src="adaptador.js?v=20261005c"></script>
+<script src="analisis.js?v=20261005c"></script>
+<script src="datos-via.js?v=20261005c"></script>
+<script src="datos-entrada.js?v=20261005c"></script>
+<script src="r3d.js?v=20261005c"></script>
+<script src="paisaje.js?v=20261005c"></script>
+<script src="recorrido.js?v=20261005c"></script>
+<script src="visor360.js?v=20261005c"></script>
+<script src="sitios-iconos.js?v=20261005c"></script>
+<script src="armazon.js?v=20261005c"></script>
+<script src="acceso.js?v=20261005c"></script>
+<script src="portada.js?v=20261005c"></script>
+<script src="ia.js?v=20261005c"></script>
+<script src="panel.js?v=20261005c"></script>
+<script src="gerencia.js?v=20261005c"></script>
+<script src="comparador.js?v=20261005c"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

@@ -340,3 +340,17 @@ revoke all on public.laureles_config from anon, authenticated;
 -- laureles_activar_pendiente (trigger en auth.users): pasa al equipo, deja el
 --   perfil con el nombre y marca 'activado' (la cédula cifrada se borra).
 -- =====================================================================
+
+-- =============================================================================
+-- TABLERO GERENCIAL (gerencia.js) — creado el 05/10/2026
+-- laureles_es_gerencia(): true si la sesión es de laureles_equipo activo con
+--   rol 'gerencia' o puede_liberar. Sólo esa sesión lee y escribe:
+-- laureles_planes (lote PK, cliente, canal, etapa, precio_lista, precio_pactado,
+--   tipo etapa|personalizado|por_definir, firma, cuotas jsonb [{mes,concepto,medio,valor}],
+--   notas, actualizado, actualizado_por) — firma automática por trigger;
+--   cada cambio deja la versión anterior en laureles_planes_hist.
+-- laureles_recaudos (id, lote, fecha, valor, medio dinero|vehiculo|cdt|inmueble|otro,
+--   concepto, referencia, notas, anulado, anulado_motivo, registrado_por) — un pago
+--   no se edita ni se borra: se anula con motivo (lo exige el trigger).
+-- RLS: select/insert/update con laureles_es_gerencia(); sin políticas de borrado.
+-- =============================================================================

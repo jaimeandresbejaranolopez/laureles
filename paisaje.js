@@ -447,6 +447,8 @@ function montar(){
     if(R3D.activo() && pref==="1" && !on) poner(true);
   },60); });
 }
-const PAISAJE = window.PAISAJE = { poner, activo:()=>on, delta:0, muestras:0, fotos:{}, arboles:0 };
+/* la película de llegada (recorrido.js) pide la luz de las 5 p. m. y luego la devuelve */
+function luz(modo){ const antes=horaModo; if(modo && modo!==horaModo){ horaModo=modo; try{ aplicarLuz(); pintarBoton(); }catch(e){} X.pedir(); } return antes; }
+const PAISAJE = window.PAISAJE = { poner, luz, activo:()=>on, delta:0, muestras:0, fotos:{}, arboles:0 };
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",montar); else montar();
 })();
