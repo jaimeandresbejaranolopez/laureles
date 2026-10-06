@@ -25,7 +25,7 @@ let on=false, preparado=false, preparando=null;
 let gl=null, D=null;                    /* datos de r3d: ve, CX, CY, ZMID, KX, KY, lat0, lon0 */
 let progH=null, progC=null, progA=null;
 let anillos=[], cielo=null, arboles=[], delta=0;
-let luzActual=null, horaModo="ahora";
+let luzActual=null, horaModo="ahora", maq=false, posArb=[];
 
 /* ---------------- coordenadas ---------------- */
 const aEscena=(lon,lat)=>{ const wx=(lon-D.lon0)*D.KX, wy=(D.lat0-lat)*D.KY; return [wx-D.CX, D.CY-wy, wx, wy]; };
@@ -227,8 +227,8 @@ function mallaArboles(orto){
     trozos.push({v:buf(gl.ARRAY_BUFFER,new Float32Array(V)), n:buf(gl.ARRAY_BUFFER,new Float32Array(N)),
                  c:buf(gl.ARRAY_BUFFER,new Float32Array(C)), i:buf(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(I)), k:I.length});
     V.length=N.length=C.length=I.length=0; };
-  const SEG=7;
-  let cuantos=0;
+  const SEG=9;
+  let cuantos=0; posArb=[];
   prot.forEach(ring=>{
     let lo0=Infinity,lo1=-Infinity,la0=Infinity,la1=-Infinity;
     ring.forEach(p=>{ lo0=Math.min(lo0,p[0]); lo1=Math.max(lo1,p[0]); la0=Math.min(la0,p[1]); la1=Math.max(la1,p[1]); });
@@ -240,22 +240,28 @@ function mallaArboles(orto){
       const z0=(hz-D.ZMID)*D.ve;
       const alto=8+az()*9, radio=2.4+az()*1.8, tronco=alto*0.38;
       const verde=[[0.20,0.33,0.16],[0.25,0.38,0.18],[0.17,0.29,0.15],[0.29,0.40,0.20]][Math.floor(az()*4)];
-      if(V.length/3 + SEG*3+6 > 65000) cerrar();
+      if(V.length/3 + SEG*4+12 > 65000) cerrar();
       /* tronco: prisma de 4 caras */
       let b=V.length/3; const t=0.22;
       [[t,0],[0,t],[-t,0],[0,-t]].forEach(([dx,dy])=>{ V.push(e[0]+dx,e[1]+dy,z0, e[0]+dx,e[1]+dy,z0+tronco); N.push(dx,dy,0, dx,dy,0); C.push(0.30,0.24,0.18, 0.30,0.24,0.18); });
       for(let s=0;s<4;s++){ const a=b+s*2, c=b+((s+1)%4)*2; I.push(a,c,a+1, c,c+1,a+1); }
-      /* copa: dos anillos y dos polos, un poco irregular */
+      /* copa: casi una esfera achatada —tres anillos y dos polos—, irregular, y
+         más clara arriba (donde le da el sol) que abajo */
       b=V.length/3; const zc=z0+tronco+(alto-tronco)*0.45, hz2=(alto-tronco)/2;
-      V.push(e[0],e[1],zc-hz2); N.push(0,0,-1); C.push(...verde.map(v=>v*0.8));
-      for(let r=0;r<2;r++){ const zz=zc+(r?0.5:-0.25)*hz2, rr=radio*(r?0.92:1);
-        for(let s=0;s<SEG;s++){ const a=2*Math.PI*s/SEG+r*0.4, f=0.85+az()*0.3;
+      V.push(e[0],e[1],zc-hz2); N.push(0,0,-1); C.push(...verde.map(v=>v*0.72));
+      const ANI=[[-0.55,0.82,-0.45,0.86],[0.05,1.0,0.0,1.0],[0.58,0.74,0.62,1.1]];   /* altura, radio, normal z, luz */
+      ANI.forEach(([hz,rf,nz,lz],r)=>{ const zz=zc+hz*hz2, rr=radio*rf;
+        for(let s=0;s<SEG;s++){ const a=2*Math.PI*s/SEG+r*0.35, f=0.84+az()*0.32;
           const nx=Math.sin(a), ny=Math.cos(a);
-          V.push(e[0]+nx*rr*f, e[1]+ny*rr*f, zz); N.push(nx, ny, r?0.6:-0.1); C.push(...verde.map(v=>v*(0.92+az()*0.16))); } }
-      V.push(e[0],e[1],zc+hz2*0.8); N.push(0,0,1); C.push(...verde.map(v=>v*1.15));
-      const pie=b, cima=b+1+SEG*2, r0=b+1, r1=b+1+SEG;
+          V.push(e[0]+nx*rr*f, e[1]+ny*rr*f, zz); N.push(nx, ny, nz); C.push(...verde.map(v=>v*lz*(0.9+az()*0.18))); } });
+      V.push(e[0],e[1],zc+hz2*0.95); N.push(0,0,1); C.push(...verde.map(v=>v*1.2));
+      const pie=b, cima=b+1+SEG*3, r0=b+1, r1=b+1+SEG, r2=b+1+SEG*2;
       for(let s=0;s<SEG;s++){ const s2=(s+1)%SEG;
-        I.push(pie,r0+s2,r0+s); I.push(r0+s,r0+s2,r1+s); I.push(r0+s2,r1+s2,r1+s); I.push(r1+s,r1+s2,cima); }
+        I.push(pie,r0+s2,r0+s);
+        I.push(r0+s,r0+s2,r1+s); I.push(r0+s2,r1+s2,r1+s);
+        I.push(r1+s,r1+s2,r2+s); I.push(r1+s2,r2+s2,r2+s);
+        I.push(r2+s,r2+s2,cima); }
+      posArb.push([lon,lat,radio,alto]);
       cuantos++;
     }
   });
@@ -306,7 +312,7 @@ function pintarCielo(ctx){
 }
 function pintarEntorno(ctx){
   const col=coloresCielo(luzActual?luzActual.alt:40), dens=densidad();
-  if(anillos.length){
+  if(anillos.length && !maq){
     gl.useProgram(progH);
     const L=["p","uv","sl","col"].map(n=>gl.getAttribLocation(progH,n));
     gl.uniformMatrix4fv(uni(progH,"M"),false,ctx.M); gl.uniform1f(uni(progH,"VE"),ctx.ve);
@@ -404,7 +410,7 @@ function aplicar(){
     X.faldaColor([0.30,0.36,0.24,1], 60);
     window.satOn=!!window.SAT;
     aplicarLuz();
-    const o=X.orbita(); if(o.elv>0.34) X.fijarOrbita({elv:0.26});
+    const o=X.orbita(); if(o.elv>0.34 && !maq) X.fijarOrbita({elv:0.26});
   } else {
     X.lejos(6000); X.fondo(null); X.quitar(pintarEntorno); X.faldaColor(null);
     X.niebla(0.8,0.85,0.9,0); window.satOn=false;
@@ -449,6 +455,8 @@ function montar(){
 }
 /* la película de llegada (recorrido.js) pide la luz de las 5 p. m. y luego la devuelve */
 function luz(modo){ const antes=horaModo; if(modo && modo!==horaModo){ horaModo=modo; try{ aplicarLuz(); pintarBoton(); }catch(e){} X.pedir(); } return antes; }
-const PAISAJE = window.PAISAJE = { poner, luz, activo:()=>on, delta:0, muestras:0, fotos:{}, arboles:0 };
+/* la maqueta (maqueta.js) usa la ortofoto y los árboles, pero no el entorno ni el cielo */
+function maqueta(v){ maq=!!v; X.pedir(); }
+const PAISAJE = window.PAISAJE = { poner, luz, maqueta, activo:()=>on, esperar:()=>preparando||Promise.resolve(), arbolesPos:()=>posArb, delta:0, muestras:0, fotos:{}, arboles:0 };
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",montar); else montar();
 })();

@@ -96,7 +96,7 @@ const R3D = (()=>{
      fondo: se pinta antes que el terreno (el cielo). extras: después de la casa
      (horizonte, árboles). cam: cámara libre {ojo,foco,cerca,fov} para los
      recorridos; sin ella manda la órbita. niebla: [r,g,b,densidad por metro]. */
-  const EXT3={ fondo:null, extras:[], cam:null, niebla:[0.8,0.85,0.9,0], lejos:6000, sinFalda:false };
+  const EXT3={ fondo:null, extras:[], cam:null, niebla:[0.8,0.85,0.9,0], lejos:6000, sinFalda:false, textura:null, fovOrb:0.85 };
   let camE=null, camF=null, camFov=0.85;
   let H=null, texCv=null, texDirty=true, raf=0;
   let progS=null, progL=null, piezas=[], somB=null, loteCasa=null, LUZ=[-0.42,0.46,0.78];
@@ -310,12 +310,12 @@ const R3D = (()=>{
             idx: new Uint16Array(idx), n};
   }
   /* el faldón: una pared de tierra bajo cada tramo del borde, hasta una base común */
-  function construirFalda(oscuro){
-    faldaB=null; if(!FALDA.length) return;
+  /* los tramos del borde, en coordenadas de escena y con la exageración vigente */
+  function tramosBorde(){
+    if(!FALDA.length) return null;
     let m=null;                                    /* posiciones actuales de la malla */
-    try{ m=malla(); }catch(e){ return; }
+    try{ m=malla(); }catch(e){ return null; }
     let zmin=Infinity; FALDA.forEach(([p,q])=>{ zmin=Math.min(zmin,m.pos[p*3+2],m.pos[q*3+2]); });
-    const zb=(zmin-(EXT3.faldaHondo||6))*ve;
     /* el recorrido deja siempre el afuera del mismo lado del tramo: se decide
        el lado por mayoría una sola vez y vale para todos (así no quedan rayas) */
     let votos=0;
@@ -328,7 +328,13 @@ const R3D = (()=>{
       votos += fuera?1:-1;
       return [x1,y1,z1,x2,y2,z2,nx,ny];
     });
-    const sgn = votos>=0 ? 1 : -1;
+    return {tramos, sgn: votos>=0 ? 1 : -1, zmin, ve};
+  }
+  function construirFalda(oscuro){
+    faldaB=null;
+    const TB=tramosBorde(); if(!TB) return;
+    const {tramos, sgn, zmin}=TB;
+    const zb=(zmin-(EXT3.faldaHondo||6))*ve;
     const V=[],N=[],I=[];
     tramos.forEach(([x1,y1,z1,x2,y2,z2,nx,ny])=>{
       /* normal casi horizontal pero algo inclinada hacia arriba: el canto se lee
@@ -601,6 +607,9 @@ const R3D = (()=>{
       x.restore();
     }
 
+    /* extensiones que pintan sobre la piel del terreno (maqueta.js: sombras de
+       los árboles y el color de venta más marcado) */
+    if(EXT3.textura){ try{ EXT3.textura(x,{P,M,T,kx,ky,traza,foto,DATA,TER,PX}); }catch(e){ console.warn(e); } }
     /* los números ya no se estampan: van como globos que siempre miran a la cámara */
     texDirty=false;
     if(gl&&tex){
@@ -1260,7 +1269,7 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
     gl.useProgram(prog);
     const C3=EXT3.cam;
     OFF=C3 ? [0,0] : desfaseVista();
-    camE = C3 ? C3.ojo : ojo(); camF = C3 ? C3.foco : foco(); camFov = (C3 && C3.fov) || 0.85;
+    camE = C3 ? C3.ojo : ojo(); camF = C3 ? C3.foco : foco(); camFov = (C3 && C3.fov) || EXT3.fovOrb;
     const PR=persp(camFov,w/h,C3?(C3.cerca||0.4):5,EXT3.lejos), VW=mirar(camE,camF,[0,0,1]);
     const M=mul(corrimiento(OFF), mul(PR,VW));
     const oscuro3 = document.documentElement.dataset.theme==="dark" ||
@@ -1355,6 +1364,10 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
 
   /* ---------- interacción ---------- */
   const pts=new Map(); let arr=null, pin=null, movido=false;
+  /* con un lente más cerrado (la maqueta) la cámara tiene que poder alejarse más */
+  const distMax=()=>3200*Math.max(1, 0.85/EXT3.fovOrb);
+  /* cuánto más lejos hay que poner la cámara para ver lo mismo con el lente vigente */
+  const lente=()=>Math.tan(0.425)/Math.tan(EXT3.fovOrb/2);
   cv.addEventListener("pointerdown",e=>{
     cv.setPointerCapture(e.pointerId); pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     movido=false;
@@ -1366,7 +1379,7 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
     pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(pin&&pts.size===2){
       const[a,b]=[...pts.values()];const nd=Math.hypot(a.x-b.x,a.y-b.y);
-      if(pin.d>4){dist=Math.max(DIST_MIN,Math.min(3200,pin.dist*pin.d/nd));pedir();}
+      if(pin.d>4){dist=Math.max(DIST_MIN,Math.min(distMax(),pin.dist*pin.d/nd));pedir();}
       movido=true; return;
     }
     if(!arr)return;
@@ -1388,7 +1401,7 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
     arr=null;
   }));
   cv.addEventListener("wheel",e=>{e.preventDefault();
-    dist=Math.max(DIST_MIN,Math.min(3200,dist*(e.deltaY>0?1.12:0.9)));pedir();},{passive:false});
+    dist=Math.max(DIST_MIN,Math.min(distMax(),dist*(e.deltaY>0?1.12:0.9)));pedir();},{passive:false});
   cv.addEventListener("contextmenu",e=>e.preventDefault());
 
   addEventListener("resize",()=>{if(activo)pedir();});
@@ -1415,7 +1428,7 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
       panX=c[0]-CX; panY=-(c[1]-CY);
       { const z=alturaEn(c[0],c[1]); cotaFoco = isNaN(z) ? null : z; }
       if(ancho||domo){ dist=RADIO_DOMO*3.0; elv=0.30; }   /* que quepa la bóveda entera */
-      else { dist=185; elv=0.44; }
+      else { dist=185*lente(); elv=0.44; }
       pedir();
     },
     quitarCasa(){ loteCasa=null; malloSolido(); if(domo)mallaSolar(); pedir(); },
@@ -1426,7 +1439,7 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
       const c=[K.o[0]+K.ux[0]*L/2+K.uv[0]*D/2, K.o[1]+K.ux[1]*L/2+K.uv[1]*D/2];
       panX=c[0]-CX; panY=-(c[1]-CY);
       { const z=alturaEn(c[0],c[1]); cotaFoco = isNaN(z) ? (K.z!=null?K.z:null) : z; }
-      dist=d||70; elv=(e!=null)?e:0.40;
+      dist=(d||70)*lente(); elv=(e!=null)?e:0.40;
       /* que la cámara mire desde la vía hacia el fondo: azimut según el eje v */
       az=Math.atan2(-K.uv[1], K.uv[0]) + Math.PI;
       pedir(); return true;
@@ -1479,6 +1492,10 @@ void main(){gl_FragColor=vec4(C.rgb*sh,C.a);}`;
       lejos(v){ EXT3.lejos=v; pedir(); },
       sinFalda(v){ EXT3.sinFalda=!!v; pedir(); },
       faldaColor(c,hondo){ EXT3.faldaColor=c||null; EXT3.faldaHondo=hondo||6; faldaSucia=true; pedir(); },
+      /* maqueta.js: pintar sobre la piel, el lente de la órbita y el borde del modelo */
+      textura(f){ EXT3.textura=f||null; texDirty=true; pedir(); },
+      fov(v){ EXT3.fovOrb = v||0.85; pedir(); },
+      borde:()=>{ if(!H) return null; try{ prepararBorde(); if(!FALDA.length) malla(); }catch(e){} return tramosBorde(); },
       luz(v){ LUZ=v; pedir(); },
       gl:()=>gl, pedir:()=>pedir(), pintarYa:()=>pintar3d(),
       alturaEn:(wx,wy)=>{ if(!H) decodificar(); return alturaEn(wx,wy); },
