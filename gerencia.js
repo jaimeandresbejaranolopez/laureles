@@ -353,8 +353,7 @@ const GERENCIA = window.GERENCIA = (()=>{
           '<td class="n">'+(c.n?mm(c.pact)+'<div class="mut">'+c.n+' con precio</div>':'<span class="nd">'+SIN+'</span>')+'</td><td class="n">'+(c.rec?mm(c.rec):'$0')+'</td></tr>'; }).join("")+
       '<tr class="tot"><td>Total</td><td class="n">'+T.sep+'</td><td class="n">'+T.ven+'</td><td class="n">'+comp+'</td><td class="n">'+mm(T.pactado)+'</td><td class="n">'+mm(T.recaudado)+'</td></tr></tbody></table></div></section>'+
 
-      '<section class="gzSec"><h3>Inventario disponible por lista</h3><p class="gzSub">'+T.disp+' lotes disponibles valorados con cada lista de precios (área útil × precio útil + protección × precio de protección).</p><div class="gzTb"><table><thead><tr><th>Lista</th><th>Condición</th><th class="n">Valor del inventario</th></tr></thead><tbody>'+
-      T.inv.map(x=>'<tr'+(x.et.n===S.etapa?' style="font-weight:700"':'')+'><td>'+x.et.l+'</td><td class="mut">'+esc(x.et.d)+'</td><td class="n">'+mm(x.v)+'</td></tr>').join("")+'</tbody></table></div></section></div>';
+      '</div>'+seccionEtapas();
 
     const cobertura = T.neg ? Math.round(T.conPlan/T.neg*100) : 0;
     h+='<section class="gzSec"><h3>Recaudo</h3><p class="gzSub">Programado según la forma de pago registrada de cada negocio, menos lo ya recibido. Las cuotas se cuentan vencidas cuando termina su mes.</p>'+
@@ -381,6 +380,23 @@ const GERENCIA = window.GERENCIA = (()=>{
     return h;
   }
 
+  /* lotes negociados en cada etapa a la fecha, y lo que vale lo que queda con cada lista */
+  function seccionEtapas(){
+    const T=M.T, por={}; let sinEt={n:0,ven:0,sep:0};
+    M.filas.forEach(r=>{ const k=r.etapa||0, o = k ? (por[k]=por[k]||{n:0,ven:0,sep:0,pact:0,m2:0}) : sinEt;
+      o.n++; if(r.e==="vendido") o.ven++; else o.sep++; if(k){ if(r.pactado) o.pact+=r.pactado; o.m2+=r.p.area_m2||0; } });
+    const e1=T.e1, quedanE1=e1.libre/e1.prom;
+    let h='<section class="gzSec"><h3>Lotes por etapa</h3><p class="gzSub">Negocios registrados en cada etapa a la fecha y valor de los '+T.disp+' lotes disponibles con cada lista (área útil × precio útil + protección × precio de protección).</p>'+
+      '<div class="gzTb"><table class="media"><thead><tr><th>Lista</th><th>Condición</th><th class="n">Negociados</th><th class="n">Vendidos</th><th class="n">Separados</th><th class="n">Pactado</th><th class="n">Inventario disponible</th></tr></thead><tbody>';
+    let tn=0, tv=0, ts=0, tp=0;
+    T.inv.forEach(x=>{ const o=por[x.et.n]||{n:0,ven:0,sep:0,pact:0,m2:0}; tn+=o.n; tv+=o.ven; ts+=o.sep; tp+=o.pact;
+      h+='<tr'+(x.et.n===S.etapa?' style="font-weight:700"':'')+'><td>'+x.et.l+'</td><td class="mut">'+esc(x.et.d)+
+        (x.et.n===1?'<div class="mut">Cupo 30 %: quedan '+m2f(e1.libre)+' (≈ '+quedanE1.toLocaleString("es-CO",{maximumFractionDigits:1})+' lotes)</div>':'')+'</td>'+
+        '<td class="n"><b>'+o.n+'</b></td><td class="n">'+o.ven+'</td><td class="n">'+o.sep+'</td><td class="n">'+(o.pact?mm(o.pact):'—')+'</td><td class="n">'+mm(x.v)+'</td></tr>'; });
+    if(sinEt.n) h+='<tr><td><span class="nd">Sin etapa</span></td><td class="mut">Negocios sin etapa registrada</td><td class="n"><b>'+sinEt.n+'</b></td><td class="n">'+sinEt.ven+'</td><td class="n">'+sinEt.sep+'</td><td class="n">—</td><td class="n">—</td></tr>';
+    h+='<tr class="tot"><td colspan="2">Total negociados · disponibles '+T.disp+'</td><td class="n">'+(tn+sinEt.n)+'</td><td class="n">'+(tv+sinEt.ven)+'</td><td class="n">'+(ts+sinEt.sep)+'</td><td class="n">'+mm(tp)+'</td><td class="n"></td></tr>';
+    return h+'</tbody></table></div></section>';
+  }
   function seccionE1(){
     const e=M.T.e1, pc=v=>(v/e.cupo*100);
     const seg2=(v,c,t,extra)=>v>0?'<i style="flex:'+v.toFixed(0)+';background:'+c+(extra||'')+'" title="'+t+': '+m2f(v)+'">'+(pc(v)>=9?Math.round(pc(v))+' %':'')+'</i>':'';
@@ -728,7 +744,11 @@ const GERENCIA = window.GERENCIA = (()=>{
       '<div class="cab">'+logo+'<div class="d"><b>Century 21 DAB · Gerencia técnica</b><br>Corte: '+D.cuando.toLocaleString("es-CO",{dateStyle:"long",timeStyle:"short"})+'</div></div>'+
       '<h1>Informe gerencial · Laureles Campestre</h1><div class="gzSub">Inventario, cartera y recaudo de la parcelación</div>'+
       '<h2>Inventario</h2><div class="ks">'+k("Disponibles",T.disp,"de 86 lotes")+k("Separados",T.sep,"Fajardo "+T.canal.fajardo.sep+" · C21 "+T.canal.c21.sep)+k("Vendidos",T.ven,"Fajardo "+T.canal.fajardo.ven+" · C21 "+T.canal.c21.ven)+k("Comprometido",Math.round((T.sep+T.ven)/86*100)+" %",(T.sep+T.ven)+" lotes")+'</div>'+
-      '<h2>Cupo de la etapa 1 (30 % del área vendible)</h2><div class="ks">'+k("Cupo E1",m2f(T.e1.cupo),"de "+m2f(T.e1.total))+k("Usado",Math.round(T.e1.usado/T.e1.cupo*100)+" %",m2f(T.e1.usado)+" · "+(T.e1.nVen+T.e1.nSep)+" lotes")+k("Queda",m2f(T.e1.libre),"≈ "+(T.e1.libre/T.e1.prom).toLocaleString("es-CO",{maximumFractionDigits:1})+" lotes promedio")+k("Sin etapa",T.e1.nSin,m2f(T.e1.sinEt))+'</div>'+'<h2>Recaudo</h2>'+(T.conPlan<T.neg?'<div class="av">Forma de pago registrada en '+T.conPlan+' de '+T.neg+' negocios: las proyecciones sólo suman esos. Los demás figuran como '+SIN+'.</div>':'')+
+      '<h2>Cupo de la etapa 1 (30 % del área vendible)</h2><div class="ks">'+k("Cupo E1",m2f(T.e1.cupo),"de "+m2f(T.e1.total))+k("Usado",Math.round(T.e1.usado/T.e1.cupo*100)+" %",m2f(T.e1.usado)+" · "+(T.e1.nVen+T.e1.nSep)+" lotes")+k("Queda",m2f(T.e1.libre),"≈ "+(T.e1.libre/T.e1.prom).toLocaleString("es-CO",{maximumFractionDigits:1})+" lotes promedio")+k("Sin etapa",T.e1.nSin,m2f(T.e1.sinEt))+'</div>'+'<h2>Lotes por etapa</h2><table><thead><tr><th>Lista</th><th class="n">Negociados</th><th class="n">Vendidos</th><th class="n">Separados</th><th class="n">Inventario disponible</th></tr></thead><tbody>'+
+        (()=>{ const por={}; let sin=0; M.filas.forEach(r=>{ if(!r.etapa){ sin++; return; } const o=por[r.etapa]=por[r.etapa]||{n:0,v:0,s:0}; o.n++; if(r.e==="vendido") o.v++; else o.s++; });
+          return T.inv.map(x=>{ const o=por[x.et.n]||{n:0,v:0,s:0}; return '<tr><td>'+x.et.l+' · '+esc(x.et.d)+'</td><td class="n">'+o.n+'</td><td class="n">'+o.v+'</td><td class="n">'+o.s+'</td><td class="n">'+cop(x.v)+'</td></tr>'; }).join("")+
+            (sin?'<tr><td class="nd">Sin etapa registrada</td><td class="n">'+sin+'</td><td></td><td></td><td></td></tr>':''); })()+
+      '</tbody></table>'+'<h2>Recaudo</h2>'+(T.conPlan<T.neg?'<div class="av">Forma de pago registrada en '+T.conPlan+' de '+T.neg+' negocios: las proyecciones sólo suman esos. Los demás figuran como '+SIN+'.</div>':'')+
       '<div class="ks">'+k("Recaudado a hoy",mm(T.recaudado))+k("Por recaudar a dic-"+String(a).slice(2),mm(T.pend1))+k("Por recaudar en "+(a+1),mm(T.pend2))+k("En mora",mm(T.mora))+'</div>'+
       '<table style="margin-top:8px"><thead><tr><th>Año</th><th class="n">Programado</th><th class="n">Recibido</th><th class="n">Por recaudar</th></tr></thead><tbody>'+
         Object.keys(anios).sort().map(y=>'<tr><td>'+y+'</td><td class="n">'+cop(anios[y].prog)+'</td><td class="n">'+cop(anios[y].real)+'</td><td class="n">'+cop(+y===a?T.pend1:+y===a+1?T.pend2:+y===a+2?T.pend3:0)+'</td></tr>').join("")+'</tbody></table>'+
