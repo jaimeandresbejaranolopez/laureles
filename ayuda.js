@@ -187,12 +187,13 @@ const PASOS = [
 /* ------------------------------ estilos ------------------------------ */
 const css = document.createElement("style");
 css.textContent = `
-.ayBtn{position:absolute;right:10px;top:10px;z-index:7;width:44px;height:44px;border-radius:50%;border:0;cursor:pointer;
-  background:var(--forest,#32402F);color:#F6F4EC;font:700 21px/1 Georgia,"Times New Roman",serif;display:grid;place-items:center;
-  box-shadow:0 0 0 2px rgba(255,255,255,.9),0 6px 18px rgba(28,34,27,.28);transition:transform .2s}
+.ayBtn{position:absolute;right:10px;top:10px;z-index:7;width:32px;height:32px;border-radius:50%;border:0;cursor:pointer;padding:0;
+  background:var(--forest,#32402F);color:#F6F4EC;font:700 17px/1 Georgia,"Times New Roman",serif;display:grid;place-items:center;
+  box-shadow:0 0 0 2px rgba(255,255,255,.9),0 4px 12px rgba(28,34,27,.26);transition:transform .2s}
+@media (pointer:coarse){.ayBtn{width:36px;height:36px;font-size:19px}}
 .ayBtn:hover{transform:scale(1.07)}
 .ayBtn:focus-visible{outline:3px solid #EBD9AE;outline-offset:3px}
-.ayBtn.nuevo:after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid #B8955C;animation:ayLatir 1.8s ease-out infinite}
+.ayBtn.nuevo:after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid #B8955C;animation:ayLatir 1.8s ease-out infinite}
 @keyframes ayLatir{0%{transform:scale(.85);opacity:.9}100%{transform:scale(1.35);opacity:0}}
 body.enRecorrido .ayBtn, body.enRecorrido .ayBur{display:none}
 .ayBur{position:absolute;z-index:7;right:64px;max-width:230px;background:#32402F;color:#F6F4EC;border-radius:12px;padding:9px 12px;
@@ -272,11 +273,15 @@ rotularBtn();
 function colocar(){
   const rm = main.getBoundingClientRect();
   const col = document.querySelector(".maplibregl-ctrl-top-right");
-  let top = 10;
-  if(col && !es3d()){ const r = col.getBoundingClientRect(); if(r.height) top = Math.round(r.bottom - rm.top + 2); }
+  let top = 10, der = 10;
+  const tam = btn.offsetWidth || 32;
+  /* centrado con la columna de MapLibre y con aire debajo de la ubicación */
+  if(col && !es3d()){ const r = col.getBoundingClientRect();
+    if(r.height){ top = Math.round(r.bottom - rm.top + 10);
+      const g = col.querySelectorAll(".maplibregl-ctrl"), u = g.length ? g[g.length-1].getBoundingClientRect() : r;
+      if(u.width) der = Math.max(4, Math.round(rm.right - (u.left + u.width/2) - tam/2)); } }
   /* con la ficha del lote abierta a la derecha (computador), el botón se corre
      a su lado izquierdo para no tapar el precio ni el botón de cerrar */
-  let der = 10;
   const fi = document.getElementById("ficha");
   if(fi && fi.classList.contains("on")){
     const rf = fi.getBoundingClientRect();
@@ -284,7 +289,7 @@ function colocar(){
       der = Math.round(rm.right - rf.left + 10); top = 10; }
   }
   btn.style.top = top + "px"; btn.style.right = der + "px";
-  if(bur){ bur.style.top = (top + 4) + "px"; bur.style.right = (der + 54) + "px"; }
+  if(bur){ bur.style.top = (top - 6) + "px"; bur.style.right = (der + tam + 12) + "px"; }
 }
 let bur = null;
 function burbuja(){
