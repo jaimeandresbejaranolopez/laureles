@@ -310,7 +310,7 @@ function mostrarFin(){
   const vista=p.topo_ok&&p.vista_hacia ? " La ladera mira al "+p.vista_hacia+"." : "";
   finEl.innerHTML='<b>Estás en el centro del lote '+R.lote+'.</b> Arrastra para mirar alrededor.'+vista+
     '<div class="acc"><button class="pri" id="recAgenda">Agendar visita</button><button id="recWa">Escribir por WhatsApp</button><button id="recOtra">Ver otra vez</button><button id="recCerrarFin">Seguir mirando</button></div>'+
-    '<div class="nota">Terreno del levantamiento topográfico y ortofoto del dron. Los árboles de la ronda son representativos.</div>';
+    '<div class="nota">Terreno del levantamiento topográfico y ortofoto del dron. Los árboles grandes están ubicados sobre la ortofoto del dron (altura aproximada); los del bosque de la ronda son representativos.</div>';
   document.body.appendChild(finEl);
   requestAnimationFrame(()=>finEl.classList.add("on"));
   finEl.querySelector("#recAgenda").onclick=()=>{ const n=R.lote; salir(true); setTimeout(()=>{ try{ if(window.ACCESO&&ACCESO.agenda) ACCESO.agenda(); }catch(e){} }, 300); };

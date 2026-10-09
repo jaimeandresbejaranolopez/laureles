@@ -218,7 +218,7 @@ function dentroAnillo(pt,ring){ let d=false;
   for(let i=0,j=ring.length-1;i<ring.length;j=i++){ const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];
     if(((yi>pt[1])!==(yj>pt[1]))&&(pt[0]<(xj-xi)*(pt[1]-yi)/(yj-yi)+xi)) d=!d; } return d; }
 function mallaArboles(orto){
-  const prot=(D.DATA&&D.DATA.prot)||[]; if(!prot.length) return [];
+  const prot=(D.DATA&&D.DATA.prot)||[];
   let semilla=7; const az=()=>{ semilla=(semilla*1103515245+12345)&0x7fffffff; return semilla/0x7fffffff; };
   const paso=5.2;                                        /* metros entre candidatos */
   const kLon=paso/D.KX, kLat=paso/D.KY;
@@ -229,16 +229,11 @@ function mallaArboles(orto){
     V.length=N.length=C.length=I.length=0; };
   const SEG=9;
   let cuantos=0; posArb=[];
-  prot.forEach(ring=>{
-    let lo0=Infinity,lo1=-Infinity,la0=Infinity,la1=-Infinity;
-    ring.forEach(p=>{ lo0=Math.min(lo0,p[0]); lo1=Math.max(lo1,p[0]); la0=Math.min(la0,p[1]); la1=Math.max(la1,p[1]); });
-    for(let la=la0; la<=la1; la+=kLat) for(let lo=lo0; lo<=lo1; lo+=kLon){
-      const lon=lo+(az()-0.5)*kLon*0.8, lat=la+(az()-0.5)*kLat*0.8;
-      if(!dentroAnillo([lon,lat],ring)) continue;
-      if(orto){ const c=copaEn(orto,lon,lat); if(c===0) continue; }   /* pasto: sin árbol */
-      const e=aEscena(lon,lat), hz=X.alturaEn(e[2],e[3]); if(isNaN(hz)) continue;
+  /* un árbol: tronco y copa, apoyado en el terreno medido */
+  const plantar=(lon,lat,radio,alto)=>{
+      const e=aEscena(lon,lat), hz=X.alturaEn(e[2],e[3]); if(isNaN(hz)) return false;
       const z0=(hz-D.ZMID)*D.ve;
-      const alto=8+az()*9, radio=2.4+az()*1.8, tronco=alto*0.38;
+      const tronco=alto*0.38;
       const verde=[[0.20,0.33,0.16],[0.25,0.38,0.18],[0.17,0.29,0.15],[0.29,0.40,0.20]][Math.floor(az()*4)];
       if(V.length/3 + SEG*4+12 > 65000) cerrar();
       /* tronco: prisma de 4 caras */
@@ -262,14 +257,30 @@ function mallaArboles(orto){
         I.push(r1+s,r1+s2,r2+s); I.push(r1+s2,r2+s2,r2+s);
         I.push(r2+s,r2+s2,cima); }
       posArb.push([lon,lat,radio,alto]);
-      cuantos++;
+      cuantos++; return true;
+  };
+  prot.forEach(ring=>{
+    let lo0=Infinity,lo1=-Infinity,la0=Infinity,la1=-Infinity;
+    ring.forEach(p=>{ lo0=Math.min(lo0,p[0]); lo1=Math.max(lo1,p[0]); la0=Math.min(la0,p[1]); la1=Math.max(la1,p[1]); });
+    for(let la=la0; la<=la1; la+=kLat) for(let lo=lo0; lo<=lo1; lo+=kLon){
+      const lon=lo+(az()-0.5)*kLon*0.8, lat=la+(az()-0.5)*kLat*0.8;
+      if(!dentroAnillo([lon,lat],ring)) continue;
+      if(orto){ const c=copaEn(orto,lon,lat); if(c===0) continue; }   /* pasto: sin árbol */
+      const alto=8+az()*9, radio=2.4+az()*1.8;
+      plantar(lon,lat,radio,alto);
     }
   });
+  /* árboles reales: las copas grandes marcadas una por una sobre la ortofoto del
+     dron (datos-arboles.js), con su diámetro medido. Los que caen en la faja de
+     protección ya los cubre la ronda de arriba y no se repiten. Altura indicativa. */
+  let reales=0;
+  (window.__ARBOLES||[]).forEach(t=>{ if(t[4]) return; if(plantar(t[0],t[1],t[2]/2,t[3])) reales++; });
+  arbolesReales=reales;
   cerrar();
   arbolesCuantos=cuantos;
   return trozos;
 }
-let arbolesCuantos=0, arbolesVE=null, ortoMosaico=null, mascara=null;
+let arbolesReales=0, arbolesCuantos=0, arbolesVE=null, ortoMosaico=null, mascara=null;
 /* Máscara del predio: 1 donde hay levantamiento. El relieve del entorno (SRTM,
    30 m, y con la copa de los árboles incluida) se descarta ahí: en la cañada
    quedaba por encima del terreno medido y tapaba el predio con manchas oscuras. */
@@ -398,7 +409,7 @@ async function preparar(){
   }
   /* 3. árboles */
   reconstruirArboles();
-  PAISAJE.arboles=arbolesCuantos;
+  PAISAJE.arboles=arbolesCuantos; PAISAJE.reales=arbolesReales;
   preparado=true;
 }
 
