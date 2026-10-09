@@ -259,6 +259,7 @@ function mallaArboles(orto){
       posArb.push([lon,lat,radio,alto]);
       cuantos++; return true;
   };
+  const REALES=window.__ARBOLES||[];
   prot.forEach(ring=>{
     let lo0=Infinity,lo1=-Infinity,la0=Infinity,la1=-Infinity;
     ring.forEach(p=>{ lo0=Math.min(lo0,p[0]); lo1=Math.max(lo1,p[0]); la0=Math.min(la0,p[1]); la1=Math.max(la1,p[1]); });
@@ -267,14 +268,16 @@ function mallaArboles(orto){
       if(!dentroAnillo([lon,lat],ring)) continue;
       if(orto){ const c=copaEn(orto,lon,lat); if(c===0) continue; }   /* pasto: sin árbol */
       const alto=8+az()*9, radio=2.4+az()*1.8;
+      /* donde ya hay un árbol real medido, la ronda no inventa otro encima */
+      if(REALES.some(t=>Math.hypot((lon-t[0])*D.KX,(lat-t[1])*D.KY) < t[2]/2+radio*0.6)) continue;
       plantar(lon,lat,radio,alto);
     }
   });
   /* árboles reales: las copas grandes marcadas una por una sobre la ortofoto del
-     dron (datos-arboles.js), con su diámetro medido. Los que caen en la faja de
-     protección ya los cubre la ronda de arriba y no se repiten. Altura indicativa. */
+     dron (datos-arboles.js), con su diámetro medido, también los de la faja de
+     protección: ahí la ronda sólo rellena donde no hay uno real. Altura indicativa. */
   let reales=0;
-  (window.__ARBOLES||[]).forEach(t=>{ if(t[4]) return; if(plantar(t[0],t[1],t[2]/2,t[3])) reales++; });
+  REALES.forEach(t=>{ if(plantar(t[0],t[1],t[2]/2,t[3])) reales++; });
   arbolesReales=reales;
   cerrar();
   arbolesCuantos=cuantos;

@@ -6038,6 +6038,7 @@ function dibujarPlantaPDF(P,V,L,A,casa,px0,py0,pw,ph){
   const ct=Math.cos(th), stt=Math.sin(th);
   const R=p=>[p[0]*ct-p[1]*stt, p[0]*stt+p[1]*ct];
   const g=g0.map(R);
+  const RinvPend = q=>[q[0]*ct+q[1]*stt, -q[0]*stt+q[1]*ct];
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
   const met=p=>{x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);y0=Math.min(y0,p[1]);y1=Math.max(y1,p[1]);};
   g.forEach(met); if(A.c)A.c.map(R).forEach(met); if(casa)casa.g.map(R).forEach(met);
@@ -6056,6 +6057,51 @@ function dibujarPlantaPDF(P,V,L,A,casa,px0,py0,pw,ph){
   P.guarda();
   P.recorte([[px0,py0],[px0+pw,py0],[px0+pw,py0+ph],[px0,py0+ph]]);
   col([240,239,227]); P.poli(g0.map(XY),"f");
+
+  /* todo se dibuja y el recorte del recuadro se encarga de lo que sobra:
+     filtrar por vértices dejaba fuera las vías que sólo cruzan el encuadre */
+  const cortaCaja=ps=>{
+    let dentro=false, prev=null;
+    for(const p of ps){ const q=R(p);
+      const d=q[0]>x0-40&&q[0]<x1+40&&q[1]>y0-40&&q[1]<y1+40;
+      if(d||(prev&&prev.d)) dentro=true;
+      prev={d};
+    }
+    return dentro;
+  };
+  /* la faja de protección va primero, de fondo: el color de la pendiente se pinta
+     encima dentro del lote y la faja queda marcada con su borde */
+  const PROTV=DATA.prot.map(r=>r.map(PX)).filter(cortaCaja);
+  PROTV.forEach(rr=>{ col([198,216,193]); P.poli(rr.map(XY),"f"); });
+  /* EL MAPA DE PENDIENTES TAMBIÉN EN LA HOJA QUE SE DESCARGA.
+     En pantalla el lote sale pintado con los cinco colores de pendiente, pero el
+     PDF sólo llevaba el fondo liso y las curvas: el cliente veía una cosa y se
+     llevaba otra. Aquí se pinta el mismo dato —MDT.pendiente punto a punto,
+     mismos colores de CLASES— sobre un lienzo en el marco girado de esta planta,
+     se mete como JPEG y se recorta al lindero. Donde no hay levantamiento queda
+     el fondo liso, y encima va el rayado de siempre. */
+  try{
+    const bw=x1-x0, bh=y1-y0, k=Math.min(6, 1400/Math.max(bw,bh));
+    const CW=Math.max(2,Math.round(bw*k)), CH=Math.max(2,Math.round(bh*k));
+    const cv=document.createElement("canvas"); cv.width=CW; cv.height=CH;
+    const cx=cv.getContext("2d"); const im=cx.createImageData(CW,CH), Dd=im.data;
+    const RGBc=CLASES.map(c=>{ const v=c[2].replace("#",""); return [parseInt(v.slice(0,2),16),parseInt(v.slice(2,4),16),parseInt(v.slice(4,6),16)]; });
+    let pintados=0;
+    for(let py=0; py<CH; py++){ const ry=y0+(py+0.5)/k;
+      for(let px=0; px<CW; px++){ const rx=x0+(px+0.5)/k, q=(py*CW+px)*4;
+        let c=[240,239,227];
+        const pl=RinvPend([rx,ry]);
+        if(dentroAnillo(pl[0],pl[1],g0)){ const pe=MDT.pendiente(pl[0],pl[1]); if(!isNaN(pe)){ c=RGBc[MDT.clase(pe)]; pintados++; } }
+        Dd[q]=c[0]; Dd[q+1]=c[1]; Dd[q+2]=c[2]; Dd[q+3]=255; } }
+    if(pintados){
+      cx.putImageData(im,0,0);
+      PDFmin.registrarJPEG("Pend", cv.toDataURL("image/jpeg",0.9).split(",")[1], CW, CH);
+      P.guarda(); P.recorte(g0.map(XY));
+      P.imagen("Pend", ox, oy, bw*s, bh*s);
+      P.recupera();
+    }
+  }catch(e){ console.warn("pendientes PDF:",e); }
+  PROTV.forEach(rr=>{ col(V.prot,1).grosor(.6); P.poli(rr.map(XY),"S"); });
 
   /* Las curvas de nivel sobre la planta: es lo que pedía el cliente para leer el
      lote sin tener que abrir el plano topográfico. Se calculan del mismo modelo
@@ -6083,20 +6129,6 @@ function dibujarPlantaPDF(P,V,L,A,casa,px0,py0,pw,ph){
     }
   });
 
-  /* todo se dibuja y el recorte del recuadro se encarga de lo que sobra:
-     filtrar por vértices dejaba fuera las vías que sólo cruzan el encuadre */
-  const cortaCaja=ps=>{
-    let dentro=false, prev=null;
-    for(const p of ps){ const q=R(p);
-      const d=q[0]>x0-40&&q[0]<x1+40&&q[1]>y0-40&&q[1]<y1+40;
-      if(d||(prev&&prev.d)) dentro=true;
-      prev={d};
-    }
-    return dentro;
-  };
-  DATA.prot.forEach(r=>{ const rr=r.map(PX);
-    if(cortaCaja(rr)){ col([198,216,193]); P.poli(rr.map(XY),"f");
-      col(V.prot,1).grosor(.5); P.poli(rr.map(XY),"S"); } });
 
   /* La parte del lote SIN curvas de nivel va rayada también en la hoja que se
      entrega. En pantalla se resuelve con un patrón; aquí el PDF no los maneja,
