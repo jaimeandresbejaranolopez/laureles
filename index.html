@@ -30,13 +30,13 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20261009b">
+<link rel="stylesheet" href="maplibre-gl.css?v=20261026a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20261009b">
-<link rel="stylesheet" href="portada.css?v=20261009b">
-<link rel="stylesheet" href="analisis.css?v=20261009b">
+<link rel="stylesheet" href="armazon.css?v=20261026a">
+<link rel="stylesheet" href="portada.css?v=20261026a">
+<link rel="stylesheet" href="analisis.css?v=20261026a">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -663,7 +663,7 @@ body.baseClara .rotCota{color:#6B5C38;
             <button id="bq">Ir</button>
           </div>
         </div>
-        <div class="blk">
+        <div class="blk" style="display:none">
           <div class="et">Etapa de venta</div>
           <div class="seg" id="segEtapa"></div>
           <div class="pista" id="etapaPista" style="font-size:11.5px;color:var(--muted);margin-top:6px"></div>
@@ -863,29 +863,14 @@ body.baseClara .rotCota{color:#6B5C38;
   </section>
 
   <section class="ptSec" id="ptPrecios">
-    <div class="ptIn ptCab"><div><div class="ptEb"><svg class="ptIc " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 20.5h17"></path><path d="m4.5 16 5-5 3.5 3.5 6.5-7"></path><path d="M15 7.5h4.5V12"></path></svg>Etapas y precios</div><h2>Mientras antes, mejor precio</h2></div><p class="ptLead">El precio de cada lote es su área útil por el valor del m² útil de la etapa, más su área de protección por el valor del m² de protección.</p></div>
+    <div class="ptIn ptCab"><div><div class="ptEb"><svg class="ptIc " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 20.5h17"></path><path d="m4.5 16 5-5 3.5 3.5 6.5-7"></path><path d="M15 7.5h4.5V12"></path></svg>Precios</div><h2>Un solo precio de lista</h2></div><p class="ptLead">El precio de cada lote es su área útil por el valor del m² útil, más su área de protección por el valor del m² de protección.</p></div>
     <div class="ptIn ptEtapas">
-    <div class="ptEt ptEt1">
-      <div class="ptEtH"><b>E1</b><div><strong>20 % menos que la lista</strong><span>De contado</span></div></div>
-      <div class="ptEtP"><small>desde</small><strong>$297 M</strong><small class="h">hasta $699 M</small></div>
-      <div class="ptEtM"><span>m² útil <b>$132.000</b></span><span>m² protección <b>$60.000</b></span></div>
-    </div>
     <div class="ptEt">
-      <div class="ptEtH"><b>E2</b><div><strong>10 % menos</strong><span>60 % en 2026</span></div></div>
-      <div class="ptEtP"><small>desde</small><strong>$334 M</strong><small class="h">hasta $786 M</small></div>
-      <div class="ptEtM"><span>m² útil <b>$148.500</b></span><span>m² protección <b>$67.500</b></span></div>
-    </div>
-    <div class="ptEt">
-      <div class="ptEtH"><b>E3</b><div><strong>5 % menos</strong><span>50 % en 2026</span></div></div>
-      <div class="ptEtP"><small>desde</small><strong>$353 M</strong><small class="h">hasta $830 M</small></div>
-      <div class="ptEtM"><span>m² útil <b>$156.750</b></span><span>m² protección <b>$71.250</b></span></div>
-    </div>
-    <div class="ptEt">
-      <div class="ptEtH"><b>E4</b><div><strong>Precio de lista</strong><span>20 % en 2026</span></div></div>
+      <div class="ptEtH"><b>$</b><div><strong>Precio de lista</strong><span>20 % en 2026</span></div></div>
       <div class="ptEtP"><small>desde</small><strong>$371 M</strong><small class="h">hasta $874 M</small></div>
       <div class="ptEtM"><span>m² útil <b>$165.000</b></span><span>m² protección <b>$75.000</b></span></div>
     </div></div>
-    <div class="ptIn ptPago"><h3>Así se paga</h3><ol><li><svg class="ptIc ptIcP" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 13.5 7 12l4 3h3.5a1.5 1.5 0 0 1 0 3H10"></path><path d="M14.5 18h3.8l2.7-3.3a1.4 1.4 0 0 0-2-1.9L17 14.5"></path><path d="M3.5 20.5V11"></path><path d="M13 4.5h4.5M15.25 2.5v4.5"></path></svg><span>Separas con $50.000.000.</span></li><li><svg class="ptIc ptIcP" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path><path d="m9 15 2 2 4-4"></path></svg><span>La inicial de la etapa se completa en 2026.</span></li><li><svg class="ptIc ptIcP" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 20.5h17"></path><path d="m4.5 16 5-5 3.5 3.5 6.5-7"></path><path d="M15 7.5h4.5V12"></path></svg><span>El saldo va en 23 cuotas del 3 % del saldo, de enero de 2027 a noviembre de 2028.</span></li><li><svg class="ptIc ptIcP" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3.5h8l4 4V20a.5.5 0 0 1-.5.5H7a.5.5 0 0 1-.5-.5z"></path><path d="M14.5 3.5V8h4"></path><path d="M9.5 12h6M9.5 15h4"></path><circle cx="15.5" cy="18" r="1.6"></circle></svg><span>Una cuota final en diciembre de 2028. Sin intereses.</span></li></ol><p class="ptNota">Precios en pesos colombianos, sujetos a disponibilidad y a cambio. El precio exacto de cada lote está en su ficha, en el plano.</p></div>
+    <div class="ptIn ptPago"><h3>Así se paga</h3><ol><li><svg class="ptIc ptIcP" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 13.5 7 12l4 3h3.5a1.5 1.5 0 0 1 0 3H10"></path><path d="M14.5 18h3.8l2.7-3.3a1.4 1.4 0 0 0-2-1.9L17 14.5"></path><path d="M3.5 20.5V11"></path><path d="M13 4.5h4.5M15.25 2.5v4.5"></path></svg><span>Separas con $50.000.000.</span></li><li><svg class="ptIc ptIcP" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path><path d="m9 15 2 2 4-4"></path></svg><span>La cuota inicial del 20 % se completa en 2026.</span></li><li><svg class="ptIc ptIcP" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 20.5h17"></path><path d="m4.5 16 5-5 3.5 3.5 6.5-7"></path><path d="M15 7.5h4.5V12"></path></svg><span>El saldo va en 23 cuotas del 3 % del saldo, de enero de 2027 a noviembre de 2028.</span></li><li><svg class="ptIc ptIcP" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3.5h8l4 4V20a.5.5 0 0 1-.5.5H7a.5.5 0 0 1-.5-.5z"></path><path d="M14.5 3.5V8h4"></path><path d="M9.5 12h6M9.5 15h4"></path><circle cx="15.5" cy="18" r="1.6"></circle></svg><span>Una cuota final en diciembre de 2028. Sin intereses.</span></li></ol><p class="ptNota">Precios en pesos colombianos, sujetos a disponibilidad y a cambio. El precio exacto de cada lote está en su ficha, en el plano.</p></div>
   </section>
 
   <section class="ptSec ptCrema">
@@ -930,7 +915,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20261009b"></script>
+<script src="maplibre-gl.js?v=20261026a"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -952,7 +937,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20261009b"></script>
+<script src="lotes.js?v=20261026a"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -1018,14 +1003,20 @@ function planPago(v, e){
    protección × PRECIO_PROT, etapa por etapa. */
 const PRECIO_UTIL = {1:132000,2:148500,3:156750,4:165000,5:181500,6:198000};
 const PRECIO_PROT = {1: 60000,2: 67500,3: 71250,4: 75000,5: 82500,6: 90000};
-const ETAPAS = [
+/* Desde el 26/10/2026 el proyecto vende a un solo precio: la lista E4 (VENTA 0).
+   Las demás etapas quedan sólo en ETAPAS_HIST, para leer negocios ya pactados en el
+   tablero de gerencia; la plataforma no muestra ningún otro precio. */
+const ETAPAS_HIST = [
   {n:1,l:"E1",d:"Contado, −20% sobre lista"},
   {n:2,l:"E2",d:"60% al cierre del año, −10%"},
   {n:3,l:"E3",d:"50% al cierre del año, −5%"},
-  {n:4,l:"E4",d:"Lista VENTA 0"},
+  {n:4,l:"E4",d:"Precio de lista"},
   {n:5,l:"E5",d:"Lista +10%"},
   {n:6,l:"E6",d:"Lista +20%"}
 ];
+const ETAPAS = ETAPAS_HIST.filter(e=>e.n===4);
+const etapaAct = () => ETAPAS.find(e=>e.n===S.etapa) || ETAPAS[0];
+window.ETAPAS_HIST = ETAPAS_HIST;
 const ESTADOS = {
   disponible:{t:"Disponible", c:"#4C8862", k:"disp"},
   separado:  {t:"Separado",   c:"#C48A2A", k:"sep"},
@@ -1050,7 +1041,7 @@ function colorLote(p){
 window.colorLote=colorLote; window.CANAL=CANAL;
 
 const S = {
-  etapa: leer("laureles.etapa", 1),
+  etapa: 4,                                  // precio único: lista E4
   estados: new Set(["disponible","separado","vendido","reservado"]),
   minArea: 0, maxPrec: 700, sel: null,
   fondo: leer("laureles.fondo","sat"),
@@ -2004,7 +1995,7 @@ function refrescar(){
   const T=LOTES.features.length;
   document.getElementById("kpis").innerHTML =
     kpi(nD+"/"+T,"Lotes libres") +
-    kpi("$"+(val/1e9).toFixed(2).replace(".",",")+" MM","Inventario "+ETAPAS[S.etapa-1].l) +
+    kpi("$"+(val/1e9).toFixed(2).replace(".",",")+" MM","Inventario "+etapaAct().l) +
     kpi(m2u.toLocaleString("es-CO"),"m² útiles libres") +
     kpi(Math.round((nS+nV)/T*100)+" %","Colocado");
   document.getElementById("cuenta").innerHTML =
@@ -2359,7 +2350,7 @@ if(window.visualViewport) visualViewport.addEventListener("resize", ()=>{
 });
 function pintarFicha(n){
   const f=LOTES.features.find(x=>x.properties.lote===n); if(!f)return;
-  const p=f.properties, E=ESTADOS[p.estado], et=ETAPAS[S.etapa-1], v=precio(p,S.etapa);
+  const p=f.properties, E=ESTADOS[p.estado], et=etapaAct(), v=precio(p,S.etapa);
   const topo = p.topo_ok
     ? '<tr><td>Cota</td><td>'+p.cota_min.toFixed(0)+'–'+p.cota_max.toFixed(0)+' m s. n. m.</td></tr>'+
       '<tr><td>Desnivel dentro del lote</td><td>'+String(p.desnivel_m).replace(".",",")+' m</td></tr>'+
@@ -2384,7 +2375,7 @@ function pintarFicha(n){
   '</div>'+
   '<div class="fb">'+
     '<div class="precio">'+cop(v)+'</div>'+
-    '<div class="precio-sub">Etapa '+et.l+' · '+et.d+' · '+cop(v/p.area_m2)+' por m² bruto</div>'+
+    '<div class="precio-sub">Precio de lista · '+cop(v/p.area_m2)+' por m² bruto</div>'+
     '<div class="fExtras" id="fExtras"></div>'+
     /* la lista de esta etapa, que es lo que se negocia: el metro útil y el protegido */
     '<div class="tarifa">'+
@@ -3025,7 +3016,7 @@ ETAPAS.forEach(e=>{
     document.getElementById("etapaPista").textContent=e.d; refrescar(); };
   segE.appendChild(b);
 });
-document.getElementById("etapaPista").textContent=ETAPAS[S.etapa-1].d;
+document.getElementById("etapaPista").textContent=etapaAct().d;
 
 const chips=document.getElementById("chips");
 function pintarChips(){
@@ -3222,7 +3213,7 @@ function acercaDe(){
     '<p><b>Sin curvas.</b> Seis lotes del extremo norte y del vértice occidental quedan fuera del área '+
     'levantada; su ficha lo advierte y no muestra cota ni pendiente.</p>'+
     '<p><b>Áreas y precios.</b> Las áreas son las rotuladas en el plano. Los precios se calculan como '+
-    'área útil × valor del m² útil de la etapa, más área de protección × su valor. Son precios de '+
+    'área útil × valor del m² útil, más área de protección × su valor. Son precios de '+
     'trabajo, no una oferta comercial.</p>'+
     '<p><b>Imagen de fondo.</b> Satelital de Esri World Imagery; mapa claro y oscuro de CARTO sobre '+
     'datos de OpenStreetMap. Ninguno requiere llave. Cuando esté la ortofoto del dron, reemplaza al '+
@@ -3433,28 +3424,28 @@ function compartirLote(p){
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png","vida_perfil_vial":"medios/vida_perfil_vial.jpg","vida_ciclorruta":"medios/vida_ciclorruta.jpg","vida_infantil":"medios/vida_infantil.jpg","vida_gimnasio":"medios/vida_gimnasio.jpg","vida_padel":"medios/vida_padel.jpg"};</script>
-<script src="datos-analisis.js?v=20261009b"></script>
-<script src="datos-terreno.js?v=20261009b"></script>
-<script src="datos-logo.js?v=20261009b"></script>
-<script src="adaptador.js?v=20261009b"></script>
-<script src="analisis.js?v=20261009b"></script>
-<script src="datos-via.js?v=20261009b"></script>
-<script src="datos-entrada.js?v=20261009b"></script>
-<script src="r3d.js?v=20261009b"></script>
-<script src="datos-arboles.js?v=20261009b"></script>
-<script src="paisaje.js?v=20261009b"></script>
-<script src="recorrido.js?v=20261009b"></script>
-<script src="maqueta.js?v=20261009b"></script>
-<script src="visor360.js?v=20261009b"></script>
-<script src="sitios-iconos.js?v=20261009b"></script>
-<script src="armazon.js?v=20261009b"></script>
-<script src="acceso.js?v=20261009b"></script>
-<script src="portada.js?v=20261009b"></script>
-<script src="ia.js?v=20261009b"></script>
-<script src="panel.js?v=20261009b"></script>
-<script src="gerencia.js?v=20261009b"></script>
-<script src="comparador.js?v=20261009b"></script>
-<script src="ayuda.js?v=20261009b"></script>
+<script src="datos-analisis.js?v=20261026a"></script>
+<script src="datos-terreno.js?v=20261026a"></script>
+<script src="datos-logo.js?v=20261026a"></script>
+<script src="adaptador.js?v=20261026a"></script>
+<script src="analisis.js?v=20261026a"></script>
+<script src="datos-via.js?v=20261026a"></script>
+<script src="datos-entrada.js?v=20261026a"></script>
+<script src="r3d.js?v=20261026a"></script>
+<script src="datos-arboles.js?v=20261026a"></script>
+<script src="paisaje.js?v=20261026a"></script>
+<script src="recorrido.js?v=20261026a"></script>
+<script src="maqueta.js?v=20261026a"></script>
+<script src="visor360.js?v=20261026a"></script>
+<script src="sitios-iconos.js?v=20261026a"></script>
+<script src="armazon.js?v=20261026a"></script>
+<script src="acceso.js?v=20261026a"></script>
+<script src="portada.js?v=20261026a"></script>
+<script src="ia.js?v=20261026a"></script>
+<script src="panel.js?v=20261026a"></script>
+<script src="gerencia.js?v=20261026a"></script>
+<script src="comparador.js?v=20261026a"></script>
+<script src="ayuda.js?v=20261026a"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

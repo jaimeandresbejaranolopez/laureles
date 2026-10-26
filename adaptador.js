@@ -21,13 +21,8 @@
 
   const PR_A={1:60000,2:67500,3:71250,4:75000,5:82500,6:90000};
   const PV_A={1:132000,2:148500,3:156750,4:165000,5:181500,6:198000};
-  const ETAPAS_A=[
-   {n:1,l:"E1",d:"Contado, −20% sobre lista"},
-   {n:2,l:"E2",d:"60% al cierre del año, −10%"},
-   {n:3,l:"E3",d:"50% al cierre del año, −5%"},
-   {n:4,l:"E4",d:"Lista VENTA 0"},
-   {n:5,l:"E5",d:"Lista +10%"},
-   {n:6,l:"E6",d:"Lista +20%"}];
+  /* precio único desde el 26/10/2026: sólo la lista E4 */
+  const ETAPAS_A=[{n:4,l:"E4",d:"Precio de lista"}];
   const EST_A={DISPONIBLE:{c:"var(--disp)",k:"d",t:"Disponible"},
                RESERVADO:{c:"var(--resv)",k:"r",t:"Reservado"},
                SEPARADO:{c:"var(--sep)",k:"s",t:"Separado"},
@@ -50,7 +45,7 @@
 
   /* la etapa y el lote seleccionado se leen del mapa, no se copian */
   const puente = {
-    get etapa(){ try{ return S.etapa; }catch(e){ return 1; } },
+    get etapa(){ return 4; },
     set etapa(v){ try{ S.etapa=v; }catch(e){} },
     get sel(){ try{ return S.sel; }catch(e){ return null; } },
     set sel(v){},

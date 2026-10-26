@@ -149,7 +149,7 @@ const GERENCIA = window.GERENCIA = (()=>{
     T.inv = ETAPAS.map(et=>({et, v:LOTES.features.filter(f=>{ const e=estado[f.properties.lote]||normEstado(f.properties.real||f.properties.estado); return !e||e==="disponible"; })
       .reduce((s,f)=>s+(precio(f.properties,et.n)||0),0)}));
     /* referencia: lo comprometido sin precio registrado, a lista E1 (no es lo pactado) */
-    T.sinPrecioE1 = filas.filter(r=>!r.pactado).reduce((s,r)=>s+(precio(r.p,1)||0),0);
+    T.sinPrecioE1 = filas.filter(r=>!r.pactado).reduce((s,r)=>s+(precio(r.p,4)||0),0);
     /* medios */
     T.medProg = {}; T.medRec = {};
     conPlan.forEach(r=>r.q.forEach(x=>{ T.medProg[x.medio]=(T.medProg[x.medio]||0)+x.valor; }));
@@ -346,7 +346,6 @@ const GERENCIA = window.GERENCIA = (()=>{
       '<div class="gzLey"><span><i style="background:#C0392B"></i>Vendidos '+T.ven+'</span><span><i style="background:#C48A2A"></i>Separados '+T.sep+'</span><span><i style="background:#4C8862"></i>Disponibles '+T.disp+'</span></div></section>';
     function seg(n,c,t){ return n ? '<i style="flex:'+n+';background:'+c+'" title="'+t+': '+n+'">'+(n>=4?n:"")+'</i>' : ""; }
 
-    h+=seccionE1();
     h+='<div class="gzG2"><section class="gzSec"><h3>Por canal</h3><p class="gzSub">Precio pactado y recaudo sólo de los negocios que tienen el precio registrado.</p><div class="gzTb"><table class="media"><thead><tr><th>Canal</th><th class="n">Separados</th><th class="n">Vendidos</th><th class="n">Total</th><th class="n">Pactado</th><th class="n">Recaudado</th></tr></thead><tbody>'+
       ["fajardo","c21","sin"].filter(k=>k!=="sin"||T.canal.sin.sep+T.canal.sin.ven).map(k=>{ const c=T.canal[k];
         return '<tr><td>'+(CANAL[k]?'<i class="gzDot" style="background:'+CANAL[k].c+'"></i>'+esc(CANAL[k].corto):'Sin canal')+'</td><td class="n">'+c.sep+'</td><td class="n">'+c.ven+'</td><td class="n"><b>'+(c.sep+c.ven)+'</b></td>'+
@@ -359,7 +358,7 @@ const GERENCIA = window.GERENCIA = (()=>{
     h+='<section class="gzSec"><h3>Recaudo</h3><p class="gzSub">Programado según la forma de pago registrada de cada negocio, menos lo ya recibido. Las cuotas se cuentan vencidas cuando termina su mes.</p>'+
       (T.conPlan<T.neg ? '<div class="gzAviso" style="margin-bottom:12px"><b>Forma de pago registrada en '+T.conPlan+' de '+T.neg+' negocios ('+cobertura+' %).</b> Las proyecciones sólo suman esos '+T.conPlan+'. '+
         'Los otros '+(T.neg-T.conPlan)+' aparecen como '+SIN+' en Cartera y pagos: ábrelos ahí y registra el precio y el plan.'+
-        (T.sinPrecioE1?' Como referencia, los lotes sin precio registrado valen '+mm(T.sinPrecioE1)+' a lista E1 (no es lo pactado).':'')+'</div>' : '')+
+        (T.sinPrecioE1?' Como referencia, los lotes sin precio registrado valen '+mm(T.sinPrecioE1)+' a la lista vigente (no es lo pactado).':'')+'</div>' : '')+
       '<div class="gzK">'+
         kpi("Recaudado a hoy", mm(T.recaudado), (k=>k+(k===1?" pago registrado":" pagos registrados"))(D.recaudos.filter(x=>!x.anulado).length), "ok")+
         kpi("Por recaudar a dic-"+String(a).slice(2), mm(T.pend1), "Lo programado hasta el 31 de diciembre de "+a+" que aún no entra")+
@@ -370,7 +369,7 @@ const GERENCIA = window.GERENCIA = (()=>{
 
     const tipos=T.tipos, medios=Object.keys(MEDIOS).filter(k=>T.medProg[k]||T.medRec[k]);
     h+='<div class="gzG2"><section class="gzSec"><h3>Formas de pago</h3><p class="gzSub">Cómo quedó pactado cada negocio separado o vendido.</p><div class="gzTb"><table><thead><tr><th>Forma de pago</th><th class="n">Negocios</th></tr></thead><tbody>'+
-      Object.keys(tipos).sort((x,y)=>tipos[y]-tipos[x]).map(k=>'<tr><td>'+({sin:'<span class="nd">'+SIN+'</span> · sin registrar', por_definir:'Precio registrado, cronograma por definir', personalizado:'Personalizado (pagos pactados aparte)'}[k] || ('Plan de la etapa '+k+(ETAPAS[+k.slice(1)-1]?' · '+esc(ETAPAS[+k.slice(1)-1].d):'')))+'</td><td class="n">'+tipos[k]+'</td></tr>').join("")+
+      Object.keys(tipos).sort((x,y)=>tipos[y]-tipos[x]).map(k=>'<tr><td>'+({sin:'<span class="nd">'+SIN+'</span> · sin registrar', por_definir:'Precio registrado, cronograma por definir', personalizado:'Personalizado (pagos pactados aparte)'}[k] || ('Plan de la etapa '+k+(ETAPAS_HIST[+k.slice(1)-1]?' · '+esc(ETAPAS_HIST[+k.slice(1)-1].d):'')))+'</td><td class="n">'+tipos[k]+'</td></tr>').join("")+
       '</tbody></table></div></section>'+
       '<section class="gzSec"><h3>Medios de pago</h3><p class="gzSub">Programado y recibido según el medio: dinero, vehículos, CDT, inmuebles.</p>'+
       (medios.length ? '<div class="gzTb"><table><thead><tr><th>Medio</th><th class="n">Programado</th><th class="n">Recibido</th></tr></thead><tbody>'+
@@ -389,10 +388,10 @@ const GERENCIA = window.GERENCIA = (()=>{
     let h='<section class="gzSec"><h3>Lotes por etapa</h3><p class="gzSub">Negocios registrados en cada etapa a la fecha y valor de los '+T.disp+' lotes disponibles con cada lista (área útil × precio útil + protección × precio de protección).</p>'+
       '<div class="gzTb"><table class="media"><thead><tr><th>Lista</th><th>Condición</th><th class="n">Negociados</th><th class="n">Vendidos</th><th class="n">Separados</th><th class="n">Pactado</th><th class="n">Inventario disponible</th></tr></thead><tbody>';
     let tn=0, tv=0, ts=0, tp=0;
-    T.inv.forEach(x=>{ const o=por[x.et.n]||{n:0,ven:0,sep:0,pact:0,m2:0}; tn+=o.n; tv+=o.ven; ts+=o.sep; tp+=o.pact;
+    ETAPAS_HIST.filter(et=>et.n===4||por[et.n]).map(et=>({et, v:(T.inv.find(z=>z.et.n===et.n)||{}).v})).forEach(x=>{ const o=por[x.et.n]||{n:0,ven:0,sep:0,pact:0,m2:0}; tn+=o.n; tv+=o.ven; ts+=o.sep; tp+=o.pact;
       h+='<tr'+(x.et.n===S.etapa?' style="font-weight:700"':'')+'><td>'+x.et.l+'</td><td class="mut">'+esc(x.et.d)+
-        (x.et.n===1?'<div class="mut">Cupo 30 %: quedan '+m2f(e1.libre)+' (≈ '+quedanE1.toLocaleString("es-CO",{maximumFractionDigits:1})+' lotes)</div>':'')+'</td>'+
-        '<td class="n"><b>'+o.n+'</b></td><td class="n">'+o.ven+'</td><td class="n">'+o.sep+'</td><td class="n">'+(o.pact?mm(o.pact):'—')+'</td><td class="n">'+mm(x.v)+'</td></tr>'; });
+        (false?'<div class="mut">Cupo 30 %: quedan '+m2f(e1.libre)+' (≈ '+quedanE1.toLocaleString("es-CO",{maximumFractionDigits:1})+' lotes)</div>':'')+'</td>'+
+        '<td class="n"><b>'+o.n+'</b></td><td class="n">'+o.ven+'</td><td class="n">'+o.sep+'</td><td class="n">'+(o.pact?mm(o.pact):'—')+'</td><td class="n">'+(x.v!=null?mm(x.v):'—')+'</td></tr>'; });
     if(sinEt.n) h+='<tr><td><span class="nd">Sin etapa</span></td><td class="mut">Negocios sin etapa registrada</td><td class="n"><b>'+sinEt.n+'</b></td><td class="n">'+sinEt.ven+'</td><td class="n">'+sinEt.sep+'</td><td class="n">—</td><td class="n">—</td></tr>';
     h+='<tr class="tot"><td colspan="2">Total negociados · disponibles '+T.disp+'</td><td class="n">'+(tn+sinEt.n)+'</td><td class="n">'+(tv+sinEt.ven)+'</td><td class="n">'+(ts+sinEt.sep)+'</td><td class="n">'+mm(tp)+'</td><td class="n"></td></tr>';
     return h+'</tbody></table></div></section>';
@@ -492,7 +491,7 @@ const GERENCIA = window.GERENCIA = (()=>{
     M.filas.filter(r=>r.mora>0).forEach(r=>A.push({nivel:"rojo", lote:r.n, t:"Lote "+r.n+" en mora: "+cop(r.mora)+" vencidos sin pagar desde "+mesLargo(primerVencido(r))+".", v:r.mora}));
     M.filas.filter(r=>r.prox && r.prox.mes===M.hoyM && r.mora===0).forEach(r=>A.push({nivel:"amar", lote:r.n, t:"Lote "+r.n+" debe pagar este mes "+cop(r.prox.valor)+" ("+MEDIOS[r.prox.medio]+(r.prox.concepto?", "+r.prox.concepto:"")+").", v:r.prox.valor}));
     M.filas.filter(r=>r.prox && r.prox.mes===sumaMes(M.hoyM,1) && r.mora===0).forEach(r=>A.push({nivel:"info", lote:r.n, t:"Lote "+r.n+" paga el próximo mes "+cop(r.prox.valor)+".", v:r.prox.valor}));
-    const e1=M.T.e1; if(e1.usado>=e1.cupo*0.85) A.push({nivel:e1.usado>e1.cupo?"rojo":"amar", t:"Cupo de etapa 1 al "+Math.round(e1.usado/e1.cupo*100)+" %: quedan "+m2f(e1.libre)+"."});
+    const e1=M.T.e1; if(false && e1.usado>=e1.cupo*0.85) A.push({nivel:e1.usado>e1.cupo?"rojo":"amar", t:"Cupo de etapa 1 al "+Math.round(e1.usado/e1.cupo*100)+" %: quedan "+m2f(e1.libre)+"."});
     const sinPlan=M.filas.filter(r=>!r.q.length);
     if(sinPlan.length) A.push({nivel:"amar", t:sinPlan.length+" negocios sin forma de pago registrada: lotes "+sinPlan.map(r=>r.n).join(", ")+"."});
     const sinCli=M.filas.filter(r=>r.clientePend);
@@ -599,8 +598,8 @@ const GERENCIA = window.GERENCIA = (()=>{
         '<div class="gzFm">'+
           '<label>Cliente<input id="eCli" value="'+esc(ed.cliente)+'"></label>'+
           '<label>Canal<select id="eCan"><option value="">Sin canal</option><option value="fajardo"'+(ed.canal==="fajardo"?" selected":"")+'>Juan Carlos Fajardo</option><option value="c21"'+(ed.canal==="c21"?" selected":"")+'>Century 21 DAB</option></select></label>'+
-          '<label>Etapa de la negociación<select id="eEt"><option value="">—</option>'+ETAPAS.map(e=>'<option value="'+e.n+'"'+(+ed.etapa===e.n?" selected":"")+'>'+e.l+' · '+esc(e.d)+'</option>').join("")+'</select>'+
-            '<span class="ayuda">'+(lista?'Lista '+ETAPAS[ed.etapa-1].l+': '+cop(lista):'Escoge la etapa para ver el precio de lista')+'</span></label>'+
+          '<label>Etapa de la negociación<select id="eEt"><option value="">—</option>'+ETAPAS_HIST.filter(e=>e.n===4||+ed.etapa===e.n).map(e=>'<option value="'+e.n+'"'+(+ed.etapa===e.n?" selected":"")+'>'+e.l+' · '+esc(e.d)+(e.n!==4?' (pactado antes del 26/10)':'')+'</option>').join("")+'</select>'+
+            '<span class="ayuda">'+(lista?'Lista '+ETAPAS_HIST[ed.etapa-1].l+': '+cop(lista):'Escoge la etapa para ver el precio de lista')+'</span></label>'+
           '<label>Precio pactado<input id="ePac" inputmode="numeric" value="'+fmtN(pac)+'" placeholder="$"><span class="ayuda">'+(lista&&pac?(pac===lista?'Igual a la lista':(pac>lista?'+':'−')+cop(Math.abs(pac-lista))+' frente a la lista'):'&nbsp;')+'</span></label>'+
           '<label>Mes de la firma<input id="eFir" type="month" value="'+esc(ed.firma)+'"></label>'+
         '</div></section>'+

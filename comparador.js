@@ -102,7 +102,7 @@ const COMPARADOR = window.COMPARADOR = (()=>{
       '<button class="cmpX" title="Quitar">×</button></div>';
   }
   function tablaHTML(R){
-    const et=ETAPAS[st.etapa-1];
+    const et=(ETAPAS.find(x=>x.n===st.etapa)||ETAPAS[0]);
     const fila=(t,s,a,b,extra)=>'<tr'+(extra||'')+'><td>'+t+(s?'<small>'+s+'</small>':'')+'</td><td>'+a+'</td><td>'+b+'</td>';
     const d=(a,b)=>{ const x=dif(a,b); return '<td class="'+(x<0?'neg':x>0?'pos':'')+'">'+difTxt(x)+'</td></tr>'; };
     return '<table class="cmpTab"><thead><tr><th>Concepto</th><th>'+et.l+' (estipulado)</th><th>Propuesta</th><th>Diferencia</th></tr></thead><tbody>'+
@@ -124,7 +124,7 @@ const COMPARADOR = window.COMPARADOR = (()=>{
   }
   function leerForm(){
     const c=document.getElementById("hojaCuerpo");
-    st.etapa = +c.querySelector("#cmpEt").value || 1;
+    st.etapa = 4;
     st.firma = c.querySelector("#cmpFirma").value || hoy();
     st.cliente = c.querySelector("#cmpCli").value;
     st.filas = [...c.querySelectorAll(".cmpFila:not(.cmpCuota)")].map(r=>({
@@ -159,8 +159,8 @@ const COMPARADOR = window.COMPARADOR = (()=>{
   }
   function abrir(n){
     if(!ROL.esVentas()){ avisar("El comparador es sólo para administradores."); return; }
-    st = leer(n) || {lote:n, etapa:S.etapa||1, firma:hoy(), cliente:"", precioCliente:"",
-                     filas:[{c:"A la firma",t:"dinero",v:SEPARACION,m:hoy()}], cuotas:[]};
+    st = leer(n) || {lote:n, etapa:4, firma:hoy(), cliente:"", precioCliente:"",
+                     filas:[{c:"A la firma",t:"dinero",v:SEPARACION,m:hoy()}], cuotas:[]}; st.etapa=4;
     st.lote=n;
     document.getElementById("hojaTit").textContent = "Lote "+n+" · Comparar propuesta de pago";
     document.getElementById("hojaPie").innerHTML =
@@ -180,7 +180,7 @@ const COMPARADOR = window.COMPARADOR = (()=>{
   /* -------------------------- la hoja para imprimir ------------------------ */
   function imprimir(){
     leerForm(); const R=calcular(); if(!R) return;
-    const et=ETAPAS[st.etapa-1];
+    const et=(ETAPAS.find(x=>x.n===st.etapa)||ETAPAS[0]);
     const logo = window.__LOGO_PDF_B64 ? '<img class="logo" src="data:image/jpeg;base64,'+window.__LOGO_PDF_B64+'" alt="Laureles Campestre">' : '<b style="color:#F4F2EA">LAURELES CAMPESTRE</b>';
     const detalle = R.P.slice().sort((x,y)=>x.m<y.m?-1:x.m>y.m?1:0);
     /* las cuotas iguales seguidas se agrupan en una sola línea */

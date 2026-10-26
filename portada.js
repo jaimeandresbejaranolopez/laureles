@@ -141,13 +141,13 @@ const TX = {
   sEb:"Cerca de todo", sT:"A minutos de lo que importa",
   sP:"Desde Laureles se llega en minutos a la autopista, al aeropuerto, a la ciudad y a los grandes atractivos del Quindío.",
   sCred:"Foto",
-  kEb:"Etapas y precios", kT:"Mientras antes, mejor precio",
-  kP:"El precio de cada lote es su área útil por el valor del m² útil de la etapa, más su área de protección por el valor del m² de protección.",
+  kEb:"Precios", kT:"Un solo precio de lista",
+  kP:"El precio de cada lote es su área útil por el valor del m² útil, más su área de protección por el valor del m² de protección.",
   etD:{1:["De contado","20 % menos que la lista"],2:["60 % en 2026","10 % menos"],3:["50 % en 2026","5 % menos"],4:["20 % en 2026","Precio de lista"],5:["20 % en 2026","Lista + 10 %"],6:["20 % en 2026","Lista + 20 %"]},
   desde:"desde", hasta:"hasta", mu:"m² útil", mp:"m² protección",
   pagoT:"Así se paga", pago:(d)=>[
     ["mano","Separas con "+(d.sep?"$"+miles(d.sep):"—")+"."],
-    ["calendario","La inicial de la etapa se completa en 2026."],
+    ["calendario","La cuota inicial del 20 % se completa en 2026."],
     ["alza","El saldo va en "+(d.planN||"—")+" cuotas del "+(d.planP?Math.round(d.planP*100):"—")+" % del saldo, de enero de 2027 a noviembre de 2028."],
     ["escritura","Una cuota final en diciembre de 2028. Sin intereses."]],
   precNota:"Precios en pesos colombianos, sujetos a disponibilidad y a cambio. El precio exacto de cada lote está en su ficha, en el plano.",
@@ -194,13 +194,13 @@ const TX = {
   sEb:"Close to everything", sT:"Minutes from what matters",
   sP:"From Laureles you reach the highway, the airport, the city and Quindío's main attractions in minutes.",
   sCred:"Photo",
-  kEb:"Stages and prices", kT:"The earlier, the better the price",
-  kP:"Each lot's price is its usable area times the stage's usable m² value, plus its protected area times the protected m² value.",
+  kEb:"Prices", kT:"One list price",
+  kP:"Each lot's price is its usable area times the usable m² value, plus its protected area times the protected m² value.",
   etD:{1:["Cash","20% below list"],2:["60% in 2026","10% off"],3:["50% in 2026","5% off"],4:["20% in 2026","List price"],5:["20% in 2026","List + 10%"],6:["20% in 2026","List + 20%"]},
   desde:"from", hasta:"to", mu:"usable m²", mp:"protected m²",
   pagoT:"How payment works", pago:(d)=>[
     ["mano","Reserve with COP "+(d.sep?Math.round(d.sep).toLocaleString("en-US"):"—")+"."],
-    ["calendario","The stage's down payment is completed in 2026."],
+    ["calendario","The 20% down payment is completed in 2026."],
     ["alza","The balance is paid in "+(d.planN||"—")+" instalments of "+(d.planP?Math.round(d.planP*100):"—")+"% of the balance, January 2027 to November 2028."],
     ["escritura","A final instalment in December 2028. No interest."]],
   precNota:"Prices in Colombian pesos, subject to availability and change. Each lot's exact price is on its card in the plan.",
@@ -247,13 +247,13 @@ const TX = {
   sEb:"Près de tout", sT:"À quelques minutes de l'essentiel",
   sP:"Depuis Laureles, l'autoroute, l'aéroport, la ville et les grands attraits du Quindío sont à quelques minutes.",
   sCred:"Photo",
-  kEb:"Étapes et prix", kT:"Plus tôt, meilleur prix",
-  kP:"Le prix de chaque terrain est sa surface utile fois la valeur du m² utile de l'étape, plus sa surface protégée fois la valeur du m² protégé.",
+  kEb:"Prix", kT:"Un seul prix de liste",
+  kP:"Le prix de chaque terrain est sa surface utile fois la valeur du m² utile, plus sa surface protégée fois la valeur du m² protégé.",
   etD:{1:["Comptant","−20 % sur la liste"],2:["60 % en 2026","−10 %"],3:["50 % en 2026","−5 %"],4:["20 % en 2026","Prix de liste"],5:["20 % en 2026","Liste + 10 %"],6:["20 % en 2026","Liste + 20 %"]},
   desde:"dès", hasta:"jusqu'à", mu:"m² utile", mp:"m² protégé",
   pagoT:"Modalités de paiement", pago:(d)=>[
     ["mano","Réservation avec "+(d.sep?miles(d.sep)+" COP":"—")+"."],
-    ["calendario","L'apport de l'étape est complété en 2026."],
+    ["calendario","L'apport de 20 % est complété en 2026."],
     ["alza","Le solde est réglé en "+(d.planN||"—")+" mensualités de "+(d.planP?Math.round(d.planP*100):"—")+" % du solde, de janvier 2027 à novembre 2028."],
     ["escritura","Une dernière échéance en décembre 2028. Sans intérêts."]],
   precNota:"Prix en pesos colombiens, sous réserve de disponibilité et de modification. Le prix exact de chaque terrain figure sur sa fiche, dans le plan.",
@@ -344,9 +344,9 @@ function html(){
       ${s.autor?`<small class="ptCred">${t.sCred}: ${s.autor} · Wikimedia Commons · CC BY-SA 4.0</small>`:""}
     </article>`;}).join("");
   /* en la portada solo van E1 a E4; E5 y E6 siguen en el mapa dinámico */
-  const et = d.et.filter(e=>e.n<=4).map(e=>`
+  const et = d.et.filter(e=>e.n===4).map(e=>`
     <div class="ptEt${e.n===1?" ptEt1":""}">
-      <div class="ptEtH"><b>E${e.n}</b><div><strong>${t.etD[e.n][1]}</strong><span>${t.etD[e.n][0]}</span></div></div>
+      <div class="ptEtH"><b>$</b><div><strong>${t.etD[e.n][1]}</strong><span>${t.etD[e.n][0]}</span></div></div>
       <div class="ptEtP"><small>${t.desde}</small><strong>${precio(e.min)}</strong><small class="h">${t.hasta} ${precio(e.max)}</small></div>
       <div class="ptEtM"><span>${t.mu} <b>${en?"COP "+e.mu.toLocaleString("en-US"):"$"+miles(e.mu)}</b></span><span>${t.mp} <b>${en?"COP "+e.mp.toLocaleString("en-US"):"$"+miles(e.mp)}</b></span></div>
     </div>`).join("");

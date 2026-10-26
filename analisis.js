@@ -73,7 +73,7 @@ const DIC_FR = {
 "Descargar ficha técnica y comercial":"Télécharger la fiche technique et commerciale",
 "Valor comercial":"Valeur commerciale",
 "EL LOTE":"LE LOT",
-"PRECIO SEGÚN LA ETAPA Y LA FORMA DE PAGO":"PRIX SELON LA PHASE ET LE MODE DE PAIEMENT",
+"PRECIO DE LISTA Y FORMA DE PAGO":"PRIX DE LISTE ET MODE DE PAIEMENT",
 "CÓMO SE MUEVE EL PRECIO":"COMMENT ÉVOLUE LE PRIX",
 "Forma de pago":"Mode de paiement",
 "$/m² bruto":"$/m² brut",
@@ -398,7 +398,7 @@ const DIC = {
 "Portería":"Gatehouse",
 "Valor comercial":"Commercial value",
 "EL LOTE":"THE LOT",
-"PRECIO SEGÚN LA ETAPA Y LA FORMA DE PAGO":"PRICE BY STAGE AND PAYMENT TERMS",
+"PRECIO DE LISTA Y FORMA DE PAGO":"LIST PRICE AND PAYMENT TERMS",
 "CÓMO SE MUEVE EL PRECIO":"HOW THE PRICE MOVES",
 "Forma de pago":"Payment terms",
 "$/m² bruto":"$/gross m²",
@@ -4064,7 +4064,7 @@ const PDFmin = (()=>{
 function hojaPortadaPDF(n,L,A,casa,V){
   const P=PDFmin.Hoja(595.28,841.89), M=38, W=595.28;
   const col=(c,f)=>f?P.trazo(c[0],c[1],c[2]):P.color(c[0],c[1],c[2]);
-  const est=estadoDe(L), ET=ETAPAS[state.etapa-1], val=precio(L,state.etapa);
+  const est=estadoDe(L), ET=(ETAPAS.find(x=>x.n===state.etapa)||ETAPAS[0]), val=precio(L,state.etapa);
 
   /* ---------------- cabecera ---------------- */
   col(V.forest).rect(0,0,W,124);
@@ -4233,7 +4233,7 @@ function hojaPortadaPDF(n,L,A,casa,V){
                    "Sunlight hours per façade and shadow fan",
                    "Heures de soleil par façade et éventail d'ombres"));
   }
-  indice.push(TT("Valor comercial por etapa y forma de pago",
+  indice.push(TT("Valor comercial y forma de pago",
                  "Commercial value by stage and payment terms",
                  "Valeur commerciale par étape et mode de paiement"));
   indice.push(TT("Plan de pagos: el calendario de cuotas mes a mes",
@@ -4277,7 +4277,7 @@ function logoEnBanda(P, M, yCentro, alto){
 /* ------------------------- la hoja PDF del lote ------------------------ */
 function fichaPDF(n){
   const L=DATA.lotes.find(x=>x.n===n), A=IMPL[String(n)];
-  const est=estadoDe(L), ET=ETAPAS[state.etapa-1], val=precio(L,state.etapa);
+  const est=estadoDe(L), ET=(ETAPAS.find(x=>x.n===state.etapa)||ETAPAS[0]), val=precio(L,state.etapa);
   const casa=A&&A.k, ej=casa?ejeLargo(casa.g):null, ver=ej?veredicto(ej.rumbo):null;
   const fach=ej?[(ej.rumbo+90)%360,(ej.rumbo+270)%360].map(rumboTxt):null;
   const V={forest:[50,64,47],gold:[155,122,72],ink:[28,34,27],muted:[107,115,103],
@@ -5006,7 +5006,7 @@ function hojaComercialPDF(n,L,V){
   y+=30; col(V.line,1).grosor(.5).linea(M,y,595.28-M,y); y+=22;
 
   /* ---- tabla de etapas ---- */
-  col(V.gold).texto(M,y,T("PRECIO SEGÚN LA ETAPA Y LA FORMA DE PAGO"),7.6,"F2",1.1); y+=16;
+  col(V.gold).texto(M,y,T("PRECIO DE LISTA Y FORMA DE PAGO"),7.6,"F2",1.1); y+=16;
   /* Las dos columnas del medio son la lista de precios de verdad: lo que vale el
      metro útil y el metro de protección en cada etapa. Antes sólo salía el total
      y un $/m² útil deducido de dividir, que no es la tarifa: incluye repartida
@@ -5101,6 +5101,7 @@ function hojaComercialPDF(n,L,V){
      y=878 de una hoja de 841,9— y no se imprimían. Se recupera alto aquí, en
      las barras y en los interlineados, que es donde sobraba aire. */
   y+=4;
+  if(ETAPAS.length>1){
   col(V.gold).texto(M,y,T("CÓMO SE MUEVE EL PRECIO"),7.6,"F2",1.1); y+=16;
   const maxV=Math.max(...ETAPAS.map(E=>precio(L,E.n)));
   const bw=(595.28-2*M-5*10)/6, base=y+58;
@@ -5112,6 +5113,7 @@ function hojaComercialPDF(n,L,V){
     col(actual?V.forest:V.muted).texto(x,base-h-5,"$"+dec(v/1e6,0)+"M",7,"F2");
   });
   y=base+22;
+  } /* con precio único no hay comparación entre etapas */
 
   /* ---- qué más entra en el precio ---- */
   col(V.line,1).grosor(.5).linea(M,y,595.28-M,y); y+=14;
@@ -5140,15 +5142,15 @@ function hojaComercialPDF(n,L,V){
      debajo: la banda arranca en 841,89−46 y por debajo de ahí no se imprime. */
   const NOTA1 = TT(
       "Los precios salen de la lista de trabajo del proyecto: "+fmtCOP(PR[state.etapa])+" por m² de área "+
-      "protegida y "+fmtCOP(PV[state.etapa])+" por m² de área útil en la etapa "+ETAPAS[state.etapa-1].l+", "+
+      "protegida y "+fmtCOP(PV[state.etapa])+" por m² de área útil en la etapa "+(ETAPAS.find(x=>x.n===state.etapa)||ETAPAS[0]).l+", "+
       "aplicados sobre las áreas del cuadro del plano 039. El área protegida se paga distinto porque no se "+
       "puede construir ni talar allí, pero sí hace parte del lote y de su valor de paisaje.",
       "Prices come from the project's working list: "+fmtCOP(PR[state.etapa])+" per m² of protected area and "+
-      fmtCOP(PV[state.etapa])+" per m² of usable area at stage "+ETAPAS[state.etapa-1].l+", applied to the areas "+
+      fmtCOP(PV[state.etapa])+" per m² of usable area at stage "+(ETAPAS.find(x=>x.n===state.etapa)||ETAPAS[0]).l+", applied to the areas "+
       "in the schedule of drawing 039. Protected area is priced differently because nothing can be built or "+
       "cleared there, but it is still part of the lot and of its landscape value.",
       "Les prix viennent de la liste de travail du projet : "+fmtCOP(PR[state.etapa])+" par m² de surface "+
-      "protégée et "+fmtCOP(PV[state.etapa])+" par m² de surface utile à la phase "+ETAPAS[state.etapa-1].l+", "+
+      "protégée et "+fmtCOP(PV[state.etapa])+" par m² de surface utile à la phase "+(ETAPAS.find(x=>x.n===state.etapa)||ETAPAS[0]).l+", "+
       "appliqués aux surfaces du tableau du plan 039. La surface protégée est valorisée différemment parce "+
       "qu'on ne peut ni y construire ni y couper, mais elle fait partie du lot et de sa valeur de paysage.");
   const NOTA2 = TT(
