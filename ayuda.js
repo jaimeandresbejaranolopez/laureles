@@ -80,13 +80,13 @@ const PASOS = [
  },
  { k:"lote", i:"lote",
    t:{es:"Toca un lote", en:"Tap a lot", fr:"Touchez un lot"},
-   d:{es:"Cada lote abre su ficha con el área, el precio y la forma de pago.",
-      en:"Each lot opens its card with the area, the price and the payment plan.",
-      fr:"Chaque lot ouvre sa fiche avec la surface, le prix et le plan de paiement."},
+   d:{es:"Cada lote abre su ficha con el área, el terreno y lo que cabe.",
+      en:"Each lot opens its card with the area, the terrain and what fits.",
+      fr:"Chaque lot ouvre sa fiche avec la surface, le terrain et ce qui y tient."},
    todo:[
      ["lote",  {es:"<b>Verde</b> está disponible; <b>rojo</b>, vendido.", en:"<b>Green</b> is available; <b>red</b>, sold.", fr:"<b>Vert</b> : disponible ; <b>rouge</b> : vendu."}],
      ["wa",    {es:"Desde la ficha escribes por <b>WhatsApp</b>, compartes el lote o pides <b>Volar al lote</b>.", en:"From the card you can message on <b>WhatsApp</b>, share the lot or <b>Fly to the lot</b>.", fr:"Depuis la fiche : <b>WhatsApp</b>, partager le lot ou <b>Voler jusqu'au lot</b>."}],
-     ["capas", {es:"En <b>Filtros</b> buscas por número, área y precio.", en:"In <b>Filters</b> search by number, area and price.", fr:"Dans <b>Filtres</b>, cherchez par numéro, surface et prix."}]
+     ["capas", {es:"En <b>Filtros</b> buscas por número y área.", en:"In <b>Filters</b> search by number and area.", fr:"Dans <b>Filtres</b>, cherchez par numéro et surface."}]
    ],
    foco:()=> tactil() ? ["#bRail"] : ["#rail"],
    accion:{es:"Abrir un lote", en:"Open a lot", fr:"Ouvrir un lot"},

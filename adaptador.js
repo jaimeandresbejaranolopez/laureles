@@ -19,8 +19,9 @@
   const KX=111320*Math.cos(lat0*Math.PI/180), KY=110540;
   const PX = p => [ (p[0]-lon0)*KX, -(p[1]-lat0)*KY ];
 
-  const PR_A={1:60000,2:67500,3:71250,4:75000,5:82500,6:90000};
-  const PV_A={1:132000,2:148500,3:156750,4:165000,5:181500,6:198000};
+  /* precios privados: los mismos objetos del mapa, llenos sólo con sesión del equipo */
+  const PR_A=(typeof PRECIO_PROT!=="undefined")?PRECIO_PROT:{};
+  const PV_A=(typeof PRECIO_UTIL!=="undefined")?PRECIO_UTIL:{};
   /* precio único desde el 26/10/2026: sólo la lista E4 */
   const ETAPAS_A=[{n:4,l:"E4",d:"Precio de lista"}];
   const EST_A={DISPONIBLE:{c:"var(--disp)",k:"d",t:"Disponible"},
@@ -58,7 +59,7 @@
     DATA: PAY, PX, lat0, lon0, KX, KY,
     EST: EST_A, ETAPAS: ETAPAS_A, PR: PR_A, PV: PV_A, POIS: POIS_A,
     RENDERS: window.__RENDERS || {},
-    precio: (L,e)=> L.pr*PR_A[e] + L.ut*PV_A[e],
+    precio: (L,e)=> (PV_A[e]!=null) ? L.pr*PR_A[e] + L.ut*PV_A[e] : null,
     estadoDe, state: puente,
     toast: (t)=>{ try{ avisar(t); }catch(e){ console.log(t); } },
     fmtA:  v => Math.round(v).toLocaleString(LOC())+" m²",

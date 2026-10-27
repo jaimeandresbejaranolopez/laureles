@@ -4188,7 +4188,7 @@ function hojaPortadaPDF(n,L,A,casa,V){
     [T("Área total"), fmtA(L.at)],
     [T("Área útil"),  fmtA(L.ut)],
     [T("Pendiente media"), pendTxt(A,1)],
-    [T("Precio")+" "+ET.l, fmtCOP(val)]
+    (val!=null ? [T("Precio")+" "+ET.l, fmtCOP(val)] : [T("Precio"), TT("Con un asesor","Ask an advisor","Auprès d'un conseiller")])
   ];
   const cw=(W-2*M)/4;
   celdas.forEach((cd,i)=>{
@@ -4233,12 +4233,14 @@ function hojaPortadaPDF(n,L,A,casa,V){
                    "Sunlight hours per façade and shadow fan",
                    "Heures de soleil par façade et éventail d'ombres"));
   }
+  if(PV[4]!=null){
   indice.push(TT("Valor comercial y forma de pago",
                  "Commercial value by stage and payment terms",
                  "Valeur commerciale par étape et mode de paiement"));
   indice.push(TT("Plan de pagos: el calendario de cuotas mes a mes",
                  "Payment plan: the month-by-month schedule",
                  "Plan de paiement : le calendrier mensuel"));
+  }
   /* con casa propuesta el índice tiene hasta ocho renglones y llegaba al pie
      (MEDIDO: "Plan de pagos" sobre "Geometría del plano" en el lote 27); el
      paso se acorta para que el último renglón quede 10 pt sobre la raya */
@@ -4295,7 +4297,7 @@ function fichaPDF(n){
   let y=108;
   col(V.gold).texto(M,y,T("FICHA TÉCNICA Y ANÁLISIS DEL LOTE"),8,"F2",1.3);
   col(V.ink).texto(M,y+22,T("Lote")+" "+n+" · "+fmtA(L.at)+" · "+T(EST[est].t).toUpperCase(),15,"F2");
-  col(V.muted).texto(M,y+38,T("Precio")+" "+ET.l+" ("+T(ET.d)+"): "+fmtCOP(val)+"   ·   "+
+  if(val!=null) col(V.muted).texto(M,y+38,T("Precio")+" "+ET.l+" ("+T(ET.d)+"): "+fmtCOP(val)+"   ·   "+
     fmtCOP(val/L.at)+TT(" por m² bruto"," per gross m²"),9.4,"F1");
   y+=56;
 
@@ -4508,8 +4510,7 @@ function fichaPDF(n){
   if(casa && casaIA(n) && RENDER_PDF[n]){ const hr=hojaRenderPDF(n,L,A,V); if(hr) hojas.push(hr); }
   if(casa){ hojas.push(hojaIsoPDF(n,L,A,casa,V)); hojas.push(hojaSolarPDF(n,L,A,casa,ej,V)); }
   if(esTerraza(n)) hojas.push(hojaTerrazaPDF(n,L,V));
-  hojas.push(hojaComercialPDF(n,L,V));
-  hojas.push(hojaCuotasPDF(n,L,V));
+  if(PV[4]!=null){ hojas.push(hojaComercialPDF(n,L,V)); hojas.push(hojaCuotasPDF(n,L,V)); }
   hojas.push(hojaSalvedadPDF(n,L,V));   /* la salvedad cierra siempre */
   return PDFmin.archivo(hojas);
 }
