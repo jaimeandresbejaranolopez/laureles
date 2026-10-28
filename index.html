@@ -30,13 +30,13 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20261027a">
+<link rel="stylesheet" href="maplibre-gl.css?v=20261028a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20261027a">
-<link rel="stylesheet" href="portada.css?v=20261027a">
-<link rel="stylesheet" href="analisis.css?v=20261027a">
+<link rel="stylesheet" href="armazon.css?v=20261028a">
+<link rel="stylesheet" href="portada.css?v=20261028a">
+<link rel="stylesheet" href="analisis.css?v=20261028a">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -664,7 +664,7 @@ body.baseClara .rotCota{color:#6B5C38;
             <button id="bq">Ir</button>
           </div>
         </div>
-        <div class="blk" style="display:none">
+        <div class="blk soloEquipo">
           <div class="et">Etapa de venta</div>
           <div class="seg" id="segEtapa"></div>
           <div class="pista" id="etapaPista" style="font-size:11.5px;color:var(--muted);margin-top:6px"></div>
@@ -909,7 +909,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20261027a"></script>
+<script src="maplibre-gl.js?v=20261028a"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -931,7 +931,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20261027a"></script>
+<script src="lotes.js?v=20261028a"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -981,7 +981,8 @@ function guardar(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(
    son 24 meses: 23 cuotas del 3 % del saldo y una última que absorbe lo que
    quede, y por eso es la más alta. E1 es de contado. */
 const SEPARACION = 50000000;
-const INICIAL = {1:1.00, 2:0.60, 3:0.50, 4:0.20, 5:0.20, 6:0.20};
+const INICIAL = {1:1.00, 2:0.60, 3:1.00, 4:0.20, 5:0.20, 6:0.20};   /* E3 (28/10/2026): contado hasta el 30-ene-2027 */
+const FECHA_CONTADO = "el 30 de enero de 2027";
 const PLAN_N = 23, PLAN_PCT = 0.03;
 function planPago(v, e){
   const frac = (INICIAL[e] != null) ? INICIAL[e] : 1;
@@ -1008,12 +1009,12 @@ window.hayPrecios = hayPrecios;
 const ETAPAS_HIST = [
   {n:1,l:"E1",d:"Contado, −20% sobre lista"},
   {n:2,l:"E2",d:"60% al cierre del año, −10%"},
-  {n:3,l:"E3",d:"50% al cierre del año, −5%"},
+  {n:3,l:"E3",d:"Contado al 30-ene-2027, −5 %"},
   {n:4,l:"E4",d:"Precio de lista"},
   {n:5,l:"E5",d:"Lista +10%"},
   {n:6,l:"E6",d:"Lista +20%"}
 ];
-const ETAPAS = ETAPAS_HIST.filter(e=>e.n===4);
+const ETAPAS = ETAPAS_HIST.filter(e=>e.n===3||e.n===4);   /* sólo el equipo las ve: el público no ve precios */
 const etapaAct = () => ETAPAS.find(e=>e.n===S.etapa) || ETAPAS[0];
 window.ETAPAS_HIST = ETAPAS_HIST;
 const ESTADOS = {
@@ -1040,7 +1041,7 @@ function colorLote(p){
 window.colorLote=colorLote; window.CANAL=CANAL;
 
 const S = {
-  etapa: 4,                                  // precio único: lista E4
+  etapa: ([3,4].includes(+leer("laureles.etapa",4)) ? +leer("laureles.etapa",4) : 4),   // E3 o E4, sólo para el equipo
   estados: new Set(["disponible","separado","vendido","reservado"]),
   minArea: 0, maxPrec: 700, sel: null,
   fondo: leer("laureles.fondo","sat"),
@@ -2375,7 +2376,7 @@ function pintarFicha(n){
   '<div class="fb">'+
     (v==null ? '<div class="precio-sub" style="font-size:14px;margin:4px 0 2px"><b>Precio y forma de pago: consúltalos con un asesor.</b></div>' :
     '<div class="precio">'+cop(v)+'</div>'+
-    '<div class="precio-sub">Precio de lista · '+cop(v/p.area_m2)+' por m² bruto</div>')+
+    '<div class="precio-sub">'+(S.etapa===4?'Precio de lista':'Etapa '+et.l+' · '+et.d)+' · '+cop(v/p.area_m2)+' por m² bruto</div>')+
     '<div class="fExtras" id="fExtras"></div>'+
     /* la lista de esta etapa, que es lo que se negocia: el metro útil y el protegido */
     (v==null ? '' : (
@@ -2386,7 +2387,7 @@ function pintarFicha(n){
     /* lo primero que pregunta el cliente: cuánto le queda por mes */
     (()=>{ const pp=planPago(v,S.etapa);
       if(pp.contado) return '<div class="plan"><b>De contado.</b> '+
-        'Separa con '+cop(SEPARACION)+' y completa el saldo en 2026.'+
+        'Separa con '+cop(SEPARACION)+' y paga el saldo de '+cop(v-SEPARACION)+' hasta '+FECHA_CONTADO+'.'+
         '<div class="pieplan"><b>Escritura del 100 % de la tierra, no proindiviso.</b> Entrega final del urbanismo: diciembre de 2028.</div></div>';
       return '<div class="plan">'+
         '<div class="fila"><span>Inicial ('+Math.round(pp.frac*100)+' %) en 2026</span><b>'+cop(pp.inicial)+'</b></div>'+
@@ -2525,7 +2526,7 @@ function whatsapp(p,v,et){
     "• Precio "+et.l+" ("+et.d+"): "+cop(v)+"\n"+
     "• Lista "+et.l+": "+cop(PRECIO_UTIL[S.etapa])+"/m² útil · "+cop(PRECIO_PROT[S.etapa])+"/m² protección\n"+
     (()=>{ const pp=planPago(v,S.etapa);
-      return pp.contado ? "• De contado\n"
+      return pp.contado ? "• De contado: "+cop(SEPARACION)+" al separar y el saldo hasta "+FECHA_CONTADO+"\n"
         : "• Inicial "+Math.round(pp.frac*100)+"% en 2026: "+cop(pp.inicial)+"\n"+
           "• "+pp.n+" cuotas de "+cop(pp.cuota)+" (ene 2027 – nov 2028)\n"+
           "• Cuota final dic 2028: "+cop(pp.ultima)+"\n"; })()+"\n"+
@@ -3442,28 +3443,28 @@ function compartirLote(p){
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png","vida_perfil_vial":"medios/vida_perfil_vial.jpg","vida_ciclorruta":"medios/vida_ciclorruta.jpg","vida_infantil":"medios/vida_infantil.jpg","vida_gimnasio":"medios/vida_gimnasio.jpg","vida_padel":"medios/vida_padel.jpg"};</script>
-<script src="datos-analisis.js?v=20261027a"></script>
-<script src="datos-terreno.js?v=20261027a"></script>
-<script src="datos-logo.js?v=20261027a"></script>
-<script src="adaptador.js?v=20261027a"></script>
-<script src="analisis.js?v=20261027a"></script>
-<script src="datos-via.js?v=20261027a"></script>
-<script src="datos-entrada.js?v=20261027a"></script>
-<script src="r3d.js?v=20261027a"></script>
-<script src="datos-arboles.js?v=20261027a"></script>
-<script src="paisaje.js?v=20261027a"></script>
-<script src="recorrido.js?v=20261027a"></script>
-<script src="maqueta.js?v=20261027a"></script>
-<script src="visor360.js?v=20261027a"></script>
-<script src="sitios-iconos.js?v=20261027a"></script>
-<script src="armazon.js?v=20261027a"></script>
-<script src="acceso.js?v=20261027a"></script>
-<script src="portada.js?v=20261027a"></script>
-<script src="ia.js?v=20261027a"></script>
-<script src="panel.js?v=20261027a"></script>
-<script src="gerencia.js?v=20261027a"></script>
-<script src="comparador.js?v=20261027a"></script>
-<script src="ayuda.js?v=20261027a"></script>
+<script src="datos-analisis.js?v=20261028a"></script>
+<script src="datos-terreno.js?v=20261028a"></script>
+<script src="datos-logo.js?v=20261028a"></script>
+<script src="adaptador.js?v=20261028a"></script>
+<script src="analisis.js?v=20261028a"></script>
+<script src="datos-via.js?v=20261028a"></script>
+<script src="datos-entrada.js?v=20261028a"></script>
+<script src="r3d.js?v=20261028a"></script>
+<script src="datos-arboles.js?v=20261028a"></script>
+<script src="paisaje.js?v=20261028a"></script>
+<script src="recorrido.js?v=20261028a"></script>
+<script src="maqueta.js?v=20261028a"></script>
+<script src="visor360.js?v=20261028a"></script>
+<script src="sitios-iconos.js?v=20261028a"></script>
+<script src="armazon.js?v=20261028a"></script>
+<script src="acceso.js?v=20261028a"></script>
+<script src="portada.js?v=20261028a"></script>
+<script src="ia.js?v=20261028a"></script>
+<script src="panel.js?v=20261028a"></script>
+<script src="gerencia.js?v=20261028a"></script>
+<script src="comparador.js?v=20261028a"></script>
+<script src="ayuda.js?v=20261028a"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

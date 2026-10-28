@@ -780,7 +780,7 @@ const claseIAtxt = c => ({muro:TT("Construido","Built","Bâti"), porche:TT("Cubi
      E4, E5 y E6  20 % inicial
    ========================================================================= */
 const SEPARACION = 50000000;
-const INICIAL = {1:1.00, 2:0.60, 3:0.50, 4:0.20, 5:0.20, 6:0.20};
+const INICIAL = {1:1.00, 2:0.60, 3:1.00, 4:0.20, 5:0.20, 6:0.20};   /* E3: contado hasta el 30-ene-2027 */
 const PLAN_N = 23, PLAN_PCT = 0.03;
 const PLAN_DESDE = "enero de 2027", PLAN_HASTA = "diciembre de 2028";
 function planPago(L, e){
@@ -4202,7 +4202,7 @@ function hojaPortadaPDF(n,L,A,casa,V){
     col(V.ink).texto(x,y+20,cd[1],tam,"F2");
   });
   y+=40;
-  col(V.muted).texto(M,y,T(ET.d),7.8,"F1");
+  if(val!=null) col(V.muted).texto(M,y,T(ET.d),7.8,"F1");
 
   /* ---------------- qué trae adentro ---------------- */
   y+=22;
@@ -4804,7 +4804,7 @@ function hojaCuotasPDF(n,L,V){
   let pp = planPago(L, E.n);
   const eraContado = pp.contado;
   if(eraContado){
-    const E2 = ETAPAS.find(x=>x.n===2);
+    const E2 = ETAPAS.find(x=>x.n===4);
     if(E2){ const p2=planPago(L,E2.n); if(!p2.contado){ E=E2; pp=p2; } }
   }
 
@@ -4820,8 +4820,8 @@ function hojaCuotasPDF(n,L,V){
   if(eraContado){
     col([140,96,34]);
     y=envolver(P, TT(
-      "La etapa 1 es de contado: se paga el total y no hay cuotas. Abajo va el calendario de la "+
-      "etapa 2, que es la alternativa financiada más cercana, para poder comparar.",
+      "La etapa 3 es de contado: $50.000.000 al separar y el saldo hasta el 30 de enero de 2027, sin cuotas. "+
+      "Abajo va el calendario de la etapa 4 (precio de lista), que es la alternativa financiada, para poder comparar.",
       "Stage 1 is a cash purchase: the full amount is paid and there are no instalments. Below is "+
       "the stage 2 schedule, the nearest financed alternative, so the two can be compared.",
       "L'étape 1 est un paiement comptant : il n'y a pas de mensualités. Ci-dessous le calendrier de "+

@@ -388,7 +388,7 @@ const GERENCIA = window.GERENCIA = (()=>{
     let h='<section class="gzSec"><h3>Lotes por etapa</h3><p class="gzSub">Negocios registrados en cada etapa a la fecha y valor de los '+T.disp+' lotes disponibles con cada lista (área útil × precio útil + protección × precio de protección).</p>'+
       '<div class="gzTb"><table class="media"><thead><tr><th>Lista</th><th>Condición</th><th class="n">Negociados</th><th class="n">Vendidos</th><th class="n">Separados</th><th class="n">Pactado</th><th class="n">Inventario disponible</th></tr></thead><tbody>';
     let tn=0, tv=0, ts=0, tp=0;
-    ETAPAS_HIST.filter(et=>et.n===4||por[et.n]).map(et=>({et, v:(T.inv.find(z=>z.et.n===et.n)||{}).v})).forEach(x=>{ const o=por[x.et.n]||{n:0,ven:0,sep:0,pact:0,m2:0}; tn+=o.n; tv+=o.ven; ts+=o.sep; tp+=o.pact;
+    ETAPAS_HIST.filter(et=>et.n===3||et.n===4||por[et.n]).map(et=>({et, v:(T.inv.find(z=>z.et.n===et.n)||{}).v})).forEach(x=>{ const o=por[x.et.n]||{n:0,ven:0,sep:0,pact:0,m2:0}; tn+=o.n; tv+=o.ven; ts+=o.sep; tp+=o.pact;
       h+='<tr'+(x.et.n===S.etapa?' style="font-weight:700"':'')+'><td>'+x.et.l+'</td><td class="mut">'+esc(x.et.d)+
         (false?'<div class="mut">Cupo 30 %: quedan '+m2f(e1.libre)+' (≈ '+quedanE1.toLocaleString("es-CO",{maximumFractionDigits:1})+' lotes)</div>':'')+'</td>'+
         '<td class="n"><b>'+o.n+'</b></td><td class="n">'+o.ven+'</td><td class="n">'+o.sep+'</td><td class="n">'+(o.pact?mm(o.pact):'—')+'</td><td class="n">'+(x.v!=null?mm(x.v):'—')+'</td></tr>'; });
@@ -556,7 +556,8 @@ const GERENCIA = window.GERENCIA = (()=>{
   function planEtapa(v, e, firma){
     const pp=planPago(v, e), out=[], sep=Math.min(SEPARACION, pp.inicial);
     out.push({mes:firma, concepto:"Separación", medio:"dinero", valor:Math.round(sep)});
-    const mIni = firma > LIM_INI ? firma : LIM_INI;
+    const lim = (e===3) ? "2027-01" : LIM_INI;   /* E3: contado hasta el 30-ene-2027 */
+    const mIni = firma > lim ? firma : lim;
     if(pp.inicial-sep > 0.5) out.push({mes:mIni, concepto:pp.contado?"Saldo de contado":"Resto de la cuota inicial", medio:"dinero", valor:Math.round(pp.inicial-sep)});
     if(!pp.contado){
       for(let i=0;i<pp.n;i++) out.push({mes:sumaMes(CUO_INI,i), concepto:"Cuota "+(i+1)+" de "+pp.n, medio:"dinero", valor:Math.round(pp.cuota)});
@@ -598,7 +599,7 @@ const GERENCIA = window.GERENCIA = (()=>{
         '<div class="gzFm">'+
           '<label>Cliente<input id="eCli" value="'+esc(ed.cliente)+'"></label>'+
           '<label>Canal<select id="eCan"><option value="">Sin canal</option><option value="fajardo"'+(ed.canal==="fajardo"?" selected":"")+'>Juan Carlos Fajardo</option><option value="c21"'+(ed.canal==="c21"?" selected":"")+'>Century 21 DAB</option></select></label>'+
-          '<label>Etapa de la negociación<select id="eEt"><option value="">—</option>'+ETAPAS_HIST.filter(e=>e.n===4||+ed.etapa===e.n).map(e=>'<option value="'+e.n+'"'+(+ed.etapa===e.n?" selected":"")+'>'+e.l+' · '+esc(e.d)+(e.n!==4?' (pactado antes del 26/10)':'')+'</option>').join("")+'</select>'+
+          '<label>Etapa de la negociación<select id="eEt"><option value="">—</option>'+ETAPAS_HIST.filter(e=>e.n===3||e.n===4||+ed.etapa===e.n).map(e=>'<option value="'+e.n+'"'+(+ed.etapa===e.n?" selected":"")+'>'+e.l+' · '+esc(e.d)+(e.n!==4&&e.n!==3?' (pactado antes del 26/10)':'')+'</option>').join("")+'</select>'+
             '<span class="ayuda">'+(lista?'Lista '+ETAPAS_HIST[ed.etapa-1].l+': '+cop(lista):'Escoge la etapa para ver el precio de lista')+'</span></label>'+
           '<label>Precio pactado<input id="ePac" inputmode="numeric" value="'+fmtN(pac)+'" placeholder="$"><span class="ayuda">'+(lista&&pac?(pac===lista?'Igual a la lista':(pac>lista?'+':'−')+cop(Math.abs(pac-lista))+' frente a la lista'):'&nbsp;')+'</span></label>'+
           '<label>Mes de la firma<input id="eFir" type="month" value="'+esc(ed.firma)+'"></label>'+

@@ -34,7 +34,8 @@ const COMPARADOR = window.COMPARADOR = (()=>{
     const v = precio(L, e), pp = planPago(v, e), pagos = [];
     const sep = Math.min(SEPARACION, pp.inicial);
     pagos.push({m:firma, v:sep});
-    const mIni = firma > LIM_INI ? firma : LIM_INI;
+    const lim = (e===3) ? "2027-01" : LIM_INI;   /* E3: contado hasta el 30-ene-2027 */
+    const mIni = firma > lim ? firma : lim;
     if(pp.inicial - sep > 0.5) pagos.push({m:mIni, v:pp.inicial - sep});
     if(!pp.contado){
       for(let i=0;i<pp.n;i++) pagos.push({m:sumaMes(CUO_INI,i), v:pp.cuota});
@@ -124,7 +125,7 @@ const COMPARADOR = window.COMPARADOR = (()=>{
   }
   function leerForm(){
     const c=document.getElementById("hojaCuerpo");
-    st.etapa = 4;
+    st.etapa = [3,4].includes(+c.querySelector("#cmpEt").value) ? +c.querySelector("#cmpEt").value : 4;
     st.firma = c.querySelector("#cmpFirma").value || hoy();
     st.cliente = c.querySelector("#cmpCli").value;
     st.filas = [...c.querySelectorAll(".cmpFila:not(.cmpCuota)")].map(r=>({
@@ -160,7 +161,7 @@ const COMPARADOR = window.COMPARADOR = (()=>{
   function abrir(n){
     if(!ROL.esVentas()){ avisar("El comparador es sólo para administradores."); return; }
     st = leer(n) || {lote:n, etapa:4, firma:hoy(), cliente:"", precioCliente:"",
-                     filas:[{c:"A la firma",t:"dinero",v:SEPARACION,m:hoy()}], cuotas:[]}; st.etapa=4;
+                     filas:[{c:"A la firma",t:"dinero",v:SEPARACION,m:hoy()}], cuotas:[]}; if(![3,4].includes(st.etapa)) st.etapa=4;
     st.lote=n;
     document.getElementById("hojaTit").textContent = "Lote "+n+" · Comparar propuesta de pago";
     document.getElementById("hojaPie").innerHTML =
