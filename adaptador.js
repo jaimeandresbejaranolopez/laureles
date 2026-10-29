@@ -23,7 +23,7 @@
   const PR_A=(typeof PRECIO_PROT!=="undefined")?PRECIO_PROT:{};
   const PV_A=(typeof PRECIO_UTIL!=="undefined")?PRECIO_UTIL:{};
   /* precio único desde el 26/10/2026: sólo la lista E4 */
-  const ETAPAS_A=[{n:3,l:"E3",d:"Contado al 30-ene-2027, −5 %"},{n:4,l:"E4",d:"Precio de lista"}];
+  const ETAPAS_A=[{n:3,l:"E3",d:"Contado al 30-ene-2027"},{n:4,l:"E4",d:"Precio de lista"}];
   const EST_A={DISPONIBLE:{c:"var(--disp)",k:"d",t:"Disponible"},
                RESERVADO:{c:"var(--resv)",k:"r",t:"Reservado"},
                SEPARADO:{c:"var(--sep)",k:"s",t:"Separado"},
@@ -46,7 +46,7 @@
 
   /* la etapa y el lote seleccionado se leen del mapa, no se copian */
   const puente = {
-    get etapa(){ try{ return (PV_A[4]!=null && [3,4].includes(S.etapa)) ? S.etapa : 4; }catch(e){ return 4; } },
+    get etapa(){ try{ return (PV_A[S.etapa]!=null && [3,4].includes(S.etapa)) ? S.etapa : 4; }catch(e){ return 4; } },
     set etapa(v){ try{ S.etapa=v; }catch(e){} },
     get sel(){ try{ return S.sel; }catch(e){ return null; } },
     set sel(v){},
@@ -57,7 +57,9 @@
 
   window.__ANL_EXT = {
     DATA: PAY, PX, lat0, lon0, KX, KY,
-    EST: EST_A, ETAPAS: ETAPAS_A, PR: PR_A, PV: PV_A, POIS: POIS_A,
+    EST: EST_A,
+    /* lista viva: sólo las etapas cuyo precio está cargado (público: E4; equipo: E3 y E4) */
+    ETAPAS: new Proxy(ETAPAS_A,{get(t,k){ const a=ETAPAS_A.filter(e=>PV_A[e.n]!=null); const v=a[k]; return typeof v==="function"?v.bind(a):v; }}), PR: PR_A, PV: PV_A, POIS: POIS_A,
     RENDERS: window.__RENDERS || {},
     precio: (L,e)=> (PV_A[e]!=null) ? L.pr*PR_A[e] + L.ut*PV_A[e] : null,
     estadoDe, state: puente,

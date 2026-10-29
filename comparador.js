@@ -141,7 +141,7 @@ const COMPARADOR = window.COMPARADOR = (()=>{
     c.innerHTML =
       '<div class="cmpCab">'+
         '<div><label for="cmpEt">Etapa para comparar</label><select id="cmpEt">'+
-          ETAPAS.map(E=>'<option value="'+E.n+'"'+(E.n===st.etapa?' selected':'')+'>'+E.l+' · '+cop(precio(f.properties,E.n))+'</option>').join("")+'</select></div>'+
+          ETAPAS.filter(E=>PRECIO_UTIL[E.n]!=null).map(E=>'<option value="'+E.n+'"'+(E.n===st.etapa?' selected':'')+'>'+E.l+' · '+cop(precio(f.properties,E.n))+'</option>').join("")+'</select></div>'+
         '<div><label for="cmpFirma">Mes de firma</label><input type="month" id="cmpFirma" value="'+esc(st.firma)+'"></div>'+
         '<div><label for="cmpCli">Cliente</label><input type="text" id="cmpCli" value="'+esc(st.cliente)+'" placeholder="Nombre del cliente"></div>'+
       '</div>'+

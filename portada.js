@@ -80,7 +80,7 @@ function datos(){
   const ini = (typeof INICIAL!=="undefined") ? INICIAL : {};
   const et = [];
   if(F.length && pu && pp){
-    for(let e=1;e<=6;e++){
+    for(let e=1;e<=6;e++){ if(pu[e]==null || pp[e]==null) continue;
       const v = F.map(p=>p.area_util_m2*pu[e] + p.area_proteccion_m2*pp[e]);
       et.push({n:e, min:Math.min(...v), max:Math.max(...v), mu:pu[e], mp:pp[e], ini:ini[e]!=null?ini[e]:1});
     }
@@ -141,8 +141,8 @@ const TX = {
   sEb:"Cerca de todo", sT:"A minutos de lo que importa",
   sP:"Desde Laureles se llega en minutos a la autopista, al aeropuerto, a la ciudad y a los grandes atractivos del Quindío.",
   sCred:"Foto",
-  kEb:"Precios", kT:"Precio y forma de pago, con un asesor",
-  kP:"Te damos el precio de lista y el plan de pagos del lote que te interese, con su ficha completa. Escríbenos por WhatsApp o agenda una visita.",
+  kEb:"Precios", kT:"Un solo precio de lista",
+  kP:"El precio de cada lote es su área útil por el valor del m² útil, más su área de protección por el valor del m² de protección.",
   etD:{1:["De contado","20 % menos que la lista"],2:["60 % en 2026","10 % menos"],3:["50 % en 2026","5 % menos"],4:["20 % en 2026","Precio de lista"],5:["20 % en 2026","Lista + 10 %"],6:["20 % en 2026","Lista + 20 %"]},
   desde:"desde", hasta:"hasta", mu:"m² útil", mp:"m² protección",
   pagoT:"Así se paga", pago:(d)=>[
@@ -194,8 +194,8 @@ const TX = {
   sEb:"Close to everything", sT:"Minutes from what matters",
   sP:"From Laureles you reach the highway, the airport, the city and Quindío's main attractions in minutes.",
   sCred:"Photo",
-  kEb:"Prices", kT:"Price and payment terms, from an advisor",
-  kP:"We give you the list price and payment plan of the lot you like, with its full sheet. Write to us on WhatsApp or book a visit.",
+  kEb:"Prices", kT:"One list price",
+  kP:"Each lot's price is its usable area times the usable m² value, plus its protected area times the protected m² value.",
   etD:{1:["Cash","20% below list"],2:["60% in 2026","10% off"],3:["50% in 2026","5% off"],4:["20% in 2026","List price"],5:["20% in 2026","List + 10%"],6:["20% in 2026","List + 20%"]},
   desde:"from", hasta:"to", mu:"usable m²", mp:"protected m²",
   pagoT:"How payment works", pago:(d)=>[
@@ -247,8 +247,8 @@ const TX = {
   sEb:"Près de tout", sT:"À quelques minutes de l'essentiel",
   sP:"Depuis Laureles, l'autoroute, l'aéroport, la ville et les grands attraits du Quindío sont à quelques minutes.",
   sCred:"Photo",
-  kEb:"Prix", kT:"Prix et modalités, avec un conseiller",
-  kP:"Nous vous donnons le prix de liste et le plan de paiement du terrain qui vous intéresse, avec sa fiche complète. Écrivez-nous sur WhatsApp ou réservez une visite.",
+  kEb:"Prix", kT:"Un seul prix de liste",
+  kP:"Le prix de chaque terrain est sa surface utile fois la valeur du m² utile, plus sa surface protégée fois la valeur du m² protégé.",
   etD:{1:["Comptant","−20 % sur la liste"],2:["60 % en 2026","−10 %"],3:["50 % en 2026","−5 %"],4:["20 % en 2026","Prix de liste"],5:["20 % en 2026","Liste + 10 %"],6:["20 % en 2026","Liste + 20 %"]},
   desde:"dès", hasta:"jusqu'à", mu:"m² utile", mp:"m² protégé",
   pagoT:"Modalités de paiement", pago:(d)=>[
@@ -432,7 +432,8 @@ function html(){
 
   <section class="ptSec" id="ptPrecios">
     <div class="ptIn ptCab"><div><div class="ptEb">${ic("alza")}${t.kEb}</div><h2>${t.kT}</h2></div><p class="ptLead">${t.kP}</p></div>
-    <div class="ptIn"><button class="ptPri" data-pt="wa">${ic("chat")}<span>${t.navWa}</span></button></div>
+    <div class="ptIn ptEtapas">${et}</div>
+    <div class="ptIn ptPago"><h3>${t.pagoT}</h3><ol>${t.pago(d).map(([k,p])=>`<li>${ic(k,"ptIcP")}<span>${p}</span></li>`).join("")}</ol><p class="ptNota">${t.precNota}</p></div>
   </section>
 
   <section class="ptSec ptCrema">
