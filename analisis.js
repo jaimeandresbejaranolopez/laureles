@@ -6415,7 +6415,10 @@ function abrirAnalisis(n){
 
   mb.querySelector("#anl3d").onclick=()=>{
     cerrarAnalisis();
-    if(!R3D.activo()) document.getElementById("b3d").click();
+    if(!R3D.activo()){
+      document.getElementById("b3d").click();
+      if(!R3D.activo()) return;      /* visitante: sale el aviso de asesor y no se abre el 3D */
+    }
     R3D.casa(n, asoEstado.f, asoEstado.h);
     setTimeout(()=>R3D.irA(n), 80);
     /* Honestidad sobre qué se está viendo: en el 3D del plano el volumen sigue

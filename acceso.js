@@ -53,7 +53,11 @@ const ACCESO = (()=>{
                "Before touring the plan, tell us who you are.",
                "Avant de parcourir le plan, dites-nous qui vous êtes.")+'</p>'+
       '<div class="puerta">'+
-        '<button class="opc" id="pVis"><b>'+tt("Soy visitante","I am a visitor","Je suis visiteur")+'</b>'+
+        '<button class="opc opcYa" id="pYa"><b>'+tt("Ya me registré","I already registered","Je suis déjà inscrit")+'</b>'+
+          '<span>'+tt("Entre solo con su correo, sin volver a llenar los datos.",
+                      "Enter with your email only, without filling in your details again.",
+                      "Entrez avec votre courriel, sans remplir à nouveau vos données.")+'</span></button>'+
+        '<button class="opc" id="pVis"><b>'+tt("Soy visitante nuevo","I am a new visitor","Je suis nouveau visiteur")+'</b>'+
           '<span>'+tt("Recorra el plano, abra cualquier lote y descargue su ficha. Sólo pedimos su nombre y cómo contactarlo.",
                       "Tour the plan, open any lot and download its sheet. We only ask your name and how to reach you.",
                       "Parcourez le plan, ouvrez n'importe quel lot et téléchargez sa fiche. Nous demandons seulement votre nom et vos coordonnées.")+'</span></button>'+
@@ -63,6 +67,7 @@ const ACCESO = (()=>{
                       "Direction : change l'état des lots et voit les prospects.")+'</span></button>'+
       '</div>',
       '');
+    document.getElementById("pYa").onclick  = ()=> formReingreso(alTerminar);
     document.getElementById("pVis").onclick = ()=> formVisitante(alTerminar);
     document.getElementById("pAdm").onclick = ()=> formAdmin(alTerminar);
   }
@@ -89,10 +94,12 @@ const ACCESO = (()=>{
       '<div class="pista" id="vErr" style="color:#A3543F"></div>'+
       '<div class="pista">'+tt("Puede conocer, actualizar, rectificar o suprimir sus datos, y revocar esta autorización, escribiendo al correo que aparece en la política.",
                               "You may access, update, correct or delete your data, and revoke this authorisation, by writing to the address in the policy.",
-                              "Vous pouvez consulter, mettre à jour, rectifier ou supprimer vos données, et révoquer cette autorisation, en écrivant à l'adresse indiquée dans la politique.")+'</div>',
+                              "Vous pouvez consulter, mettre à jour, rectifier ou supprimer vos données, et révoquer cette autorisation, en écrivant à l'adresse indiquée dans la politique.")+'</div>'+
+      '<div class="pista"><a href="#" id="vYa">'+tt("¿Ya se registró antes? Entre solo con su correo.","Registered before? Enter with your email only.","Déjà inscrit ? Entrez avec votre courriel.")+'</a></div>',
       '<button class="sec" id="vAtras">'+tt("Atrás","Back","Retour")+'</button>'+
       '<button class="pri" id="vIr">'+tt("Entrar","Enter","Entrer")+'</button>');
     document.getElementById("vAtras").onclick = ()=> puerta(alTerminar);
+    { const y=document.getElementById("vYa"); if(y) y.onclick=ev=>{ ev.preventDefault(); formReingreso(alTerminar); }; }
     const err = document.getElementById("vErr");
     const ir = async ()=>{
       const d = { nombre: document.getElementById("vNom").value.trim(),
@@ -118,10 +125,98 @@ const ACCESO = (()=>{
                                       cuando:new Date().toISOString(), guardado:guardado, version_politica:V_POLITICA });
       cerrar(); if(alTerminar) alTerminar();
       avisar(tt("Bienvenido, ","Welcome, ","Bienvenue, ")+d.nombre.split(" ")[0]+".");
+      sugerirGuardar();
     };
     document.getElementById("vIr").onclick = ir;
     ["vNom","vMail","vTel"].forEach(id=>document.getElementById(id).onkeydown=ev=>{ if(ev.key==="Enter") ir(); });
     setTimeout(()=>{ const i=document.getElementById("vNom"); if(i) i.focus(); }, 60);
+  }
+
+  /* ------------------------ visitante que vuelve ------------------------- */
+  /* 03/11/2026: muchos visitantes vuelven desde otro celular, otro navegador o
+     el navegador de WhatsApp, donde no queda guardado su registro, y llenaban
+     todo otra vez (hay correos registrados hasta 12 veces). Con el correo basta:
+     la base confirma que ya existe (función laureles_visitante_existe, que solo
+     responde sí o no y no devuelve ningún dato de la persona). */
+  async function correoRegistrado(correo){
+    try{
+      const r = await fetch(base()+"/rest/v1/rpc/laureles_visitante_existe",
+        {method:"POST", headers:cab(), body:JSON.stringify({p_correo:correo})});
+      if(!r.ok) return null;                 /* función no disponible: no se bloquea a nadie */
+      return (await r.json()) === true;
+    }catch(e){ return null; }
+  }
+  function formReingreso(alTerminar){
+    const v = visitante() || {};
+    hojaBase(tt("Bienvenido de nuevo","Welcome back","Bon retour"),
+      '<p>'+tt("Escriba el correo con el que se registró y entre de una vez.",
+               "Type the email you registered with and go straight in.",
+               "Saisissez le courriel utilisé lors de votre inscription et entrez directement.")+'</p>'+
+      '<label>'+tt("Correo","Email","Courriel")+'</label>'+
+      '<input type="text" id="rMail" autocomplete="email" inputmode="email" value="'+esc(v.correo)+'" placeholder="nombre@correo.com">'+
+      '<div class="pista" id="rErr" style="color:#A3543F"></div>',
+      '<button class="sec" id="rAtras">'+tt("Atrás","Back","Retour")+'</button>'+
+      '<button class="pri" id="rIr">'+tt("Entrar","Enter","Entrer")+'</button>');
+    document.getElementById("rAtras").onclick = ()=> puerta(alTerminar);
+    const err = document.getElementById("rErr");
+    const ir = async ()=>{
+      const correo = document.getElementById("rMail").value.trim().toLowerCase();
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)){ err.textContent=tt("Ese correo no se ve bien.","That email does not look right.","Ce courriel semble incorrect."); return; }
+      const bt=document.getElementById("rIr"); bt.disabled=true; bt.textContent=tt("Buscando…","Looking…","Recherche…"); err.textContent="";
+      const ok = await correoRegistrado(correo);
+      if(ok === false){
+        bt.disabled=false; bt.textContent=tt("Entrar","Enter","Entrer");
+        err.innerHTML = tt("No encontramos ese correo. Revise que esté bien escrito o ","We could not find that email. Check it or ","Courriel introuvable. Vérifiez-le ou ")+
+          '<a href="#" id="rNuevo">'+tt("regístrese aquí","register here","inscrivez-vous ici")+'</a>.';
+        const n=document.getElementById("rNuevo"); if(n) n.onclick=ev=>{ ev.preventDefault(); formVisitante(alTerminar); };
+        return;
+      }
+      const prev = (v.correo===correo) ? v : {};
+      guardar("laureles.visitante", Object.assign({}, prev, { correo, guardado:true, reingreso:new Date().toISOString(),
+                                                              version_politica: prev.version_politica || V_POLITICA }));
+      cerrar(); if(alTerminar) alTerminar();
+      avisar(prev.nombre ? tt("Bienvenido de nuevo, ","Welcome back, ","Bon retour, ")+prev.nombre.split(" ")[0]+"."
+                         : tt("Bienvenido de nuevo.","Welcome back.","Bon retour."));
+      sugerirGuardar();
+    };
+    document.getElementById("rIr").onclick = ir;
+    document.getElementById("rMail").onkeydown = ev=>{ if(ev.key==="Enter") ir(); };
+    setTimeout(()=>{ const i=document.getElementById("rMail"); if(i) i.focus(); }, 60);
+  }
+
+  /* Guardar la página en el celular o el computador: así abre directo, como
+     una aplicación, y el registro queda en ese dispositivo. */
+  let promptInstalar = null;
+  addEventListener("beforeinstallprompt", ev=>{ ev.preventDefault(); promptInstalar = ev; });
+  const yaInstalada = ()=>{ try{ return matchMedia("(display-mode: standalone)").matches || navigator.standalone===true; }catch(e){ return false; } };
+  function sugerirGuardar(){
+    if(yaInstalada() || leer("laureles.sugerido", false)) return;
+    guardar("laureles.sugerido", true);
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent||"");
+    const enApp = /FBAN|FBAV|Instagram|WhatsApp|Line\//i.test(navigator.userAgent||"");
+    let d=document.getElementById("guardarApp");
+    if(!d){ d=document.createElement("div"); d.id="guardarApp"; document.body.appendChild(d); }
+    d.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:9998;"+
+      "max-width:420px;width:calc(100% - 32px);background:#32402F;color:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.35);font-size:14px;line-height:1.45";
+    const txt = enApp ? tt("Para entrar más rápido la próxima vez, abra esta página en Chrome o Safari (menú ⋮ → Abrir en el navegador) y guárdela en su pantalla de inicio.",
+                           "To get in faster next time, open this page in Chrome or Safari (⋮ menu → Open in browser) and save it to your home screen.",
+                           "Pour entrer plus vite, ouvrez cette page dans Chrome ou Safari (menu ⋮ → Ouvrir dans le navigateur) et ajoutez-la à l'écran d'accueil.")
+             : ios ? tt("Para entrar más rápido la próxima vez: toque Compartir y luego «Agregar a inicio».",
+                        "To get in faster next time: tap Share, then “Add to Home Screen”.",
+                        "Pour entrer plus vite : touchez Partager puis « Sur l'écran d'accueil ».")
+             : tt("Guarde la página en su celular o computador y la próxima vez entra directo.",
+                  "Save the page on your phone or computer and next time go straight in.",
+                  "Enregistrez la page sur votre téléphone ou ordinateur et entrez directement la prochaine fois.");
+    d.innerHTML='<div style="display:flex;gap:12px;align-items:flex-start"><div style="flex:1">'+txt+'</div>'+
+      '<button type="button" id="gaX" aria-label="Cerrar" style="background:none;border:0;color:#fff;font-size:20px;line-height:1;cursor:pointer">×</button></div>'+
+      ((promptInstalar && !ios && !enApp) ? '<button type="button" id="gaSi" style="margin-top:10px;width:100%;min-height:42px;border:0;border-radius:10px;background:#EBD9AE;color:#23291F;font-weight:700;font-size:15px;cursor:pointer">'+
+        tt("Guardar en mi dispositivo","Save to my device","Enregistrer sur mon appareil")+'</button>' : '');
+    d.hidden=false;
+    const fuera=()=>{ d.hidden=true; d.style.display="none"; };
+    d.querySelector("#gaX").onclick=fuera;
+    const si=d.querySelector("#gaSi");
+    if(si) si.onclick=async()=>{ try{ promptInstalar.prompt(); await promptInstalar.userChoice; }catch(e){} promptInstalar=null; fuera(); };
+    setTimeout(fuera, 20000);
   }
 
   /* reintento silencioso de un registro que no alcanzó a subir */

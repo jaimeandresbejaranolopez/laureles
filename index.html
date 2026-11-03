@@ -30,13 +30,13 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20261029a">
+<link rel="stylesheet" href="maplibre-gl.css?v=20261103a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20261029a">
-<link rel="stylesheet" href="portada.css?v=20261029a">
-<link rel="stylesheet" href="analisis.css?v=20261029a">
+<link rel="stylesheet" href="armazon.css?v=20261103a">
+<link rel="stylesheet" href="portada.css?v=20261103a">
+<link rel="stylesheet" href="analisis.css?v=20261103a">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -276,6 +276,7 @@ main.en3d .fondos, .stage.en3d .fondos{bottom:70px}
 .hoja .puerta .opc b{font-family:var(--serif);font-size:18px;font-weight:600;color:var(--ink)}
 .hoja .puerta .opc span{font-size:12.5px;line-height:1.45}
 .hoja .puerta .opc:hover{border-color:var(--forest);background:var(--surface)}
+.hoja .puerta .opcYa{grid-column:1/-1;border-color:var(--forest);border-width:1.5px}
 .hoja .chk{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;line-height:1.5;color:var(--ink-2);margin-top:16px;font-weight:400}
 .hoja .chk input{margin-top:4px;flex-shrink:0;width:16px;height:16px}
 .hoja .chk a{color:var(--forest);font-weight:600}
@@ -610,7 +611,7 @@ body.baseClara .rotCota{color:#6B5C38;
     <button class="hbtn abrirRail" id="bRail">Filtros</button>
     <button class="hbtn" id="bEncuadre" title="Ver todo el predio">Ver todo</button>
     <button class="hbtn" id="bRelieve">Relieve</button>
-    <button class="hbtn" id="b3d" title="Ver el terreno en relieve 3D">3D</button>
+    <button class="hbtn" id="b3d" title="Modelo 3D del lote: con un asesor">3D</button>
     <button class="hbtn ger" id="bGer" title="Tablero gerencial: inventario, cartera y recaudo" hidden>Gerencia</button>
     <button class="hbtn" id="bRol" title="Quién está usando la página">Visitante</button>
     <button class="hbtn" id="bConfig">Ajustes</button>
@@ -909,7 +910,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20261029a"></script>
+<script src="maplibre-gl.js?v=20261103a"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -931,7 +932,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20261029a"></script>
+<script src="lotes.js?v=20261103a"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -3448,28 +3449,28 @@ function compartirLote(p){
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/casa_aerea.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/hero.jpg","praderas":"medios/praderas.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png","vida_perfil_vial":"medios/vida_perfil_vial.jpg","vida_ciclorruta":"medios/vida_ciclorruta.jpg","vida_infantil":"medios/vida_infantil.jpg","vida_gimnasio":"medios/vida_gimnasio.jpg","vida_padel":"medios/vida_padel.jpg"};</script>
-<script src="datos-analisis.js?v=20261029a"></script>
-<script src="datos-terreno.js?v=20261029a"></script>
-<script src="datos-logo.js?v=20261029a"></script>
-<script src="adaptador.js?v=20261029a"></script>
-<script src="analisis.js?v=20261029a"></script>
-<script src="datos-via.js?v=20261029a"></script>
-<script src="datos-entrada.js?v=20261029a"></script>
-<script src="r3d.js?v=20261029a"></script>
-<script src="datos-arboles.js?v=20261029a"></script>
-<script src="paisaje.js?v=20261029a"></script>
-<script src="recorrido.js?v=20261029a"></script>
-<script src="maqueta.js?v=20261029a"></script>
-<script src="visor360.js?v=20261029a"></script>
-<script src="sitios-iconos.js?v=20261029a"></script>
-<script src="armazon.js?v=20261029a"></script>
-<script src="acceso.js?v=20261029a"></script>
-<script src="portada.js?v=20261029a"></script>
-<script src="ia.js?v=20261029a"></script>
-<script src="panel.js?v=20261029a"></script>
-<script src="gerencia.js?v=20261029a"></script>
-<script src="comparador.js?v=20261029a"></script>
-<script src="ayuda.js?v=20261029a"></script>
+<script src="datos-analisis.js?v=20261103a"></script>
+<script src="datos-terreno.js?v=20261103a"></script>
+<script src="datos-logo.js?v=20261103a"></script>
+<script src="adaptador.js?v=20261103a"></script>
+<script src="analisis.js?v=20261103a"></script>
+<script src="datos-via.js?v=20261103a"></script>
+<script src="datos-entrada.js?v=20261103a"></script>
+<script src="r3d.js?v=20261103a"></script>
+<script src="datos-arboles.js?v=20261103a"></script>
+<script src="paisaje.js?v=20261103a"></script>
+<script src="recorrido.js?v=20261103a"></script>
+<script src="maqueta.js?v=20261103a"></script>
+<script src="visor360.js?v=20261103a"></script>
+<script src="sitios-iconos.js?v=20261103a"></script>
+<script src="armazon.js?v=20261103a"></script>
+<script src="acceso.js?v=20261103a"></script>
+<script src="portada.js?v=20261103a"></script>
+<script src="ia.js?v=20261103a"></script>
+<script src="panel.js?v=20261103a"></script>
+<script src="gerencia.js?v=20261103a"></script>
+<script src="comparador.js?v=20261103a"></script>
+<script src="ayuda.js?v=20261103a"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

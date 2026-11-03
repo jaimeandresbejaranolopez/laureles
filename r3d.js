@@ -1543,8 +1543,42 @@ window.__R3D = R3D;
 const b   = document.getElementById("b3d");
 const ctl = document.getElementById("ve3d");
 if(b && ctl){
+  /* 31/10/2026: el modelo 3D manipulable es sólo para el equipo. Un visitante
+     que lo pide recibe un aviso para hacerlo con un asesor. */
+  const esEquipo3D = ()=>{ try{ return !!(window.ROL ? window.ROL.esVentas() : (typeof ROL!=="undefined" && ROL.esVentas())); }catch(e){ return false; } };
+  const avisoAsesor3D = ()=>{
+    let ov=document.getElementById("aviso3d");
+    if(!ov){
+      ov=document.createElement("div"); ov.id="aviso3d";
+      ov.setAttribute("role","dialog"); ov.setAttribute("aria-modal","true");
+      ov.style.cssText="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(20,26,18,.55);padding:16px";
+      ov.innerHTML='<div style="max-width:420px;width:100%;background:#F7F5EE;color:#23291F;border-radius:14px;padding:24px 22px;box-shadow:0 12px 40px rgba(0,0,0,.35);font-family:inherit">'+
+        '<div style="font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#9B7A48;font-weight:700">Modelo 3D del lote</div>'+
+        '<h3 style="margin:8px 0 10px;font-size:21px;line-height:1.25;color:#32402F">Recorre el lote en 3D con un asesor</h3>'+
+        '<p style="margin:0 0 18px;font-size:15px;line-height:1.5;color:#4A5245">Para ver y manipular el modelo 3D del terreno y de la casa dentro del lote, comunícate con un asesor. Te lo mostramos en una visita guiada, en línea o en el predio.</p>'+
+        '<div style="display:flex;gap:10px;flex-wrap:wrap">'+
+        '<button type="button" id="aviso3dWa" style="flex:1 1 180px;min-height:44px;border:0;border-radius:10px;background:#32402F;color:#fff;font-weight:700;font-size:15px;cursor:pointer">Escribir a un asesor</button>'+
+        '<button type="button" id="aviso3dNo" style="flex:0 1 auto;min-height:44px;padding:0 18px;border:1px solid #CFC9B6;border-radius:10px;background:transparent;color:#32402F;font-size:15px;cursor:pointer">Cerrar</button>'+
+        '</div></div>';
+      document.body.appendChild(ov);
+      const cerrar=()=>{ ov.hidden=true; ov.style.display="none"; };
+      ov.addEventListener("click",ev=>{ if(ev.target===ov) cerrar(); });
+      ov.querySelector("#aviso3dNo").onclick=cerrar;
+      document.addEventListener("keydown",ev=>{ if(ev.key==="Escape" && !ov.hidden) cerrar(); });
+      ov.querySelector("#aviso3dWa").onclick=()=>{
+        let n=null; try{ n=(typeof state!=="undefined" && state.sel!=null) ? state.sel : (typeof S!=="undefined" ? S.sel : null); }catch(e){}
+        const t="Hola, quiero ver el modelo 3D"+(n!=null?" del lote "+n:"")+" de Laureles Campestre con un asesor.";
+        try{ (window.abrirWhatsApp||function(){})(t); }catch(e){}
+        cerrar();
+      };
+    }
+    ov.hidden=false; ov.style.display="flex";
+    try{ ov.querySelector("#aviso3dWa").focus(); }catch(e){}
+  };
+  window.__avisoAsesor3D = avisoAsesor3D;
   b.onclick = ()=>{
     const nuevo = !R3D.activo();
+    if(nuevo && !esEquipo3D()){ avisoAsesor3D(); return; }
     if(!R3D.activar(nuevo)){
       try{ avisar("Este dispositivo no puede mostrar el relieve 3D."); }catch(e){}
       return; }
