@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Error</title>
+<style>
+html,body{height:100%;margin:0}
+body{display:flex;align-items:center;justify-content:center;background:#ffffff;color:#222;
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;padding:0 16px}
+p{font-size:20px;text-align:center}
+</style>
+<script>
+if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister();});}).catch(function(){});}
+if(window.caches){caches.keys().then(function(k){k.forEach(function(n){caches.delete(n);});}).catch(function(){});}
+</script>
+</head>
+<body>
+<p>Ha ocurrido un error.</p>
+</body>
+</html>
