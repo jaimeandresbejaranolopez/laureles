@@ -1,0 +1,19 @@
+{
+ "bosque": "medios/bosque.jpg",
+ "canada": "medios/canada.jpg",
+ "casa_aerea": "medios/casa_aerea.jpg",
+ "casa_cerca": "medios/casa_cerca.jpg",
+ "casa_galpones": "medios/casa_galpones.jpg",
+ "clip": "medios/clip.mp4",
+ "cordillera": "medios/cordillera.jpg",
+ "guayacan": "medios/guayacan.jpg",
+ "hero": "medios/hero.jpg",
+ "praderas": "medios/praderas.jpg",
+ "intro": "medios/intro.mp4",
+ "logo": "medios/logo.png",
+ "vida_ciclorruta": "medios/vida_ciclorruta.jpg",
+ "vida_perfil_vial": "medios/vida_perfil_vial.jpg",
+ "vida_infantil": "medios/vida_infantil.jpg",
+ "vida_gimnasio": "medios/vida_gimnasio.jpg",
+ "vida_padel": "medios/vida_padel.jpg"
+}

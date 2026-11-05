@@ -1,0 +1,470 @@
+/* =============================================================================
+   Laureles Campestre — puerta de entrada, registro de visitantes,
+   recuperación de contraseña y agendamiento de visitas.
+
+   QUIÉN ENTRA. Al dar "Comenzar el recorrido" la página pregunta si la persona
+   es visitante o administrador.
+     · Visitante: deja nombre, correo y teléfono y AUTORIZA el tratamiento de
+       sus datos (Ley 1581 de 2012 y Decreto 1377 de 2013). Sin esa
+       autorización marcada no entra nada a la base: lo exige la propia tabla
+       (RLS) y no sólo este formulario. El visitante puede leer la política
+       antes de marcar la casilla; el enlace abre politica-datos.html.
+     · Administrador: correo y contraseña contra Supabase Auth. Es el mismo rol
+       que la página llamaba "ventas": puede cambiar el estado de los lotes y
+       guardar prospectos. Si olvidó la clave, pide un enlace al correo; al
+       volver por ese enlace la página le pide la clave nueva.
+
+   Todo lo que se guarda va a Supabase con la llave publicable. Lo que protege
+   los datos no es la llave sino la RLS: el visitante sólo puede INSERTAR su
+   propio registro y nunca leer los de los demás.
+
+   AGENDAR VISITA. Si en Ajustes hay una URL de agenda (la página de citas de
+   Google Calendar), se abre ahí mismo. Si no la hay todavía, un formulario
+   guarda la solicitud en laureles_visitas y abre WhatsApp con el mensaje
+   listo, para que ninguna solicitud se pierda mientras se conecta la agenda.
+   ============================================================================= */
+"use strict";
+const ACCESO = (()=>{
+  const V_POLITICA = "2026-09-20";        /* fecha de la política vigente */
+  const velo = document.getElementById("velo");
+  /* el idioma vive en el módulo de análisis; armazon.js lo lee igual */
+  const idioma = ()=>{ try{ return (window.ANALISIS && ANALISIS.lang) ? ANALISIS.lang() : "es"; }catch(e){ return "es"; } };
+  const tt = (es,en,fr)=>{ const L=idioma(); return L==="en" ? en : L==="fr" ? fr : es; };
+  const esc = s => String(s||"").replace(/[<>&"]/g, c=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]));
+  const base = ()=> (CFG.supabaseUrl||"").replace(/\/$/,"");
+  const cab  = ()=>({ "apikey":CFG.supabaseKey, "Authorization":"Bearer "+CFG.supabaseKey,
+                      "Content-Type":"application/json", "Prefer":"return=minimal" });
+
+  const visitante   = ()=> leer("laureles.visitante", null);
+  const identificado= ()=> ROL.esVentas() || !!(visitante() && visitante().correo);
+
+  function hojaBase(titulo, cuerpo, pie){
+    document.getElementById("hojaTit").textContent = titulo;
+    document.getElementById("hojaCuerpo").innerHTML = cuerpo;
+    document.getElementById("hojaPie").innerHTML = pie;
+    velo.classList.add("on");
+  }
+  const cerrar = ()=> velo.classList.remove("on");
+
+  /* ------------------------------ la puerta ------------------------------ */
+  function puerta(alTerminar){
+    hojaBase(tt("¿Quién entra?","Who is entering?","Qui entre ?"),
+      '<p>'+tt("Antes de recorrer el plano, díganos quién es usted.",
+               "Before touring the plan, tell us who you are.",
+               "Avant de parcourir le plan, dites-nous qui vous êtes.")+'</p>'+
+      '<div class="puerta">'+
+        '<button class="opc opcYa" id="pYa"><b>'+tt("Ya me registré","I already registered","Je suis déjà inscrit")+'</b>'+
+          '<span>'+tt("Entre solo con su correo, sin volver a llenar los datos.",
+                      "Enter with your email only, without filling in your details again.",
+                      "Entrez avec votre courriel, sans remplir à nouveau vos données.")+'</span></button>'+
+        '<button class="opc" id="pVis"><b>'+tt("Soy visitante nuevo","I am a new visitor","Je suis nouveau visiteur")+'</b>'+
+          '<span>'+tt("Recorra el plano, abra cualquier lote y descargue su ficha. Sólo pedimos su nombre y cómo contactarlo.",
+                      "Tour the plan, open any lot and download its sheet. We only ask your name and how to reach you.",
+                      "Parcourez le plan, ouvrez n'importe quel lot et téléchargez sa fiche. Nous demandons seulement votre nom et vos coordonnées.")+'</span></button>'+
+        '<button class="opc" id="pAdm"><b>'+tt("Soy administrador","I am an administrator","Je suis administrateur")+'</b>'+
+          '<span>'+tt("Gerencia: cambia el estado de los lotes y ve los prospectos.",
+                      "Management: changes lot status and sees prospects.",
+                      "Direction : change l'état des lots et voit les prospects.")+'</span></button>'+
+      '</div>',
+      '');
+    document.getElementById("pYa").onclick  = ()=> formReingreso(alTerminar);
+    document.getElementById("pVis").onclick = ()=> formVisitante(alTerminar);
+    document.getElementById("pAdm").onclick = ()=> formAdmin(alTerminar);
+  }
+
+  /* ---------------------------- el visitante ----------------------------- */
+  function formVisitante(alTerminar){
+    const v = visitante() || {};
+    hojaBase(tt("Bienvenido","Welcome","Bienvenue"),
+      '<p>'+tt("Déjenos sus datos para poder atenderlo. Es lo único que pedimos para entrar.",
+               "Leave us your details so we can assist you. It is all we ask to enter.",
+               "Laissez-nous vos coordonnées pour pouvoir vous répondre. C'est tout ce que nous demandons.")+'</p>'+
+      '<label>'+tt("Nombre","Name","Nom")+'</label>'+
+      '<input type="text" id="vNom" autocomplete="name" value="'+esc(v.nombre)+'" placeholder="'+tt("Nombre y apellido","First and last name","Prénom et nom")+'">'+
+      '<label>'+tt("Correo","Email","Courriel")+'</label>'+
+      '<input type="text" id="vMail" autocomplete="email" inputmode="email" value="'+esc(v.correo)+'" placeholder="nombre@correo.com">'+
+      '<label>'+tt("Teléfono","Phone","Téléphone")+'</label>'+
+      '<input type="text" id="vTel" autocomplete="tel" inputmode="tel" value="'+esc(v.telefono)+'" placeholder="+57 300 000 0000">'+
+      '<label class="chk"><input type="checkbox" id="vOk"> <span>'+
+        tt('Autorizo a Laureles Campestre el tratamiento de mis datos personales para contactarme e informarme sobre el proyecto, conforme a la Ley 1581 de 2012. ',
+           'I authorise Laureles Campestre to process my personal data to contact me and inform me about the project, under Colombian Law 1581 of 2012. ',
+           'J\'autorise Laureles Campestre à traiter mes données personnelles pour me contacter et m\'informer sur le projet, conformément à la loi colombienne 1581 de 2012. ')+
+        '<a href="politica-datos.html" target="_blank" rel="noopener">'+
+        tt("Leer la política de tratamiento de datos","Read the data-processing policy","Lire la politique de traitement des données")+'</a>.</span></label>'+
+      '<div class="pista" id="vErr" style="color:#A3543F"></div>'+
+      '<div class="pista">'+tt("Puede conocer, actualizar, rectificar o suprimir sus datos, y revocar esta autorización, escribiendo al correo que aparece en la política.",
+                              "You may access, update, correct or delete your data, and revoke this authorisation, by writing to the address in the policy.",
+                              "Vous pouvez consulter, mettre à jour, rectifier ou supprimer vos données, et révoquer cette autorisation, en écrivant à l'adresse indiquée dans la politique.")+'</div>'+
+      '<div class="pista"><a href="#" id="vYa">'+tt("¿Ya se registró antes? Entre solo con su correo.","Registered before? Enter with your email only.","Déjà inscrit ? Entrez avec votre courriel.")+'</a></div>',
+      '<button class="sec" id="vAtras">'+tt("Atrás","Back","Retour")+'</button>'+
+      '<button class="pri" id="vIr">'+tt("Entrar","Enter","Entrer")+'</button>');
+    document.getElementById("vAtras").onclick = ()=> puerta(alTerminar);
+    { const y=document.getElementById("vYa"); if(y) y.onclick=ev=>{ ev.preventDefault(); formReingreso(alTerminar); }; }
+    const err = document.getElementById("vErr");
+    const ir = async ()=>{
+      const d = { nombre: document.getElementById("vNom").value.trim(),
+                  correo: document.getElementById("vMail").value.trim().toLowerCase(),
+                  telefono: document.getElementById("vTel").value.trim().replace(/[^\d+]/g,"") || null,
+                  acepta_politica: document.getElementById("vOk").checked };
+      if(d.nombre.length<2){ err.textContent=tt("Falta el nombre.","Name is missing.","Le nom manque."); return; }
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.correo)){ err.textContent=tt("Ese correo no se ve bien.","That email does not look right.","Ce courriel semble incorrect."); return; }
+      if(d.telefono && (d.telefono.length<7 || d.telefono.length>20)){ err.textContent=tt("Ese teléfono no se ve bien.","That phone does not look right.","Ce téléphone semble incorrect."); return; }
+      if(!d.acepta_politica){ err.textContent=tt("Para entrar hace falta autorizar el tratamiento de los datos.","You need to authorise data processing to enter.","Il faut autoriser le traitement des données pour entrer."); return; }
+      const bt=document.getElementById("vIr"); bt.disabled=true; bt.textContent=tt("Un momento…","One moment…","Un instant…"); err.textContent="";
+      const registro = Object.assign({}, d, { version_politica:V_POLITICA, idioma:idioma(), origen:"web",
+                                              navegador:(navigator.userAgent||"").slice(0,180) });
+      let guardado = false;
+      try{
+        const r = await fetch(base()+"/rest/v1/laureles_visitantes", {method:"POST", headers:cab(), body:JSON.stringify([registro])});
+        guardado = r.ok;
+        if(!r.ok){ const j=await r.json().catch(()=>({})); console.warn("visitante no guardado:", r.status, j.message||""); }
+      }catch(e){ console.warn("visitante no guardado:", e.message); }
+      /* Con o sin red la persona entra: lo que dejó queda en el dispositivo y
+         se reintenta la próxima vez que abra la página. */
+      guardar("laureles.visitante", { nombre:d.nombre, correo:d.correo, telefono:d.telefono,
+                                      cuando:new Date().toISOString(), guardado:guardado, version_politica:V_POLITICA });
+      cerrar(); if(alTerminar) alTerminar();
+      avisar(tt("Bienvenido, ","Welcome, ","Bienvenue, ")+d.nombre.split(" ")[0]+".");
+      sugerirGuardar();
+    };
+    document.getElementById("vIr").onclick = ir;
+    ["vNom","vMail","vTel"].forEach(id=>document.getElementById(id).onkeydown=ev=>{ if(ev.key==="Enter") ir(); });
+    setTimeout(()=>{ const i=document.getElementById("vNom"); if(i) i.focus(); }, 60);
+  }
+
+  /* ------------------------ visitante que vuelve ------------------------- */
+  /* 03/11/2026: muchos visitantes vuelven desde otro celular, otro navegador o
+     el navegador de WhatsApp, donde no queda guardado su registro, y llenaban
+     todo otra vez (hay correos registrados hasta 12 veces). Con el correo basta:
+     la base confirma que ya existe (función laureles_visitante_existe, que solo
+     responde sí o no y no devuelve ningún dato de la persona). */
+  async function correoRegistrado(correo){
+    try{
+      const r = await fetch(base()+"/rest/v1/rpc/laureles_visitante_existe",
+        {method:"POST", headers:cab(), body:JSON.stringify({p_correo:correo})});
+      if(!r.ok) return null;                 /* función no disponible: no se bloquea a nadie */
+      return (await r.json()) === true;
+    }catch(e){ return null; }
+  }
+  function formReingreso(alTerminar){
+    const v = visitante() || {};
+    hojaBase(tt("Bienvenido de nuevo","Welcome back","Bon retour"),
+      '<p>'+tt("Escriba el correo con el que se registró y entre de una vez.",
+               "Type the email you registered with and go straight in.",
+               "Saisissez le courriel utilisé lors de votre inscription et entrez directement.")+'</p>'+
+      '<label>'+tt("Correo","Email","Courriel")+'</label>'+
+      '<input type="text" id="rMail" autocomplete="email" inputmode="email" value="'+esc(v.correo)+'" placeholder="nombre@correo.com">'+
+      '<div class="pista" id="rErr" style="color:#A3543F"></div>',
+      '<button class="sec" id="rAtras">'+tt("Atrás","Back","Retour")+'</button>'+
+      '<button class="pri" id="rIr">'+tt("Entrar","Enter","Entrer")+'</button>');
+    document.getElementById("rAtras").onclick = ()=> puerta(alTerminar);
+    const err = document.getElementById("rErr");
+    const ir = async ()=>{
+      const correo = document.getElementById("rMail").value.trim().toLowerCase();
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)){ err.textContent=tt("Ese correo no se ve bien.","That email does not look right.","Ce courriel semble incorrect."); return; }
+      const bt=document.getElementById("rIr"); bt.disabled=true; bt.textContent=tt("Buscando…","Looking…","Recherche…"); err.textContent="";
+      const ok = await correoRegistrado(correo);
+      if(ok === false){
+        bt.disabled=false; bt.textContent=tt("Entrar","Enter","Entrer");
+        err.innerHTML = tt("No encontramos ese correo. Revise que esté bien escrito o ","We could not find that email. Check it or ","Courriel introuvable. Vérifiez-le ou ")+
+          '<a href="#" id="rNuevo">'+tt("regístrese aquí","register here","inscrivez-vous ici")+'</a>.';
+        const n=document.getElementById("rNuevo"); if(n) n.onclick=ev=>{ ev.preventDefault(); formVisitante(alTerminar); };
+        return;
+      }
+      const prev = (v.correo===correo) ? v : {};
+      guardar("laureles.visitante", Object.assign({}, prev, { correo, guardado:true, reingreso:new Date().toISOString(),
+                                                              version_politica: prev.version_politica || V_POLITICA }));
+      cerrar(); if(alTerminar) alTerminar();
+      avisar(prev.nombre ? tt("Bienvenido de nuevo, ","Welcome back, ","Bon retour, ")+prev.nombre.split(" ")[0]+"."
+                         : tt("Bienvenido de nuevo.","Welcome back.","Bon retour."));
+      sugerirGuardar();
+    };
+    document.getElementById("rIr").onclick = ir;
+    document.getElementById("rMail").onkeydown = ev=>{ if(ev.key==="Enter") ir(); };
+    setTimeout(()=>{ const i=document.getElementById("rMail"); if(i) i.focus(); }, 60);
+  }
+
+  /* Guardar la página en el celular o el computador: así abre directo, como
+     una aplicación, y el registro queda en ese dispositivo. */
+  let promptInstalar = null;
+  addEventListener("beforeinstallprompt", ev=>{ ev.preventDefault(); promptInstalar = ev; });
+  const yaInstalada = ()=>{ try{ return matchMedia("(display-mode: standalone)").matches || navigator.standalone===true; }catch(e){ return false; } };
+  function sugerirGuardar(){
+    if(yaInstalada() || leer("laureles.sugerido", false)) return;
+    guardar("laureles.sugerido", true);
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent||"");
+    const enApp = /FBAN|FBAV|Instagram|WhatsApp|Line\//i.test(navigator.userAgent||"");
+    let d=document.getElementById("guardarApp");
+    if(!d){ d=document.createElement("div"); d.id="guardarApp"; document.body.appendChild(d); }
+    d.style.cssText="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:9998;"+
+      "max-width:420px;width:calc(100% - 32px);background:#32402F;color:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.35);font-size:14px;line-height:1.45";
+    const txt = enApp ? tt("Para entrar más rápido la próxima vez, abra esta página en Chrome o Safari (menú ⋮ → Abrir en el navegador) y guárdela en su pantalla de inicio.",
+                           "To get in faster next time, open this page in Chrome or Safari (⋮ menu → Open in browser) and save it to your home screen.",
+                           "Pour entrer plus vite, ouvrez cette page dans Chrome ou Safari (menu ⋮ → Ouvrir dans le navigateur) et ajoutez-la à l'écran d'accueil.")
+             : ios ? tt("Para entrar más rápido la próxima vez: toque Compartir y luego «Agregar a inicio».",
+                        "To get in faster next time: tap Share, then “Add to Home Screen”.",
+                        "Pour entrer plus vite : touchez Partager puis « Sur l'écran d'accueil ».")
+             : tt("Guarde la página en su celular o computador y la próxima vez entra directo.",
+                  "Save the page on your phone or computer and next time go straight in.",
+                  "Enregistrez la page sur votre téléphone ou ordinateur et entrez directement la prochaine fois.");
+    d.innerHTML='<div style="display:flex;gap:12px;align-items:flex-start"><div style="flex:1">'+txt+'</div>'+
+      '<button type="button" id="gaX" aria-label="Cerrar" style="background:none;border:0;color:#fff;font-size:20px;line-height:1;cursor:pointer">×</button></div>'+
+      ((promptInstalar && !ios && !enApp) ? '<button type="button" id="gaSi" style="margin-top:10px;width:100%;min-height:42px;border:0;border-radius:10px;background:#EBD9AE;color:#23291F;font-weight:700;font-size:15px;cursor:pointer">'+
+        tt("Guardar en mi dispositivo","Save to my device","Enregistrer sur mon appareil")+'</button>' : '');
+    d.hidden=false;
+    const fuera=()=>{ d.hidden=true; d.style.display="none"; };
+    d.querySelector("#gaX").onclick=fuera;
+    const si=d.querySelector("#gaSi");
+    if(si) si.onclick=async()=>{ try{ promptInstalar.prompt(); await promptInstalar.userChoice; }catch(e){} promptInstalar=null; fuera(); };
+    setTimeout(fuera, 20000);
+  }
+
+  /* reintento silencioso de un registro que no alcanzó a subir */
+  async function reintentarVisitante(){
+    const v = visitante(); if(!v || v.guardado || !v.correo || !base()) return;
+    try{
+      const r = await fetch(base()+"/rest/v1/laureles_visitantes", {method:"POST", headers:cab(),
+        body:JSON.stringify([{ nombre:v.nombre, correo:v.correo, telefono:v.telefono, acepta_politica:true,
+                               version_politica:v.version_politica||V_POLITICA, idioma:idioma(), origen:"web-reintento" }])});
+      if(r.ok){ v.guardado=true; guardar("laureles.visitante", v); }
+    }catch(e){}
+  }
+
+  /* -------------------------- el administrador --------------------------- */
+  function formAdmin(alTerminar){
+    hojaBase(tt("Administración","Administration","Administration"),
+      '<p>'+tt("Entre con el correo y la contraseña de gerencia.","Sign in with the management email and password.","Connectez-vous avec le courriel et le mot de passe de la direction.")+'</p>'+
+      '<label>'+tt("Correo","Email","Courriel")+'</label>'+
+      '<input type="text" id="aMail" autocomplete="username" inputmode="email" placeholder="gerencia@…">'+
+      '<label>'+tt("Contraseña","Password","Mot de passe")+'</label>'+
+      '<input type="password" id="aClave" autocomplete="current-password" placeholder="••••••••">'+
+      '<div class="pista" id="aErr" style="color:#A3543F"></div>'+
+      '<div class="pista" style="margin-top:12px"><a href="#" id="aOlvide">'+tt("Olvidé mi contraseña","I forgot my password","J'ai oublié mon mot de passe")+'</a></div>'+
+      '<div class="pista" style="margin-top:6px"><a href="#" id="aNuevo">'+tt("Soy asesor nuevo: crear mi contraseña","New agent: create my password","Nouvel agent : créer mon mot de passe")+'</a></div>',
+      '<button class="sec" id="aAtras">'+tt("Atrás","Back","Retour")+'</button>'+
+      '<button class="pri" id="aIr">'+tt("Entrar","Enter","Entrer")+'</button>');
+    document.getElementById("aAtras").onclick = ()=> puerta(alTerminar);
+    const err = document.getElementById("aErr");
+    const ir = async ()=>{
+      const e=document.getElementById("aMail").value.trim(), c=document.getElementById("aClave").value;
+      if(!e||!c){ err.textContent=tt("Falta el correo o la contraseña.","Email or password missing.","Courriel ou mot de passe manquant."); return; }
+      const bt=document.getElementById("aIr"); bt.disabled=true; bt.textContent=tt("Entrando…","Signing in…","Connexion…"); err.textContent="";
+      try{ await ROL.entrar(e,c); cerrar(); if(alTerminar) alTerminar(); }
+      catch(ex){ err.textContent = /Invalid login/i.test(ex.message)
+                   ? tt("Correo o contraseña incorrectos.","Wrong email or password.","Courriel ou mot de passe incorrect.") : ex.message;
+                 bt.disabled=false; bt.textContent=tt("Entrar","Enter","Entrer"); }
+    };
+    document.getElementById("aIr").onclick = ir;
+    document.getElementById("aClave").onkeydown = ev=>{ if(ev.key==="Enter") ir(); };
+    document.getElementById("aOlvide").onclick = ev=>{ ev.preventDefault(); formRecuperar(alTerminar, document.getElementById("aMail").value.trim()); };
+    document.getElementById("aNuevo").onclick = ev=>{ ev.preventDefault(); formAlta(alTerminar, document.getElementById("aMail").value.trim()); };
+    setTimeout(()=>{ const i=document.getElementById("aMail"); if(i) i.focus(); }, 60);
+  }
+
+  /* Asesor nuevo: gerencia autoriza el correo (y la cédula, cifrada) en la base;
+     el asesor escribe correo + cédula y escoge su contraseña. La función
+     laureles-alta verifica y crea la cuenta; luego se entra de una vez. */
+  function formAlta(alTerminar, correo0){
+    hojaBase(tt("Crear mi contraseña","Create my password","Créer mon mot de passe"),
+      '<p>'+tt("Para asesores que gerencia ya autorizó. Escribe tu correo, tu cédula y la contraseña que quieras usar.",
+               "For agents already authorised by management. Enter your email, your ID number and the password you want.",
+               "Pour les agents déjà autorisés. Saisissez votre courriel, votre numéro d'identité et le mot de passe choisi.")+'</p>'+
+      '<label>'+tt("Correo","Email","Courriel")+'</label>'+
+      '<input type="text" id="nMail" autocomplete="username" inputmode="email" value="'+esc(correo0||"")+'">'+
+      '<label>'+tt("Cédula (sólo números)","ID number (digits only)","N° d'identité (chiffres)")+'</label>'+
+      '<input type="text" id="nCed" inputmode="numeric" autocomplete="off">'+
+      '<label>'+tt("Contraseña nueva (mínimo 8 caracteres)","New password (8+ characters)","Nouveau mot de passe (8 caractères min.)")+'</label>'+
+      '<input type="password" id="nC1" autocomplete="new-password">'+
+      '<label>'+tt("Repítela","Repeat it","Répétez-le")+'</label>'+
+      '<input type="password" id="nC2" autocomplete="new-password">'+
+      '<div class="pista" id="nErr" style="color:#A3543F"></div>',
+      '<button class="sec" id="nAtras">'+tt("Atrás","Back","Retour")+'</button>'+
+      '<button class="pri" id="nIr">'+tt("Crear y entrar","Create and sign in","Créer et entrer")+'</button>');
+    document.getElementById("nAtras").onclick = ()=> formAdmin(alTerminar);
+    const err=document.getElementById("nErr");
+    const ir = async ()=>{
+      const m=document.getElementById("nMail").value.trim(), ced=document.getElementById("nCed").value.replace(/\D/g,""),
+            c1=document.getElementById("nC1").value, c2=document.getElementById("nC2").value;
+      if(!m || ced.length<5){ err.textContent=tt("Escribe el correo y la cédula.","Enter your email and ID number.","Saisissez courriel et identité."); return; }
+      if(c1.length<8){ err.textContent=tt("La contraseña debe tener mínimo 8 caracteres.","Password must be 8+ characters.","8 caractères minimum."); return; }
+      if(c1!==c2){ err.textContent=tt("Las dos contraseñas no coinciden.","Passwords do not match.","Les mots de passe ne correspondent pas."); return; }
+      const bt=document.getElementById("nIr"); bt.disabled=true; bt.textContent=tt("Creando…","Creating…","Création…"); err.textContent="";
+      try{
+        const r=await fetch(base()+"/functions/v1/laureles-alta",{method:"POST",
+          headers:{"apikey":CFG.supabaseKey,"Content-Type":"application/json"},
+          body:JSON.stringify({correo:m, cedula:ced, clave:c1})});
+        const j=await r.json().catch(()=>({}));
+        if(!r.ok) throw new Error(j.error||("Error "+r.status));
+        await ROL.entrar(m,c1); cerrar(); if(alTerminar) alTerminar();
+        avisar(tt("Listo: tu cuenta quedó creada y ya entraste.","Done: your account is ready and you are signed in.","C'est fait : compte créé, vous êtes connecté."),6000);
+      }catch(ex){ err.textContent=ex.message; bt.disabled=false; bt.textContent=tt("Crear y entrar","Create and sign in","Créer et entrer"); }
+    };
+    document.getElementById("nIr").onclick=ir;
+    document.getElementById("nC2").onkeydown=ev=>{ if(ev.key==="Enter") ir(); };
+  }
+
+  /* Olvidé mi contraseña: Supabase manda un correo con un enlace que vuelve a
+     esta página con #type=recovery; ahí se pide la clave nueva. */
+  function formRecuperar(alTerminar, correo){
+    hojaBase(tt("Recuperar la contraseña","Recover password","Récupérer le mot de passe"),
+      '<p>'+tt("Escriba el correo de la cuenta. Le llegará un enlace para poner una contraseña nueva.",
+               "Enter the account email. You will receive a link to set a new password.",
+               "Saisissez le courriel du compte. Vous recevrez un lien pour définir un nouveau mot de passe.")+'</p>'+
+      '<label>'+tt("Correo","Email","Courriel")+'</label>'+
+      '<input type="text" id="rMail" inputmode="email" value="'+esc(correo)+'" placeholder="gerencia@…">'+
+      '<div class="pista" id="rErr" style="color:#A3543F"></div>',
+      '<button class="sec" id="rAtras">'+tt("Atrás","Back","Retour")+'</button>'+
+      '<button class="pri" id="rIr">'+tt("Enviar enlace","Send link","Envoyer le lien")+'</button>');
+    document.getElementById("rAtras").onclick = ()=> formAdmin(alTerminar);
+    document.getElementById("rIr").onclick = async ()=>{
+      const e=document.getElementById("rMail").value.trim(); const err=document.getElementById("rErr");
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){ err.textContent=tt("Ese correo no se ve bien.","That email does not look right.","Ce courriel semble incorrect."); return; }
+      const bt=document.getElementById("rIr"); bt.disabled=true; err.textContent="";
+      try{
+        const destino = location.origin + location.pathname;
+        const r = await fetch(base()+"/auth/v1/recover?redirect_to="+encodeURIComponent(destino),
+          {method:"POST", headers:{ "apikey":CFG.supabaseKey, "Content-Type":"application/json" }, body:JSON.stringify({email:e})});
+        if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(j.msg||j.error_description||j.message||(r.status+"")); }
+        document.getElementById("hojaCuerpo").innerHTML = '<p>'+tt("Listo. Si ese correo tiene cuenta de administración, en un momento le llega el enlace. Revise también la carpeta de correo no deseado.",
+          "Done. If that email has an administration account, the link is on its way. Check your spam folder too.",
+          "C'est fait. Si ce courriel a un compte d'administration, le lien arrive. Vérifiez aussi les indésirables.")+'</p>';
+        document.getElementById("hojaPie").innerHTML = '<button class="pri" id="rOk">'+tt("Cerrar","Close","Fermer")+'</button>';
+        document.getElementById("rOk").onclick = cerrar;
+      }catch(ex){ err.textContent = ex.message; bt.disabled=false; }
+    };
+  }
+
+  /* La vuelta por el enlace del correo: #access_token=…&type=recovery */
+  function atenderRecuperacion(){
+    const h = location.hash || "";
+    if(!/type=recovery/.test(h)) return false;
+    const q = new URLSearchParams(h.replace(/^#/,""));
+    const tok = q.get("access_token"), ref = q.get("refresh_token");
+    if(!tok) return false;
+    history.replaceState(null, "", location.pathname + location.search);
+    const pedir = ()=>{
+      hojaBase(tt("Contraseña nueva","New password","Nouveau mot de passe"),
+        '<p>'+tt("Escriba la contraseña nueva dos veces. Mínimo 6 caracteres.","Type the new password twice. At least 6 characters.","Saisissez deux fois le nouveau mot de passe. 6 caractères minimum.")+'</p>'+
+        '<label>'+tt("Contraseña nueva","New password","Nouveau mot de passe")+'</label>'+
+        '<input type="password" id="nClave1" autocomplete="new-password">'+
+        '<label>'+tt("Repítala","Repeat it","Répétez-le")+'</label>'+
+        '<input type="password" id="nClave2" autocomplete="new-password">'+
+        '<div class="pista" id="nErr" style="color:#A3543F"></div>',
+        '<button class="pri" id="nIr">'+tt("Guardar","Save","Enregistrer")+'</button>');
+      document.getElementById("nIr").onclick = async ()=>{
+        const a=document.getElementById("nClave1").value, b=document.getElementById("nClave2").value, err=document.getElementById("nErr");
+        if(a.length<6){ err.textContent=tt("Mínimo 6 caracteres.","At least 6 characters.","6 caractères minimum."); return; }
+        if(a!==b){ err.textContent=tt("No coinciden.","They do not match.","Ils ne correspondent pas."); return; }
+        const bt=document.getElementById("nIr"); bt.disabled=true; err.textContent="";
+        try{
+          const r = await fetch(base()+"/auth/v1/user", {method:"PUT",
+            headers:{ "apikey":CFG.supabaseKey, "Authorization":"Bearer "+tok, "Content-Type":"application/json" },
+            body:JSON.stringify({password:a})});
+          if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(j.msg||j.error_description||j.message||(r.status+"")); }
+          const u = await r.json().catch(()=>({}));
+          /* deja la sesión abierta con el token del enlace */
+          if(ref) guardar("laureles.sesion", { ref:ref, exp:Date.now()+50*60*1000, correo:(u&&u.email)||"" });
+          cerrar(); avisar(tt("Contraseña cambiada. Vuelva a entrar si la página se la pide.","Password changed. Sign in again if asked.","Mot de passe modifié. Reconnectez-vous si demandé."), 5000);
+          try{ location.reload(); }catch(e){}
+        }catch(ex){ err.textContent=ex.message; bt.disabled=false; }
+      };
+    };
+    /* la intro puede estar corriendo: se corta y se pide la clave encima */
+    try{ if(typeof cerrarIntro==="function") cerrarIntro(); }catch(e){}
+    setTimeout(pedir, 200);
+    return true;
+  }
+
+  /* ----------------------------- agendar visita -------------------------- */
+  /* Horario de visitas al predio: de 7 a. m. a 12 m. y de 1 a 4 p. m. Cada
+     opción es la hora de llegada; la última de cada franja deja una hora de
+     recorrido antes del cierre. La base de datos acepta sólo estas horas. */
+  const HORAS = ["07:00","08:00","09:00","10:00","11:00","13:00","14:00","15:00"];
+  const hora12 = h => { const n=parseInt(h,10); return (n>12?n-12:n)+":00 "+(n<12?"a. m.":"p. m."); };
+  function agenda(){
+    const v = visitante() || {};
+    const p = (S && S.sel!=null) ? S.sel : null;
+    if(CFG.agendaUrl){
+      hojaBase(tt("Agendar visita presencial","Book a site visit","Prendre rendez-vous"),
+        '<p>'+tt("Elija el día y la hora que le convengan. La cita queda en la agenda del equipo comercial.",
+                 "Pick the day and time that suit you. The appointment goes straight to the sales team's calendar.",
+                 "Choisissez le jour et l'heure qui vous conviennent. Le rendez-vous est inscrit dans l'agenda de l'équipe.")+'</p>'+
+        '<iframe class="agenda" src="'+esc(CFG.agendaUrl)+'" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>',
+        '<button class="sec" id="gCerrar">'+tt("Cerrar","Close","Fermer")+'</button>');
+      document.getElementById("gCerrar").onclick = cerrar;
+      return;
+    }
+    const hoy = new Date(); hoy.setDate(hoy.getDate()+1);
+    const min = hoy.toISOString().slice(0,10);
+    hojaBase(tt("Agendar visita presencial","Book a site visit","Prendre rendez-vous"),
+      '<p>'+tt("Escoja el día y la hora para conocer el predio. Atendemos de 7 a. m. a 12 m. y de 1 a 4 p. m.; un asesor le confirma la cita.",
+               "Choose the day and time to see the site. Visits run from 7 am to 12 pm and from 1 to 4 pm; an advisor will confirm.",
+               "Choisissez le jour et l'heure de la visite. Nous recevons de 7h à 12h et de 13h à 16h ; un conseiller confirmera.")+'</p>'+
+      '<label>'+tt("Nombre","Name","Nom")+'</label><input type="text" id="gNom" value="'+esc(v.nombre)+'">'+
+      '<label>'+tt("Correo","Email","Courriel")+'</label><input type="text" id="gMail" inputmode="email" value="'+esc(v.correo)+'">'+
+      '<label>'+tt("Teléfono","Phone","Téléphone")+'</label><input type="text" id="gTel" inputmode="tel" value="'+esc(v.telefono)+'">'+
+      '<div class="dos">'+
+        '<div><label>'+tt("Fecha","Date","Date")+'</label><input type="date" id="gFecha" min="'+min+'"></div>'+
+        '<div><label>'+tt("Hora","Time","Heure")+'</label><select id="gHora">'+
+          '<optgroup label="'+tt("Mañana · 7 a. m. a 12 m.","Morning · 7 am to 12 pm","Matin · 7h à 12h")+'">'+
+            HORAS.filter(h=>h<"12").map(h=>'<option value="'+h+'">'+hora12(h)+'</option>').join("")+'</optgroup>'+
+          '<optgroup label="'+tt("Tarde · 1 a 4 p. m.","Afternoon · 1 to 4 pm","Après-midi · 13h à 16h")+'">'+
+            HORAS.filter(h=>h>"12").map(h=>'<option value="'+h+'">'+hora12(h)+'</option>').join("")+'</optgroup>'+
+          '</select></div>'+
+      '</div>'+
+      '<label>'+tt("Lote de interés (opcional)","Lot of interest (optional)","Lot d'intérêt (facultatif)")+'</label>'+
+      '<input type="text" id="gLote" inputmode="numeric" value="'+(p!=null?p:"")+'" placeholder="'+tt("p. ej. 30","e.g. 30","p. ex. 30")+'">'+
+      '<div class="pista" id="gErr" style="color:#A3543F"></div>',
+      '<button class="sec" id="gCerrar">'+tt("Cancelar","Cancel","Annuler")+'</button>'+
+      '<button class="pri" id="gIr">'+tt("Solicitar la visita","Request the visit","Demander la visite")+'</button>');
+    document.getElementById("gCerrar").onclick = cerrar;
+    document.getElementById("gIr").onclick = async ()=>{
+      const err=document.getElementById("gErr");
+      const d={ nombre:document.getElementById("gNom").value.trim(),
+                correo:document.getElementById("gMail").value.trim().toLowerCase(),
+                telefono:document.getElementById("gTel").value.trim().replace(/[^\d+]/g,"")||null,
+                fecha:document.getElementById("gFecha").value,
+                hora:document.getElementById("gHora").value,
+                lote: parseInt(document.getElementById("gLote").value,10)||null };
+      if(d.nombre.length<2){ err.textContent=tt("Falta el nombre.","Name is missing.","Le nom manque."); return; }
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.correo)){ err.textContent=tt("Ese correo no se ve bien.","That email does not look right.","Ce courriel semble incorrect."); return; }
+      if(!d.fecha){ err.textContent=tt("Elija la fecha.","Pick a date.","Choisissez la date."); return; }
+      if(HORAS.indexOf(d.hora)<0){ err.textContent=tt("Elija la hora.","Pick a time.","Choisissez l'heure."); return; }
+      d.franja = d.hora<"12" ? "manana" : "tarde";
+      const bt=document.getElementById("gIr"); bt.disabled=true; err.textContent="";
+      let ok=false;
+      try{ const r=await fetch(base()+"/rest/v1/laureles_visitas",{method:"POST",headers:cab(),body:JSON.stringify([d])}); ok=r.ok; }catch(e){}
+      const franja = tt("a las ","at ","à ")+hora12(d.hora);
+      const msg = tt("Hola, quiero agendar una visita a Laureles Campestre el "+d.fecha+" "+franja+
+                     (d.lote?" (me interesa el lote "+d.lote+")":"")+". Soy "+d.nombre+".",
+                     "Hi, I would like to book a visit to Laureles Campestre on "+d.fecha+" "+franja+
+                     (d.lote?" (interested in lot "+d.lote+")":"")+". I am "+d.nombre+".",
+                     "Bonjour, je souhaite visiter Laureles Campestre le "+d.fecha+" "+franja+
+                     (d.lote?" (lot "+d.lote+")":"")+". Je suis "+d.nombre+".");
+      cerrar();
+      avisar(ok ? tt("Solicitud registrada. Un asesor le confirma la cita.","Request saved. An advisor will confirm your visit.","Demande enregistrée. Un conseiller confirmera la visite.")
+                : tt("No se pudo guardar la solicitud; le abrimos WhatsApp para que no se pierda.","Could not save the request; opening WhatsApp so it is not lost.","Impossible d'enregistrer ; ouverture de WhatsApp."), 5000);
+      if(typeof window.abrirWhatsApp==="function") window.abrirWhatsApp(msg);
+    };
+  }
+
+  /* --------------------------------- arranque ---------------------------- */
+  function instalar(){
+    /* la puerta se abre al dar "Comenzar el recorrido" si nadie se ha identificado */
+    const sb = document.getElementById("startBtn");
+    if(sb){
+      const seguir = ()=>{ const w=document.getElementById("welcome"); if(w) w.hidden=true; if(typeof fit==="function") fit(); };
+      sb.onclick = ()=>{ if(identificado()) seguir(); else puerta(seguir); };
+    }
+    /* el botón de la barra */
+    const bv = document.getElementById("bVisita");
+    if(bv) bv.onclick = ()=>{ document.querySelectorAll("#nav button").forEach(c=>c.classList.remove("on")); agenda(); };
+    reintentarVisitante();
+    atenderRecuperacion();
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", instalar); else instalar();
+
+  return { puerta, agenda, visitante, identificado, formAdmin, formAlta };
+})();
+/* const no llega a window: el mapa (index.html) lo busca como window.ACCESO */
+window.ACCESO = ACCESO;

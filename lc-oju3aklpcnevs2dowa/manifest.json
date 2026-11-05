@@ -1,0 +1,27 @@
+{
+  "name": "Laureles Campestre — Gerencia",
+  "short_name": "Laureles Pro",
+  "description": "Laureles Campestre: 86 lotes campestres en El Caimo, Armenia (Quindío). Mapa dinámico con disponibilidad y precios.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F4F2EA",
+  "theme_color": "#32402F",
+  "lang": "es-CO",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "icono-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
