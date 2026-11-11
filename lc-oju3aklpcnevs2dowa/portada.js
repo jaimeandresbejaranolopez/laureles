@@ -124,9 +124,9 @@ const TX = {
   c:[["lotes","lotes campestres"],["regla","el más pequeño"],["expandir","el más grande"],["hectarea","de predio"],["arbol","de bosque protegido"],["casa","lotes por hectárea"]],
   escT:"Escritura individual", escF:"100 % de la tierra", escD:"Cada lote se escritura a nombre del comprador. No es proindiviso.",
   entT:"Entrega del urbanismo", entF:"Diciembre de 2028", entD:"Fecha de entrega final de las obras de urbanismo.",
-  fEb:"Fotos reales del predio", fT:"Lo que ya está ahí",
-  fP:"El terreno tal como es hoy: el bosque de la cañada, los guayacanes, las praderas y la cordillera al fondo.",
-  fotos:[["canada","El corredor de bosque de la cañada"],["cordillera","La cordillera desde el remate alto"],["guayacan","Guayacán en el predio"],["praderas","Praderas con arbolado grande"],["bosque","Bosque y cafetal en el borde del predio"]],
+  fEb:"Fotos aéreas reales · noviembre de 2026", fT:"Lo que ya está ahí",
+  fP:"El predio tal como está hoy, con el anillo vial ya trazado: los lotes, la cañada arborizada, los samanes y la cordillera al fondo.",
+  fotos:[["aerea_predio","El predio completo, con el anillo vial trazado"],["aerea_samanes","La vía nueva junto a los samanes, con la cordillera al fondo"],["aerea_cenital","El predio desde arriba: la vía y los lotes"],["aerea_lotes","Lotes en pradera a lado y lado de la vía"],["aerea_via_samanes","Tramo de la vía bajo los samanes"]],
   uEb:"Urbanismo", uT:"Una sola entrada, un anillo vial y la noche de campo",
   uP:"Portería con plazoleta de acceso y un anillo vial que llega a todos los lotes. La iluminación es baja, con bolardos de máximo 1 m, para que el cielo siga siendo de campo.",
   perfilT:"Perfil vial típico", perfilN:"Medidas en metros. Ciclorruta a un costado de la vía.",
@@ -177,9 +177,9 @@ const TX = {
   c:[["lotes","country lots"],["regla","smallest"],["expandir","largest"],["hectarea","property"],["arbol","protected woodland"],["casa","lots per hectare"]],
   escT:"Individual title deed", escF:"100% of the land", escD:"Each lot is deeded in the buyer's name. Not shared undivided ownership.",
   entT:"Site works handover", entF:"December 2028", entD:"Final handover date of the site works.",
-  fEb:"Real photos of the property", fT:"What is already there",
-  fP:"The land as it is today: the ravine woodland, the guayacán trees, the pastures and the mountains beyond.",
-  fotos:[["canada","The wooded corridor of the ravine"],["cordillera","The mountains from the high end"],["guayacan","Guayacán tree on the property"],["praderas","Pasture with mature trees"],["bosque","Woodland and coffee at the edge"]],
+  fEb:"Real aerial photos · November 2026", fT:"What is already there",
+  fP:"The property as it is today, with the ring road already laid out: the lots, the wooded ravine, the rain trees and the mountains beyond.",
+  fotos:[["aerea_predio","The whole property, with the ring road laid out"],["aerea_samanes","The new road beside the rain trees, mountains beyond"],["aerea_cenital","The property from above: the road and the lots"],["aerea_lotes","Pasture lots on both sides of the road"],["aerea_via_samanes","Road section under the rain trees"]],
   uEb:"Site plan", uT:"One gate, one road loop and country nights",
   uP:"A gatehouse with an entrance plaza and a road loop that reaches every lot. Lighting is low, with bollards no taller than 1 m, so the sky stays country.",
   perfilT:"Typical road section", perfilN:"Dimensions in metres. Bike lane on one side of the road.",
@@ -230,9 +230,9 @@ const TX = {
   c:[["lotes","terrains de campagne"],["regla","le plus petit"],["expandir","le plus grand"],["hectarea","de terrain"],["arbol","de forêt protégée"],["casa","terrains par hectare"]],
   escT:"Acte individuel", escF:"100 % du terrain", escD:"Chaque terrain est inscrit au nom de l'acheteur. Pas d'indivision.",
   entT:"Livraison de l'aménagement", entF:"Décembre 2028", entD:"Date de livraison finale des travaux d'aménagement.",
-  fEb:"Photos réelles du terrain", fT:"Ce qui est déjà là",
-  fP:"Le terrain tel qu'il est aujourd'hui : la forêt du ravin, les guayacanes, les prairies et la cordillère au fond.",
-  fotos:[["canada","Le corridor boisé du ravin"],["cordillera","La cordillère depuis le point haut"],["guayacan","Guayacán sur le terrain"],["praderas","Prairies avec de grands arbres"],["bosque","Bois et caféiers en bordure"]],
+  fEb:"Photos aériennes réelles · novembre 2026", fT:"Ce qui est déjà là",
+  fP:"Le terrain tel qu'il est aujourd'hui, avec la voie en anneau déjà tracée : les lots, le ravin boisé, les samanes et la cordillère au fond.",
+  fotos:[["aerea_predio","Le terrain entier, avec la voie en anneau tracée"],["aerea_samanes","La nouvelle voie près des samanes, la cordillère au fond"],["aerea_cenital","Le terrain vu d'en haut : la voie et les lots"],["aerea_lotes","Lots en prairie de part et d'autre de la voie"],["aerea_via_samanes","Tronçon de la voie sous les samanes"]],
   uEb:"Aménagement", uT:"Une seule entrée, une boucle et des nuits de campagne",
   uP:"Une loge avec placette d'accès et une boucle qui dessert chaque terrain. Éclairage bas, par bornes de 1 m maximum, pour garder un ciel de campagne.",
   perfilT:"Profil type de la voie", perfilN:"Cotes en mètres. Piste cyclable d'un côté de la voie.",
@@ -442,7 +442,7 @@ function html(){
   </section>
 
   <section class="ptFin">
-    <div class="ptFinBg" style="background-image:url('${IMG("cordillera")}')"></div>
+    <div class="ptFinBg" style="background-image:url('${IMG("aerea_via_cordillera")}')"></div>
     <div class="ptFinIn">
       <img class="ptLogoFin" src="${"medios/logo_claro.svg"}" alt="Laureles Campestre">
       <h2>${t.finT}</h2><p class="ptLead">${t.finP}</p>
