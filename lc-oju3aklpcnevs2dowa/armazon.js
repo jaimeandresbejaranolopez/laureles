@@ -154,7 +154,7 @@ const CONT_ES=()=>({
    de la cañada, de 20 a 40 segundos cada una, en horizontal y vertical.</p>`,
  contacto:`<h2 class="serif">Consultar</h2>
    <p class="lead">En el sitio real este botón abre WhatsApp con el asesor y el lote precargado, y deja el lead
-   registrado con la etapa y el precio que el prospecto estaba viendo.</p>
+   registrado con el lote y el precio que el prospecto estaba viendo.</p>
    <p class="hint">En este demo no está conectado: falta definir el número del asesor y el destino del lead
    (CRM de Century 21 DAB).</p>`});
 

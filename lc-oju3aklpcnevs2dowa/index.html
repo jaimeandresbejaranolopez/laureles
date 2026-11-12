@@ -30,13 +30,13 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20261111b">
+<link rel="stylesheet" href="maplibre-gl.css?v=20261112a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20261111b">
-<link rel="stylesheet" href="portada.css?v=20261111b">
-<link rel="stylesheet" href="analisis.css?v=20261111b">
+<link rel="stylesheet" href="armazon.css?v=20261112a">
+<link rel="stylesheet" href="portada.css?v=20261112a">
+<link rel="stylesheet" href="analisis.css?v=20261112a">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -910,7 +910,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20261111b"></script>
+<script src="maplibre-gl.js?v=20261112a"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -932,7 +932,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20261111b"></script>
+<script src="lotes.js?v=20261112a"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -1006,6 +1006,14 @@ function planPago(v, e){
 const PRECIO_UTIL = {4:180000};
 const PRECIO_PROT = {4: 90000};
 const PUB_UTIL = 180000, PUB_PROT = 90000;
+/* 12/11/2026 — decisión de Jaime Bejarano: los lotes 1 a 20 y 58 a 64 valen
+   $30.000.000 más, en la E3 y en la E4 (también lo que ve el público). Se suma
+   al precio del lote; el valor del m² no cambia. */
+const AJUSTE_LOTES = new Set([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,58,59,60,61,62,63,64]);
+const AJUSTE_VALOR = 30000000;
+const ajusteLote = (n,e) => (AJUSTE_LOTES.has(+n) && (+e===3 || +e===4)) ? AJUSTE_VALOR : 0;
+window.ajusteLote = ajusteLote;
+const esEquipoYa = ()=>{ try{ return ROL.esVentas(); }catch(e){ return false; } };
 const hayPrecios = () => PRECIO_UTIL[4] != null;
 window.hayPrecios = hayPrecios;
 /* Desde el 26/10/2026 el proyecto vende a un solo precio: la lista E4 (VENTA 0).
@@ -1071,7 +1079,7 @@ const BUILD = (document.querySelector('meta[name=build]')||{}).content || "sin s
 const LOTES = LAURELES.lotes;
 LOTES.features.forEach(f=>{ const c=S.cambios[f.properties.lote]; if(c) f.properties.estado=c; });
 
-const precio  = (p,e)=> (p && PRECIO_UTIL[e]!=null) ? p.area_util_m2*PRECIO_UTIL[e] + p.area_proteccion_m2*PRECIO_PROT[e] : null;
+const precio  = (p,e)=> (p && PRECIO_UTIL[e]!=null) ? p.area_util_m2*PRECIO_UTIL[e] + p.area_proteccion_m2*PRECIO_PROT[e] + ajusteLote(p.lote,e) : null;
 const cop     = v => "$" + Math.round(v).toLocaleString("es-CO");
 const m2      = v => Math.round(v).toLocaleString("es-CO") + " m²";
 /* metros con un decimal siempre: 30 y 30,0 no pueden verse distinto en la
@@ -2000,7 +2008,7 @@ function refrescar(){
   const T=LOTES.features.length;
   document.getElementById("kpis").innerHTML =
     kpi(nD+"/"+T,"Lotes libres") +
-    (hayPrecios() ? kpi("$"+(val/1e9).toFixed(2).replace(".",",")+" MM","Inventario "+etapaAct().l) : "") +
+    (hayPrecios() ? kpi("$"+(val/1e9).toFixed(2).replace(".",",")+" MM", esEquipoYa() ? "Inventario "+etapaAct().l : "Inventario") : "") +
     kpi(m2u.toLocaleString("es-CO"),"m² útiles libres") +
     kpi(Math.round((nS+nV)/T*100)+" %","Colocado");
   document.getElementById("cuenta").innerHTML =
@@ -2388,6 +2396,7 @@ function pintarFicha(n){
     '<div class="tarifa">'+
       '<div><span>m² útil</span><b>'+cop(PRECIO_UTIL[S.etapa])+'</b></div>'+
       '<div><span>m² protección</span><b>'+cop(PRECIO_PROT[S.etapa])+'</b></div>'+
+      (ajusteLote(p.lote,S.etapa) ? '<div><span>Valor adicional del lote</span><b>'+cop(ajusteLote(p.lote,S.etapa))+'</b></div>' : '')+
     '</div>'+
     /* lo primero que pregunta el cliente: cuánto le queda por mes */
     (()=>{ const pp=planPago(v,S.etapa);
@@ -2528,8 +2537,9 @@ function whatsapp(p,v,et){
     "• Área útil: "+m2(p.area_util_m2)+"\n"+
     "• Frente: "+un(p.frente_m)+" m"+((p.frentes_extra_m&&p.frentes_extra_m.length)?" (+ "+p.frentes_extra_m.map(un).join(" + ")+" m sobre otra vía)":"")+" · Fondo: "+un(p.fondo_m)+" m\n"+
     (p.topo_ok?"• Pendiente media: "+String(p.pendiente_pct).replace(".",",")+" %\n":"")+
-    "• Precio "+et.l+" ("+et.d+"): "+cop(v)+"\n"+
-    "• Lista "+et.l+": "+cop(PRECIO_UTIL[S.etapa])+"/m² útil · "+cop(PRECIO_PROT[S.etapa])+"/m² protección\n"+
+    "• Precio"+(S.etapa===4 ? "" : " "+et.l+" ("+et.d+")")+": "+cop(v)+"\n"+
+    "• Valor del m²"+(S.etapa===4 ? "" : " "+et.l)+": "+cop(PRECIO_UTIL[S.etapa])+" útil · "+cop(PRECIO_PROT[S.etapa])+" protección\n"+
+    (ajusteLote(p.lote,S.etapa) ? "• Incluye un valor adicional del lote de "+cop(ajusteLote(p.lote,S.etapa))+"\n" : "")+
     (()=>{ const pp=planPago(v,S.etapa);
       return pp.contado ? "• De contado: "+cop(SEPARACION)+" al separar y el saldo hasta "+FECHA_CONTADO+"\n"
         : "• Inicial "+Math.round(pp.frac*100)+"% en 2026: "+cop(pp.inicial)+"\n"+
@@ -3449,29 +3459,29 @@ function compartirLote(p){
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/aerea_cenital.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/aerea_hero.jpg","praderas":"medios/aerea_lotes.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png","vida_perfil_vial":"medios/vida_perfil_vial.jpg","vida_ciclorruta":"medios/vida_ciclorruta.jpg","vida_infantil":"medios/vida_infantil.jpg","vida_gimnasio":"medios/vida_gimnasio.jpg","vida_padel":"medios/vida_padel.jpg","aerea_hero":"medios/aerea_hero.jpg","aerea_predio":"medios/aerea_predio.jpg","aerea_cenital":"medios/aerea_cenital.jpg","aerea_anillo":"medios/aerea_anillo.jpg","aerea_canada":"medios/aerea_canada.jpg","aerea_samanes":"medios/aerea_samanes.jpg","aerea_via_pradera":"medios/aerea_via_pradera.jpg","aerea_via_samanes":"medios/aerea_via_samanes.jpg","aerea_via_cordillera":"medios/aerea_via_cordillera.jpg","aerea_lotes":"medios/aerea_lotes.jpg","aerea_sector_alto":"medios/aerea_sector_alto.jpg","aerea_acceso":"medios/aerea_acceso.jpg"};</script>
-<script src="datos-analisis.js?v=20261111b"></script>
-<script src="datos-terreno.js?v=20261111b"></script>
-<script src="datos-logo.js?v=20261111b"></script>
-<script src="adaptador.js?v=20261111b"></script>
-<script src="analisis.js?v=20261111b"></script>
-<script src="datos-via.js?v=20261111b"></script>
-<script src="datos-entrada.js?v=20261111b"></script>
-<script src="r3d.js?v=20261111b"></script>
-<script src="datos-arboles.js?v=20261111b"></script>
-<script src="paisaje.js?v=20261111b"></script>
-<script src="recorrido.js?v=20261111b"></script>
-<script src="maqueta.js?v=20261111b"></script>
-<script src="visor360.js?v=20261111b"></script>
-<script src="vuelo.js?v=20261111b"></script>
-<script src="sitios-iconos.js?v=20261111b"></script>
-<script src="armazon.js?v=20261111b"></script>
-<script src="acceso.js?v=20261111b"></script>
-<script src="portada.js?v=20261111b"></script>
-<script src="ia.js?v=20261111b"></script>
-<script src="panel.js?v=20261111b"></script>
-<script src="gerencia.js?v=20261111b"></script>
-<script src="comparador.js?v=20261111b"></script>
-<script src="ayuda.js?v=20261111b"></script>
+<script src="datos-analisis.js?v=20261112a"></script>
+<script src="datos-terreno.js?v=20261112a"></script>
+<script src="datos-logo.js?v=20261112a"></script>
+<script src="adaptador.js?v=20261112a"></script>
+<script src="analisis.js?v=20261112a"></script>
+<script src="datos-via.js?v=20261112a"></script>
+<script src="datos-entrada.js?v=20261112a"></script>
+<script src="r3d.js?v=20261112a"></script>
+<script src="datos-arboles.js?v=20261112a"></script>
+<script src="paisaje.js?v=20261112a"></script>
+<script src="recorrido.js?v=20261112a"></script>
+<script src="maqueta.js?v=20261112a"></script>
+<script src="visor360.js?v=20261112a"></script>
+<script src="vuelo.js?v=20261112a"></script>
+<script src="sitios-iconos.js?v=20261112a"></script>
+<script src="armazon.js?v=20261112a"></script>
+<script src="acceso.js?v=20261112a"></script>
+<script src="portada.js?v=20261112a"></script>
+<script src="ia.js?v=20261112a"></script>
+<script src="panel.js?v=20261112a"></script>
+<script src="gerencia.js?v=20261112a"></script>
+<script src="comparador.js?v=20261112a"></script>
+<script src="ayuda.js?v=20261112a"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

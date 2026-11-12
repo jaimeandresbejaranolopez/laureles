@@ -10,6 +10,10 @@ const DATA=EXT.DATA, PX=EXT.PX, lat0=EXT.lat0, lon0=EXT.lon0,
       RENDERS=EXT.RENDERS, precio=EXT.precio, estadoDe=EXT.estadoDe,
       state=EXT.state, toast=EXT.toast, fmtA=EXT.fmtA, fmtCOP=EXT.fmtCOP,
       devolverIntro=EXT.devolverIntro, R3D=EXT.R3D;
+/* 12/11/2026: al visitante no se le nombran etapas (E3, E4…): sólo el precio. */
+const esPub = ()=>{ try{ return !(typeof ROL!=="undefined" && ROL.esVentas()); }catch(e){ return true; } };
+const etq = E => esPub() ? "" : E.l;
+const ajL = (n,e) => (typeof window.ajusteLote==="function") ? window.ajusteLote(n,e) : 0;
 if(!window.__TER){ console.warn("Falta datos-terreno.js: sin corte del terreno ni mapa de pendientes"); }
 const modal=document.getElementById("anlModal"), mb=document.getElementById("anlBody");
 const TER = window.__TER;                 /* malla de alturas: datos-terreno.js */
@@ -4188,7 +4192,7 @@ function hojaPortadaPDF(n,L,A,casa,V){
     [T("Área total"), fmtA(L.at)],
     [T("Área útil"),  fmtA(L.ut)],
     [T("Pendiente media"), pendTxt(A,1)],
-    (val!=null ? [T("Precio")+" "+ET.l, fmtCOP(val)] : [T("Precio"), TT("Con un asesor","Ask an advisor","Auprès d'un conseiller")])
+    (val!=null ? [T("Precio")+(esPub()?"":" "+ET.l), fmtCOP(val)] : [T("Precio"), TT("Con un asesor","Ask an advisor","Auprès d'un conseiller")])
   ];
   const cw=(W-2*M)/4;
   celdas.forEach((cd,i)=>{
@@ -4297,7 +4301,7 @@ function fichaPDF(n){
   let y=108;
   col(V.gold).texto(M,y,T("FICHA TÉCNICA Y ANÁLISIS DEL LOTE"),8,"F2",1.3);
   col(V.ink).texto(M,y+22,T("Lote")+" "+n+" · "+fmtA(L.at)+" · "+T(EST[est].t).toUpperCase(),15,"F2");
-  if(val!=null) col(V.muted).texto(M,y+38,T("Precio")+" "+ET.l+" ("+T(ET.d)+"): "+fmtCOP(val)+"   ·   "+
+  if(val!=null) col(V.muted).texto(M,y+38,T("Precio")+(esPub()?"":" "+ET.l+" ("+T(ET.d)+")")+": "+fmtCOP(val)+"   ·   "+
     fmtCOP(val/L.at)+TT(" por m² bruto"," per gross m²"),9.4,"F1");
   y+=56;
 
@@ -4815,7 +4819,7 @@ function hojaCuotasPDF(n,L,V){
   col(V.gold).rect(0,66,595.28,2.5);
 
   let y=100;
-  col(V.gold).texto(M,y,T("LA ETAPA ESCOGIDA")+"  ·  "+E.l+"  ·  "+T(E.d).toUpperCase(),7.6,"F2",1.1);
+  col(V.gold).texto(M,y,esPub() ? TT("PLAN DE PAGOS DEL LOTE","LOT PAYMENT PLAN","PLAN DE PAIEMENT DU LOT") : T("LA ETAPA ESCOGIDA")+"  ·  "+E.l+"  ·  "+T(E.d).toUpperCase(),7.6,"F2",1.1);
   y+=16;
   if(eraContado){
     col([140,96,34]);
@@ -4919,7 +4923,7 @@ function hojaCuotasPDF(n,L,V){
   col(V.forest).texto(M,y,TT("Total pagado","Total paid","Total payé"),9,"F2");
   col(V.forest).textoD(595.28-M,y,fmtCOP(total),11,"F2");
   y+=6; col(V.gold,1).grosor(.8).linea(M,y,595.28-M,y); y+=13;
-  col(V.muted).texto(M,y,TT("Precio del lote en la etapa "+E.l,
+  col(V.muted).texto(M,y,esPub() ? TT("Precio del lote","Lot price","Prix du lot") : TT("Precio del lote en la etapa "+E.l,
     "Lot price at stage "+E.l, "Prix du lot à l'étape "+E.l),8,"F1");
   col(V.ink).textoD(595.28-M,y,fmtCOP(pp.v),8.6,"F1");
   y+=16;
@@ -5014,7 +5018,7 @@ function hojaComercialPDF(n,L,V){
      la faja de protección y por eso nunca coincide con la lista. */
   const xEt=M, xFp=M+42;
   const rUt=M+286, rPr=M+372, rPre=M+458, rBr=595.28-M;
-  const cab=[[T("Etapa"),xEt,0],[T("Forma de pago"),xFp,0],
+  const cab=[[esPub()?"":T("Etapa"),xEt,0],[T("Forma de pago"),xFp,0],
              [T("$/m² útil"),rUt,1],[T("$/m² protección"),rPr,1],
              [T("Precio"),rPre,1],[T("$/m² bruto"),rBr,1]];
   col(V.muted);
@@ -5024,7 +5028,7 @@ function hojaComercialPDF(n,L,V){
   ETAPAS.forEach(E=>{
     const v=precio(L,E.n), actual=(E.n===state.etapa);
     if(actual){ col([241,234,217]).rect(M-6,y-9,595.28-2*M+12,20); }
-    col(actual?V.forest:V.ink).texto(xEt,y,E.l,9,"F2");
+    col(actual?V.forest:V.ink).texto(xEt,y,etq(E),9,"F2");
     col(V.muted).texto(xFp,y,T(E.d),7.2,"F1");
     col(actual?V.forest:V.ink).textoD(rUt,y,fmtCOP(PV[E.n]),8,actual?"F2":"F1");
     col(actual?V.forest:V.ink).textoD(rPr,y,fmtCOP(PR[E.n]),8,actual?"F2":"F1");
@@ -5034,14 +5038,14 @@ function hojaComercialPDF(n,L,V){
   });
   col(V.muted); y-=4;
   y=envolver(P, TT(
-    "Las dos primeras columnas son la lista: lo que vale cada metro en esa etapa. El precio del lote "+
+    "Las dos primeras columnas son la lista: lo que vale cada metro"+(esPub()?".":" en esa etapa.")+" El precio del lote "+
       "es el área útil por el valor del metro útil, más el área de protección por el valor del metro "+
-      "protegido. El $/m² bruto es sólo el resultado repartido sobre el área total, para comparar lotes.",
-    "The first two columns are the price list: what each square metre is worth at that stage. The lot "+
+      "protegido"+(ajL(L.n,state.etapa)?", más un valor adicional de "+fmtCOP(ajL(L.n,state.etapa))+" que tiene este lote":"")+". El $/m² bruto es sólo el resultado repartido sobre el área total, para comparar lotes.",
+    "The first two columns are the price list: what each square metre is worth"+(esPub()?".":" at that stage.")+" The lot "+
       "price is the useful area times the useful rate, plus the protected area times the protected "+
-      "rate. The $/m² gross column is just the result spread over the total area, for comparing lots.",
-    "Les deux premières colonnes sont le barème : ce que vaut chaque mètre à cette étape. Le prix du "+
-      "lot est la surface utile par le taux utile, plus la surface protégée par le taux protégé. Le "+
+      "rate"+(ajL(L.n,state.etapa)?", plus an additional "+fmtCOP(ajL(L.n,state.etapa))+" for this lot":"")+". The $/m² gross column is just the result spread over the total area, for comparing lots.",
+    "Les deux premières colonnes sont le barème : ce que vaut chaque mètre"+(esPub()?".":" à cette étape.")+" Le prix du "+
+      "lot est la surface utile par le taux utile, plus la surface protégée par le taux protégé"+(ajL(L.n,state.etapa)?", plus une valeur additionnelle de "+fmtCOP(ajL(L.n,state.etapa))+" pour ce lot":"")+". Le "+
       "$/m² brut n'est que le résultat rapporté à la surface totale, pour comparer les lots."),
     M, y, 595.28-2*M, 6.8, 9.2); y+=4;
 
@@ -5051,7 +5055,7 @@ function hojaComercialPDF(n,L,V){
     TT("23 cuotas desde "+PLAN_DESDE+" y una final en "+PLAN_HASTA,
        "23 instalments from January 2027 and a final one in December 2028"),7.6,"F2",1.1); y+=15;
   const pc=[M, M+150, M+268, M+392, 595.28-M];
-  const cabP=[[T("Etapa"),pc[0],0],
+  const cabP=[[esPub()?"":T("Etapa"),pc[0],0],
               [TT("Inicial en 2026","Down payment in 2026"),pc[1],1],
               [TT("Saldo a financiar","Balance financed"),pc[2],1],
               [TT("Cuota mensual","Monthly instalment"),pc[3],1],
@@ -5062,7 +5066,7 @@ function hojaComercialPDF(n,L,V){
   ETAPAS.forEach(E=>{
     const pp=planPago(L,E.n), actual=(E.n===state.etapa);
     if(actual){ col([241,234,217]).rect(M-6,y-9,595.28-2*M+12,20); }
-    col(actual?V.forest:V.ink).texto(pc[0],y,E.l,9,"F2");
+    col(actual?V.forest:V.ink).texto(pc[0],y,etq(E),9,"F2");
     if(pp.contado){
       col(V.muted).texto(pc[0]+26,y,TT("contado","cash"),7.6,"F1");
       col(actual?V.forest:V.ink).textoD(pc[1],y,fmtCOP(pp.inicial),8,actual?"F2":"F1");
@@ -5091,9 +5095,10 @@ function hojaComercialPDF(n,L,V){
     "Un acompte de "+fmtCOP(SEPARACION)+" réserve le lot et le reste de l'apport se complète avant "+
       "décembre 2026. Le solde s'étale sur 24 mois, de janvier 2027 à décembre 2028 : 23 mensualités de "+
       "3 % du solde et une dernière qui absorbe le reste, la plus élevée. Sans intérêts ni indexation.")+
-    " "+TT("El calendario mes a mes de la etapa escogida va en la hoja siguiente.",
+    " "+(esPub() ? TT("El calendario mes a mes va en la hoja siguiente.","The month-by-month schedule is on the next page.","Le calendrier mois par mois figure à la page suivante.") :
+         TT("El calendario mes a mes de la etapa escogida va en la hoja siguiente.",
            "The month-by-month schedule for the chosen stage is on the next page.",
-           "Le calendrier mois par mois de l'étape choisie figure à la page suivante."),
+           "Le calendrier mois par mois de l'étape choisie figure à la page suivante.")),
     M, y, 595.28-2*M, 6.8, 9.2); y+=6;
 
   /* ---- barras de comparación ---- */
@@ -5143,15 +5148,15 @@ function hojaComercialPDF(n,L,V){
      debajo: la banda arranca en 841,89−46 y por debajo de ahí no se imprime. */
   const NOTA1 = TT(
       "Los precios salen de la lista de trabajo del proyecto: "+fmtCOP(PR[state.etapa])+" por m² de área "+
-      "protegida y "+fmtCOP(PV[state.etapa])+" por m² de área útil en la etapa "+(ETAPAS.find(x=>x.n===state.etapa)||ETAPAS[0]).l+", "+
+      "protegida y "+fmtCOP(PV[state.etapa])+" por m² de área útil"+(esPub()?"":" en la etapa "+(ETAPAS.find(x=>x.n===state.etapa)||ETAPAS[0]).l)+", "+
       "aplicados sobre las áreas del cuadro del plano 039. El área protegida se paga distinto porque no se "+
       "puede construir ni talar allí, pero sí hace parte del lote y de su valor de paisaje.",
       "Prices come from the project's working list: "+fmtCOP(PR[state.etapa])+" per m² of protected area and "+
-      fmtCOP(PV[state.etapa])+" per m² of usable area at stage "+(ETAPAS.find(x=>x.n===state.etapa)||ETAPAS[0]).l+", applied to the areas "+
+      fmtCOP(PV[state.etapa])+" per m² of usable area"+(esPub()?"":" at stage "+(ETAPAS.find(x=>x.n===state.etapa)||ETAPAS[0]).l)+", applied to the areas "+
       "in the schedule of drawing 039. Protected area is priced differently because nothing can be built or "+
       "cleared there, but it is still part of the lot and of its landscape value.",
       "Les prix viennent de la liste de travail du projet : "+fmtCOP(PR[state.etapa])+" par m² de surface "+
-      "protégée et "+fmtCOP(PV[state.etapa])+" par m² de surface utile à la phase "+(ETAPAS.find(x=>x.n===state.etapa)||ETAPAS[0]).l+", "+
+      "protégée et "+fmtCOP(PV[state.etapa])+" par m² de surface utile"+(esPub()?"":" à la phase "+(ETAPAS.find(x=>x.n===state.etapa)||ETAPAS[0]).l)+", "+
       "appliqués aux surfaces du tableau du plan 039. La surface protégée est valorisée différemment parce "+
       "qu'on ne peut ni y construire ni y couper, mais elle fait partie du lot et de sa valeur de paysage.");
   const NOTA2 = TT(

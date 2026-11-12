@@ -61,7 +61,7 @@
     /* lista viva: sólo las etapas cuyo precio está cargado (público: E4; equipo: E3 y E4) */
     ETAPAS: new Proxy(ETAPAS_A,{get(t,k){ const a=ETAPAS_A.filter(e=>PV_A[e.n]!=null); const v=a[k]; return typeof v==="function"?v.bind(a):v; }}), PR: PR_A, PV: PV_A, POIS: POIS_A,
     RENDERS: window.__RENDERS || {},
-    precio: (L,e)=> (PV_A[e]!=null) ? L.pr*PR_A[e] + L.ut*PV_A[e] : null,
+    precio: (L,e)=> (PV_A[e]!=null) ? L.pr*PR_A[e] + L.ut*PV_A[e] + (typeof window.ajusteLote==="function" ? window.ajusteLote(L.n,e) : 0) : null,
     estadoDe, state: puente,
     toast: (t)=>{ try{ avisar(t); }catch(e){ console.log(t); } },
     fmtA:  v => Math.round(v).toLocaleString(LOC())+" m²",

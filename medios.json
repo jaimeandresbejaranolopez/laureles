@@ -7,7 +7,7 @@
  "clip": "medios/clip.mp4",
  "cordillera": "medios/cordillera.jpg",
  "guayacan": "medios/guayacan.jpg",
- "hero": "medios/hero.jpg",
+ "hero": "medios/aerea_hero.jpg",
  "praderas": "medios/praderas.jpg",
  "intro": "medios/intro.mp4",
  "logo": "medios/logo.png",
@@ -15,5 +15,11 @@
  "vida_perfil_vial": "medios/vida_perfil_vial.jpg",
  "vida_infantil": "medios/vida_infantil.jpg",
  "vida_gimnasio": "medios/vida_gimnasio.jpg",
- "vida_padel": "medios/vida_padel.jpg"
+ "vida_padel": "medios/vida_padel.jpg",
+ "aerea_predio": "medios/aerea_predio.jpg",
+ "aerea_cenital": "medios/aerea_cenital.jpg",
+ "aerea_samanes": "medios/aerea_samanes.jpg",
+ "aerea_lotes": "medios/aerea_lotes.jpg",
+ "aerea_via_samanes": "medios/aerea_via_samanes.jpg",
+ "aerea_via_cordillera": "medios/aerea_via_cordillera.jpg"
 }

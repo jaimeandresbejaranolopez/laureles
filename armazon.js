@@ -154,7 +154,7 @@ const CONT_ES=()=>({
    de la cañada, de 20 a 40 segundos cada una, en horizontal y vertical.</p>`,
  contacto:`<h2 class="serif">Consultar</h2>
    <p class="lead">En el sitio real este botón abre WhatsApp con el asesor y el lote precargado, y deja el lead
-   registrado con la etapa y el precio que el prospecto estaba viendo.</p>
+   registrado con el lote y el precio que el prospecto estaba viendo.</p>
    <p class="hint">En este demo no está conectado: falta definir el número del asesor y el destino del lead
    (CRM de Century 21 DAB).</p>`});
 
@@ -259,20 +259,18 @@ const CONT_FR=()=>({
 const CONT = () => LANG==="en" ? CONT_EN() : LANG==="fr" ? CONT_FR() : CONT_ES();
 const modal=document.getElementById("modal"),mb=document.getElementById("modalBody");
 const FOTOS=[
-  ["hero","El predio completo: la explanada de la vía, la casa principal y el guayacán",
-          "The whole property: the levelled road platform, the main house and the guayacán"],
-  ["guayacan","Guayacán en flor sobre la explanada del anillo vial",
-              "Guayacán in bloom over the ring-road platform"],
-  ["casa_galpones","La casa principal y los galpones existentes",
-                   "The main house and the existing sheds"],
-  ["casa_aerea","La casa principal desde arriba","The main house from above"],
-  ["casa_cerca","Cubiertas de barro de la casa principal","Clay-tile roofs of the main house"],
-  ["praderas","Praderas con arbolado grande, sector central",
-              "Pasture with mature trees, central sector"],
-  ["canada","El corredor de bosque de la cañada","The wooded corridor of the ravine"],
-  ["cordillera","La cordillera al fondo desde el remate alto",
-                "The mountain range beyond, from the high end"],
-  ["bosque","Bosque y cafetal en el borde del predio","Woodland and coffee at the edge of the property"]];
+  ["aerea_hero","El predio y su entorno: El Caimo, Armenia","The property and its surroundings: El Caimo, Armenia"],
+  ["aerea_predio","El predio completo, con el anillo vial trazado","The whole property, with the ring road laid out"],
+  ["aerea_cenital","El predio desde arriba: la vía y los lotes","The property from above: the road and the lots"],
+  ["aerea_anillo","El anillo vial rodea el predio","The ring road around the property"],
+  ["aerea_canada","La cañada arborizada entre los dos tramos de la vía","The wooded ravine between the two road sections"],
+  ["aerea_samanes","La vía nueva junto a los samanes, con la cordillera al fondo","The new road beside the rain trees, mountains beyond"],
+  ["aerea_via_pradera","La vía trazada entre pradera y samanes","The road between pasture and rain trees"],
+  ["aerea_via_samanes","Tramo de la vía bajo los samanes","Road section under the rain trees"],
+  ["aerea_via_cordillera","La vía trazada, con la cordillera al fondo","The road, with the mountains beyond"],
+  ["aerea_lotes","Lotes en pradera a lado y lado de la vía","Pasture lots on both sides of the road"],
+  ["aerea_sector_alto","Lotes del sector alto, con guadual y cafetales vecinos","Upper-sector lots, with bamboo and coffee next door"],
+  ["aerea_acceso","La vía llegando a la casa principal","The road reaching the main house"]];
 const capFoto = f => LANG==="es" ? f[1] : (LANG==="fr" && f[3] ? f[3] : f[2]);
 function devolverIntro(){
   const v=document.getElementById("introVid");
