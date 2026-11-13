@@ -35,7 +35,7 @@ function PROY(l){
         ["Vida en común","Tres áreas sociales (1.190, 718 y 2.254 m²), una cancha de 10 × 20 m, un sendero de circulación lateral de 2.510 m² y 82 parqueaderos para visitantes."],
         ["Cerca de todo","A minutos de la Autopista del Café y del aeropuerto El Edén, y a menos de veinte minutos del centro de Armenia."]],
      herrT:"Todo el lote, antes de ir", herr:"En este mismo plano cada lote tiene su ficha con precio y forma de pago, el análisis del terreno en PDF, el relieve en 3D, el recorrido del sol y un diseñador de casa con inteligencia artificial. Y en campo, el botón Dónde estoy dice en qué lote está parado.",
-     cerca:"Cerca", precio:"Lotes desde $419 millones, precio de lista (sujeto a disponibilidad).",
+     cerca:"Cerca", precio:"Lotes desde $419 millones (sujeto a disponibilidad).",
      verPlano:"Ver los lotes en el plano", wa:"Escribir por WhatsApp",
      tCifras:"Cifras del proyecto", tA:"Área", tT:"Total", tP:"Protegida", tU:"Útil",
      filas:[["Lotes","300.357","66.772","233.585"],["Zonas sociales","10.057","1.180","8.877"],["Áreas de protección","28.695,53","28.695,53","0"],["Andenes y vías","30.775","0","30.775"],["Portería","53","0","53"],["<b>Total</b>","<b>369.937,53</b>","<b>96.647,53</b>","<b>273.290</b>"]],

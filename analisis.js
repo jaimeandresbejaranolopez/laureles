@@ -11,7 +11,7 @@ const DATA=EXT.DATA, PX=EXT.PX, lat0=EXT.lat0, lon0=EXT.lon0,
       state=EXT.state, toast=EXT.toast, fmtA=EXT.fmtA, fmtCOP=EXT.fmtCOP,
       devolverIntro=EXT.devolverIntro, R3D=EXT.R3D;
 /* 12/11/2026: al visitante no se le nombran etapas (E3, E4…): sólo el precio. */
-const esPub = ()=>{ try{ return !(typeof ROL!=="undefined" && ROL.esVentas()); }catch(e){ return true; } };
+const esPub = ()=>true;   /* 13/11/2026: un solo precio para todos; ninguna ficha nombra etapas */
 const etq = E => esPub() ? "" : E.l;
 const ajL = (n,e) => (typeof window.ajusteLote==="function") ? window.ajusteLote(n,e) : 0;
 if(!window.__TER){ console.warn("Falta datos-terreno.js: sin corte del terreno ni mapa de pendientes"); }
@@ -78,6 +78,8 @@ const DIC_FR = {
 "Valor comercial":"Valeur commerciale",
 "EL LOTE":"LE LOT",
 "PRECIO DE LISTA Y FORMA DE PAGO":"PRIX DE LISTE ET MODE DE PAIEMENT",
+"PRECIO Y FORMA DE PAGO":"PRIX ET MODE DE PAIEMENT",
+"20 % de inicial y 24 cuotas":"20 % d'apport et 24 mensualités",
 "CÓMO SE MUEVE EL PRECIO":"COMMENT ÉVOLUE LE PRIX",
 "Forma de pago":"Mode de paiement",
 "$/m² bruto":"$/m² brut",
@@ -403,6 +405,8 @@ const DIC = {
 "Valor comercial":"Commercial value",
 "EL LOTE":"THE LOT",
 "PRECIO DE LISTA Y FORMA DE PAGO":"LIST PRICE AND PAYMENT TERMS",
+"PRECIO Y FORMA DE PAGO":"PRICE AND PAYMENT TERMS",
+"20 % de inicial y 24 cuotas":"20% down payment and 24 instalments",
 "CÓMO SE MUEVE EL PRECIO":"HOW THE PRICE MOVES",
 "Forma de pago":"Payment terms",
 "$/m² bruto":"$/gross m²",
@@ -5011,7 +5015,7 @@ function hojaComercialPDF(n,L,V){
   y+=30; col(V.line,1).grosor(.5).linea(M,y,595.28-M,y); y+=22;
 
   /* ---- tabla de etapas ---- */
-  col(V.gold).texto(M,y,T("PRECIO DE LISTA Y FORMA DE PAGO"),7.6,"F2",1.1); y+=16;
+  col(V.gold).texto(M,y,T("PRECIO Y FORMA DE PAGO"),7.6,"F2",1.1); y+=16;
   /* Las dos columnas del medio son la lista de precios de verdad: lo que vale el
      metro útil y el metro de protección en cada etapa. Antes sólo salía el total
      y un $/m² útil deducido de dividir, que no es la tarifa: incluye repartida
@@ -5038,13 +5042,13 @@ function hojaComercialPDF(n,L,V){
   });
   col(V.muted); y-=4;
   y=envolver(P, TT(
-    "Las dos primeras columnas son la lista: lo que vale cada metro"+(esPub()?".":" en esa etapa.")+" El precio del lote "+
+    "Las dos primeras columnas son lo que vale cada metro"+(esPub()?".":" en esa etapa.")+" El precio del lote "+
       "es el área útil por el valor del metro útil, más el área de protección por el valor del metro "+
       "protegido"+(ajL(L.n,state.etapa)?", más un valor adicional de "+fmtCOP(ajL(L.n,state.etapa))+" que tiene este lote":"")+". El $/m² bruto es sólo el resultado repartido sobre el área total, para comparar lotes.",
-    "The first two columns are the price list: what each square metre is worth"+(esPub()?".":" at that stage.")+" The lot "+
+    "The first two columns are what each square metre is worth"+(esPub()?".":" at that stage.")+" The lot "+
       "price is the useful area times the useful rate, plus the protected area times the protected "+
       "rate"+(ajL(L.n,state.etapa)?", plus an additional "+fmtCOP(ajL(L.n,state.etapa))+" for this lot":"")+". The $/m² gross column is just the result spread over the total area, for comparing lots.",
-    "Les deux premières colonnes sont le barème : ce que vaut chaque mètre"+(esPub()?".":" à cette étape.")+" Le prix du "+
+    "Les deux premières colonnes indiquent ce que vaut chaque mètre"+(esPub()?".":" à cette étape.")+" Le prix du "+
       "lot est la surface utile par le taux utile, plus la surface protégée par le taux protégé"+(ajL(L.n,state.etapa)?", plus une valeur additionnelle de "+fmtCOP(ajL(L.n,state.etapa))+" pour ce lot":"")+". Le "+
       "$/m² brut n'est que le résultat rapporté à la surface totale, pour comparer les lots."),
     M, y, 595.28-2*M, 6.8, 9.2); y+=4;
@@ -5147,15 +5151,15 @@ function hojaComercialPDF(n,L,V){
   /* las dos notas se ajustan para terminar SOBRE la banda del pie, nunca
      debajo: la banda arranca en 841,89−46 y por debajo de ahí no se imprime. */
   const NOTA1 = TT(
-      "Los precios salen de la lista de trabajo del proyecto: "+fmtCOP(PR[state.etapa])+" por m² de área "+
+      "Los precios salen del valor por m² del proyecto: "+fmtCOP(PR[state.etapa])+" por m² de área "+
       "protegida y "+fmtCOP(PV[state.etapa])+" por m² de área útil"+(esPub()?"":" en la etapa "+(ETAPAS.find(x=>x.n===state.etapa)||ETAPAS[0]).l)+", "+
       "aplicados sobre las áreas del cuadro del plano 039. El área protegida se paga distinto porque no se "+
       "puede construir ni talar allí, pero sí hace parte del lote y de su valor de paisaje.",
-      "Prices come from the project's working list: "+fmtCOP(PR[state.etapa])+" per m² of protected area and "+
+      "Prices come from the project's value per m²: "+fmtCOP(PR[state.etapa])+" per m² of protected area and "+
       fmtCOP(PV[state.etapa])+" per m² of usable area"+(esPub()?"":" at stage "+(ETAPAS.find(x=>x.n===state.etapa)||ETAPAS[0]).l)+", applied to the areas "+
       "in the schedule of drawing 039. Protected area is priced differently because nothing can be built or "+
       "cleared there, but it is still part of the lot and of its landscape value.",
-      "Les prix viennent de la liste de travail du projet : "+fmtCOP(PR[state.etapa])+" par m² de surface "+
+      "Les prix viennent de la valeur au m² du projet : "+fmtCOP(PR[state.etapa])+" par m² de surface "+
       "protégée et "+fmtCOP(PV[state.etapa])+" par m² de surface utile"+(esPub()?"":" à la phase "+(ETAPAS.find(x=>x.n===state.etapa)||ETAPAS[0]).l)+", "+
       "appliqués aux surfaces du tableau du plan 039. La surface protégée est valorisée différemment parce "+
       "qu'on ne peut ni y construire ni y couper, mais elle fait partie du lot et de sa valeur de paysage.");
