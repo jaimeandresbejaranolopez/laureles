@@ -146,8 +146,7 @@ const TX = {
   etD:{1:["De contado","20 % menos que la lista"],2:["60 % en 2026","10 % menos"],3:["50 % en 2026","5 % menos"],4:["20 % en 2026 y 24 cuotas","Precio del lote"],5:["20 % en 2026","Lista + 10 %"],6:["20 % en 2026","Lista + 20 %"]},
   desde:"desde", hasta:"hasta", mu:"m² útil", mp:"m² protección",
   pagoT:"Así se paga", pago:(d)=>[
-    ["mano","Separas con "+(d.sep?"$"+miles(d.sep):"—")+"."],
-    ["calendario","La cuota inicial del 20 % se completa en 2026."],
+    ["mano","Separas pagando la cuota inicial: el 20 % del precio del lote."],
     ["alza","El saldo va en "+(d.planN||"—")+" cuotas del "+(d.planP?Math.round(d.planP*100):"—")+" % del saldo, de enero de 2027 a noviembre de 2028."],
     ["escritura","Una cuota final en diciembre de 2028. Sin intereses."]],
   precNota:"Precios en pesos colombianos, sujetos a disponibilidad y a cambio. El precio exacto de cada lote está en su ficha, en el plano.",
@@ -199,8 +198,7 @@ const TX = {
   etD:{1:["Cash","20% below list"],2:["60% in 2026","10% off"],3:["50% in 2026","5% off"],4:["20% in 2026 and 24 instalments","Lot price"],5:["20% in 2026","List + 10%"],6:["20% in 2026","List + 20%"]},
   desde:"from", hasta:"to", mu:"usable m²", mp:"protected m²",
   pagoT:"How payment works", pago:(d)=>[
-    ["mano","Reserve with COP "+(d.sep?Math.round(d.sep).toLocaleString("en-US"):"—")+"."],
-    ["calendario","The 20% down payment is completed in 2026."],
+    ["mano","You reserve by paying the down payment: 20% of the lot price."],
     ["alza","The balance is paid in "+(d.planN||"—")+" instalments of "+(d.planP?Math.round(d.planP*100):"—")+"% of the balance, January 2027 to November 2028."],
     ["escritura","A final instalment in December 2028. No interest."]],
   precNota:"Prices in Colombian pesos, subject to availability and change. Each lot's exact price is on its card in the plan.",
@@ -252,8 +250,7 @@ const TX = {
   etD:{1:["Comptant","−20 % sur la liste"],2:["60 % en 2026","−10 %"],3:["50 % en 2026","−5 %"],4:["20 % en 2026 et 24 mensualités","Prix du lot"],5:["20 % en 2026","Liste + 10 %"],6:["20 % en 2026","Liste + 20 %"]},
   desde:"dès", hasta:"jusqu'à", mu:"m² utile", mp:"m² protégé",
   pagoT:"Modalités de paiement", pago:(d)=>[
-    ["mano","Réservation avec "+(d.sep?miles(d.sep)+" COP":"—")+"."],
-    ["calendario","L'apport de 20 % est complété en 2026."],
+    ["mano","La réservation se fait en payant l'apport : 20 % du prix du terrain."],
     ["alza","Le solde est réglé en "+(d.planN||"—")+" mensualités de "+(d.planP?Math.round(d.planP*100):"—")+" % du solde, de janvier 2027 à novembre 2028."],
     ["escritura","Une dernière échéance en décembre 2028. Sans intérêts."]],
   precNota:"Prix en pesos colombiens, sous réserve de disponibilité et de modification. Le prix exact de chaque terrain figure sur sa fiche, dans le plan.",

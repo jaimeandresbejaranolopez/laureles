@@ -32,7 +32,7 @@ const COMPARADOR = window.COMPARADOR = (()=>{
   /* ------------------------- el plan estipulado ------------------------- */
   function estipulado(L, e, firma){
     const v = precio(L, e), pp = planPago(v, e), pagos = [];
-    const sep = Math.min(SEPARACION, pp.inicial);
+    const sep = pp.inicial;   /* 15/11/2026: se separa con la cuota inicial completa */
     pagos.push({m:firma, v:sep});
     const lim = (e===3) ? "2027-01" : LIM_INI;   /* E3: contado hasta el 30-ene-2027 */
     const mIni = firma > lim ? firma : lim;
@@ -77,7 +77,7 @@ const COMPARADOR = window.COMPARADOR = (()=>{
       obs.push("A diciembre de 2026 la etapa pide "+cop(a.dic26)+" ("+pctTxt(a.dic26/E.v)+"); la propuesta lleva "+cop(b.dic26)+": faltan "+cop(a.dic26-b.dic26)+".");
     else obs.push("Cumple lo que la etapa pide a diciembre de 2026 ("+cop(a.dic26)+").");
     if(b.especie26>0) obs.push("De lo pagado en 2026, "+cop(b.especie26)+" es en especie (vehículo, inmueble u otro): su valor hay que confirmarlo con un avalúo.");
-    if(b.firma < Math.min(SEPARACION,E.v)-0.5) obs.push("A la firma entran "+cop(b.firma)+"; la separación es de "+cop(SEPARACION)+".");
+    { const sepE=planPago(E.v,st.etapa).inicial; if(b.firma < sepE-0.5) obs.push("A la firma entran "+cop(b.firma)+"; la separación es la cuota inicial completa: "+cop(sepE)+"."); }
     if(b.tarde>0) obs.push(cop(b.tarde)+" quedan después de diciembre de 2028, más allá del plan del proyecto.");
     if(P.some(p=>p.t==="cdt")) obs.push("Hay pagos con CDT: verificar entidad, titular, monto, vencimiento y cómo queda respaldado el pago.");
     const cumple = b.dic26>=a.dic26-0.5 && b.total>=E.v-0.5 && b.tarde===0;
@@ -161,7 +161,7 @@ const COMPARADOR = window.COMPARADOR = (()=>{
   function abrir(n){
     if(!ROL.esVentas()){ avisar("El comparador es sólo para administradores."); return; }
     st = leer(n) || {lote:n, etapa:4, firma:hoy(), cliente:"", precioCliente:"",
-                     filas:[{c:"A la firma",t:"dinero",v:SEPARACION,m:hoy()}], cuotas:[]}; if(![3,4].includes(st.etapa)) st.etapa=4;
+                     filas:[{c:"A la firma",t:"dinero",v:(()=>{ try{ const f=LOTES.features.find(x=>x.properties.lote===n); return Math.round(planPago(precio(f.properties,4),4).inicial); }catch(e){ return SEPARACION; } })(),m:hoy()}], cuotas:[]}; if(![3,4].includes(st.etapa)) st.etapa=4;
     st.lote=n;
     document.getElementById("hojaTit").textContent = "Lote "+n+" · Comparar propuesta de pago";
     document.getElementById("hojaPie").innerHTML =

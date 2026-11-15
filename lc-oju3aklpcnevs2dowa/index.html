@@ -30,13 +30,13 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20261113a">
+<link rel="stylesheet" href="maplibre-gl.css?v=20261115a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20261113a">
-<link rel="stylesheet" href="portada.css?v=20261113a">
-<link rel="stylesheet" href="analisis.css?v=20261113a">
+<link rel="stylesheet" href="armazon.css?v=20261115a">
+<link rel="stylesheet" href="portada.css?v=20261115a">
+<link rel="stylesheet" href="analisis.css?v=20261115a">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -910,7 +910,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20261113a"></script>
+<script src="maplibre-gl.js?v=20261115a"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -932,7 +932,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20261113a"></script>
+<script src="lotes.js?v=20261115a"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -977,8 +977,8 @@ window.abrirWhatsApp = abrirWhatsApp;
 function leer(k, d){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } }
 function guardar(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 
-/* Plan de pagos: la inicial se paga dentro de 2026 —para separar entran
-   $50.000.000— y el saldo se reparte de enero de 2027 a diciembre de 2028, que
+/* Plan de pagos (15/11/2026): se separa pagando la cuota inicial completa
+   —el 20 % del precio— y el saldo se reparte de enero de 2027 a diciembre de 2028, que
    son 24 meses: 23 cuotas del 3 % del saldo y una última que absorbe lo que
    quede, y por eso es la más alta. E1 es de contado. */
 const SEPARACION = 50000000;
@@ -2405,10 +2405,10 @@ function pintarFicha(n){
         'Separa con '+cop(SEPARACION)+' y paga el saldo de '+cop(v-SEPARACION)+' hasta '+FECHA_CONTADO+'.'+
         '<div class="pieplan"><b>Escritura del 100 % de la tierra, no proindiviso.</b> Entrega final del urbanismo: diciembre de 2028.</div></div>';
       return '<div class="plan">'+
-        '<div class="fila"><span>Inicial ('+Math.round(pp.frac*100)+' %) en 2026</span><b>'+cop(pp.inicial)+'</b></div>'+
+        '<div class="fila"><span>Separación · cuota inicial ('+Math.round(pp.frac*100)+' %)</span><b>'+cop(pp.inicial)+'</b></div>'+
         '<div class="fila"><span>'+pp.n+' cuotas · ene 2027 a nov 2028</span><b>'+cop(pp.cuota)+'</b></div>'+
         '<div class="fila"><span>Cuota final · dic 2028</span><b>'+cop(pp.ultima)+'</b></div>'+
-        '<div class="pieplan">Separa con '+cop(SEPARACION)+'. Sin intereses.</div>'+
+        '<div class="pieplan">Se separa pagando la cuota inicial. Sin intereses.</div>'+
         '<div class="pieplan"><b>Escritura del 100 % de la tierra, no proindiviso.</b> Entrega final del urbanismo: diciembre de 2028.</div>'+
       '</div>'; })()))+
     '<table class="tabla">'+
@@ -2543,7 +2543,7 @@ function whatsapp(p,v,et){
     (ajusteLote(p.lote,S.etapa) ? "• Incluye un valor adicional del lote de "+cop(ajusteLote(p.lote,S.etapa))+"\n" : "")+
     (()=>{ const pp=planPago(v,S.etapa);
       return pp.contado ? "• De contado: "+cop(SEPARACION)+" al separar y el saldo hasta "+FECHA_CONTADO+"\n"
-        : "• Inicial "+Math.round(pp.frac*100)+"% en 2026: "+cop(pp.inicial)+"\n"+
+        : "• Separación (cuota inicial del "+Math.round(pp.frac*100)+" %): "+cop(pp.inicial)+"\n"+
           "• "+pp.n+" cuotas de "+cop(pp.cuota)+" (ene 2027 – nov 2028)\n"+
           "• Cuota final dic 2028: "+cop(pp.ultima)+"\n"; })()+"\n"+
     "• Escrituración del 100 % de la tierra a nombre del comprador (no es proindiviso)\n"+
@@ -3460,29 +3460,29 @@ function compartirLote(p){
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/aerea_cenital.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/aerea_hero.jpg","praderas":"medios/aerea_lotes.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png","vida_perfil_vial":"medios/vida_perfil_vial.jpg","vida_ciclorruta":"medios/vida_ciclorruta.jpg","vida_infantil":"medios/vida_infantil.jpg","vida_gimnasio":"medios/vida_gimnasio.jpg","vida_padel":"medios/vida_padel.jpg","aerea_hero":"medios/aerea_hero.jpg","aerea_predio":"medios/aerea_predio.jpg","aerea_cenital":"medios/aerea_cenital.jpg","aerea_anillo":"medios/aerea_anillo.jpg","aerea_canada":"medios/aerea_canada.jpg","aerea_samanes":"medios/aerea_samanes.jpg","aerea_via_pradera":"medios/aerea_via_pradera.jpg","aerea_via_samanes":"medios/aerea_via_samanes.jpg","aerea_via_cordillera":"medios/aerea_via_cordillera.jpg","aerea_lotes":"medios/aerea_lotes.jpg","aerea_sector_alto":"medios/aerea_sector_alto.jpg","aerea_acceso":"medios/aerea_acceso.jpg"};</script>
-<script src="datos-analisis.js?v=20261113a"></script>
-<script src="datos-terreno.js?v=20261113a"></script>
-<script src="datos-logo.js?v=20261113a"></script>
-<script src="adaptador.js?v=20261113a"></script>
-<script src="analisis.js?v=20261113a"></script>
-<script src="datos-via.js?v=20261113a"></script>
-<script src="datos-entrada.js?v=20261113a"></script>
-<script src="r3d.js?v=20261113a"></script>
-<script src="datos-arboles.js?v=20261113a"></script>
-<script src="paisaje.js?v=20261113a"></script>
-<script src="recorrido.js?v=20261113a"></script>
-<script src="maqueta.js?v=20261113a"></script>
-<script src="visor360.js?v=20261113a"></script>
-<script src="vuelo.js?v=20261113a"></script>
-<script src="sitios-iconos.js?v=20261113a"></script>
-<script src="armazon.js?v=20261113a"></script>
-<script src="acceso.js?v=20261113a"></script>
-<script src="portada.js?v=20261113a"></script>
-<script src="ia.js?v=20261113a"></script>
-<script src="panel.js?v=20261113a"></script>
-<script src="gerencia.js?v=20261113a"></script>
-<script src="comparador.js?v=20261113a"></script>
-<script src="ayuda.js?v=20261113a"></script>
+<script src="datos-analisis.js?v=20261115a"></script>
+<script src="datos-terreno.js?v=20261115a"></script>
+<script src="datos-logo.js?v=20261115a"></script>
+<script src="adaptador.js?v=20261115a"></script>
+<script src="analisis.js?v=20261115a"></script>
+<script src="datos-via.js?v=20261115a"></script>
+<script src="datos-entrada.js?v=20261115a"></script>
+<script src="r3d.js?v=20261115a"></script>
+<script src="datos-arboles.js?v=20261115a"></script>
+<script src="paisaje.js?v=20261115a"></script>
+<script src="recorrido.js?v=20261115a"></script>
+<script src="maqueta.js?v=20261115a"></script>
+<script src="visor360.js?v=20261115a"></script>
+<script src="vuelo.js?v=20261115a"></script>
+<script src="sitios-iconos.js?v=20261115a"></script>
+<script src="armazon.js?v=20261115a"></script>
+<script src="acceso.js?v=20261115a"></script>
+<script src="portada.js?v=20261115a"></script>
+<script src="ia.js?v=20261115a"></script>
+<script src="panel.js?v=20261115a"></script>
+<script src="gerencia.js?v=20261115a"></script>
+<script src="comparador.js?v=20261115a"></script>
+<script src="ayuda.js?v=20261115a"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

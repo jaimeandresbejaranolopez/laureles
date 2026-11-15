@@ -798,13 +798,13 @@ function planPago(L, e){
   const saldo = v - inicial;
   if(saldo <= 1){
     return {v:v, contado:true, inicial:inicial, saldo:0,
-            separacion:Math.min(SEPARACION, inicial)};
+            separacion:inicial /* 15/11/2026: se separa con la cuota inicial completa */};
   }
   const cuota = saldo * PLAN_PCT;
   const ultima = saldo - cuota * PLAN_N;
   return {v:v, contado:false, inicial:inicial, saldo:saldo, frac:frac,
           cuota:cuota, ultima:ultima, n:PLAN_N,
-          separacion:Math.min(SEPARACION, inicial)};
+          separacion:inicial /* 15/11/2026: se separa con la cuota inicial completa */};
 }
 
 
@@ -4845,10 +4845,8 @@ function hojaCuotasPDF(n,L,V){
     col(fuerte?V.forest:V.ink).texto(x,y+15,v,13,"F2");
   };
   bloque(0,T("Precio del lote"),fmtCOP(pp.v),1);
-  bloque(1,TT("Separación","Reservation deposit","Acompte de réservation"),fmtCOP(pp.separacion));
-  bloque(2,TT("Cuota inicial en 2026 · "+Math.round(pp.frac*100)+" %",
-              "Down payment in 2026 · "+Math.round(pp.frac*100)+"%",
-              "Apport en 2026 · "+Math.round(pp.frac*100)+" %"), fmtCOP(pp.inicial));
+  bloque(1,TT("Separación · cuota inicial "+Math.round(pp.frac*100)+" %","Reservation · down payment "+Math.round(pp.frac*100)+"%","Réservation · apport "+Math.round(pp.frac*100)+" %"),fmtCOP(pp.separacion));
+  bloque(2,TT("Cuota mensual · "+PLAN_N+" cuotas","Monthly instalment · "+PLAN_N,"Mensualité · "+PLAN_N), fmtCOP(pp.cuota||0));
   bloque(3,TT("Saldo a financiar","Balance financed","Solde à financer"),fmtCOP(pp.saldo));
   y+=30; col(V.line,1).grosor(.5).linea(M,y,595.28-M,y); y+=20;
 
@@ -4857,11 +4855,11 @@ function hojaCuotasPDF(n,L,V){
     7.6,"F2",1.1); y+=15;
   const resto = pp.inicial - pp.separacion;
   const dosFilas=[
-    [TT("Al separar el lote","On reserving the lot","À la réservation"), fmtCOP(pp.separacion)],
+    [TT("Al separar el lote: la cuota inicial completa","On reserving the lot: the full down payment","À la réservation : l'apport complet"), fmtCOP(pp.separacion)],
     [TT("Resto de la cuota inicial, hasta diciembre de 2026",
         "Rest of the down payment, up to December 2026",
         "Reste de l'apport, jusqu'en décembre 2026"), fmtCOP(resto)]
-  ];
+  ].filter((f,i)=>i===0 || resto>0.5);
   dosFilas.forEach(([k,v])=>{
     col(V.ink).texto(M,y,k,8.6,"F1");
     col(V.ink).textoD(595.28-M,y,v,9.4,"F2");
@@ -4913,7 +4911,7 @@ function hojaCuotasPDF(n,L,V){
   col(V.gold).texto(M,y,TT("LA CUENTA CIERRA","THE FIGURES ADD UP","LE COMPTE EST BON"),7.6,"F2",1.1);
   y+=15;
   const cierre=[
-    [TT("Cuota inicial en 2026","Down payment in 2026","Apport en 2026"), fmtCOP(pp.inicial)],
+    [TT("Separación (cuota inicial)","Reservation (down payment)","Réservation (apport)"), fmtCOP(pp.inicial)],
     [TT("23 cuotas de "+fmtCOP(pp.cuota), "23 instalments of "+fmtCOP(pp.cuota),
         "23 mensualités de "+fmtCOP(pp.cuota)), fmtCOP(pp.cuota*pp.n)],
     [TT("Cuota final de "+mesDe(pp.n), "Final instalment, "+mesDe(pp.n),
@@ -4968,14 +4966,11 @@ function hojaCuotasPDF(n,L,V){
   y=baseA+24;
   col(V.muted);
   y=envolver(P, TT(
-    "2026 es la cuota inicial completa —"+fmtCOP(pp.separacion)+" al separar y el resto antes de "+
-      "diciembre—. 2027 son doce cuotas iguales. 2028 son once iguales más la final de "+
+    "La cuota inicial completa —"+fmtCOP(pp.separacion)+"— se paga al separar. 2027 son doce cuotas iguales. 2028 son once iguales más la final de "+
       fmtCOP(pp.ultima)+".",
-    "2026 is the full down payment — "+fmtCOP(pp.separacion)+" on reserving and the rest before "+
-      "December. 2027 is twelve equal instalments. 2028 is eleven equal ones plus the final "+
+    "The full down payment — "+fmtCOP(pp.separacion)+" — is paid on reserving. 2027 is twelve equal instalments. 2028 is eleven equal ones plus the final "+
       fmtCOP(pp.ultima)+".",
-    "2026, c'est l'apport complet — "+fmtCOP(pp.separacion)+" à la réservation et le reste avant "+
-      "décembre. 2027, douze mensualités égales. 2028, onze égales plus la dernière de "+
+    "L'apport complet — "+fmtCOP(pp.separacion)+" — se paie à la réservation. 2027, douze mensualités égales. 2028, onze égales plus la dernière de "+
       fmtCOP(pp.ultima)+"."),
     M, y, 595.28-2*M, 7, 9.4);
 
@@ -5060,7 +5055,7 @@ function hojaComercialPDF(n,L,V){
        "23 instalments from January 2027 and a final one in December 2028"),7.6,"F2",1.1); y+=15;
   const pc=[M, M+150, M+268, M+392, 595.28-M];
   const cabP=[[esPub()?"":T("Etapa"),pc[0],0],
-              [TT("Inicial en 2026","Down payment in 2026"),pc[1],1],
+              [TT("Separación (inicial)","Reservation (down payment)","Réservation (apport)"),pc[1],1],
               [TT("Saldo a financiar","Balance financed"),pc[2],1],
               [TT("Cuota mensual","Monthly instalment"),pc[3],1],
               [TT("Cuota final","Final instalment"),pc[4],1]];
@@ -5088,16 +5083,13 @@ function hojaComercialPDF(n,L,V){
   });
   col(V.muted); y-=4;
   y=envolver(P, TT(
-    "Para separar entran "+fmtCOP(SEPARACION)+" y el resto de la cuota inicial se completa hasta "+
-      "diciembre de 2026. El saldo se reparte en 24 meses, de "+PLAN_DESDE+" a "+PLAN_HASTA+": "+
+    "Se separa pagando la cuota inicial completa, el 20 % del precio del lote. El saldo se reparte en 24 meses, de "+PLAN_DESDE+" a "+PLAN_HASTA+": "+
       "23 cuotas del 3 % del saldo y una última que absorbe lo que queda, que por eso es la más alta. "+
       "Sin intereses ni ajuste por inflación.",
-    "A "+fmtCOP(SEPARACION)+" deposit reserves the lot and the rest of the down payment is completed by "+
-      "December 2026. The balance is spread over 24 months, from January 2027 to December 2028: 23 "+
+    "The lot is reserved by paying the full down payment, 20% of the price. The balance is spread over 24 months, from January 2027 to December 2028: 23 "+
       "instalments of 3% of the balance and a final one absorbing the remainder, which is why it is the "+
       "largest. No interest, no inflation adjustment.",
-    "Un acompte de "+fmtCOP(SEPARACION)+" réserve le lot et le reste de l'apport se complète avant "+
-      "décembre 2026. Le solde s'étale sur 24 mois, de janvier 2027 à décembre 2028 : 23 mensualités de "+
+    "Le lot se réserve en payant l'apport complet, 20 % du prix. Le solde s'étale sur 24 mois, de janvier 2027 à décembre 2028 : 23 mensualités de "+
       "3 % du solde et une dernière qui absorbe le reste, la plus élevée. Sans intérêts ni indexation.")+
     " "+(esPub() ? TT("El calendario mes a mes va en la hoja siguiente.","The month-by-month schedule is on the next page.","Le calendrier mois par mois figure à la page suivante.") :
          TT("El calendario mes a mes de la etapa escogida va en la hoja siguiente.",
