@@ -30,13 +30,13 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-192.png">
 <!-- MapLibre GL JS 4.7.1 servido desde este mismo repositorio: si el CDN se cae, el mapa sigue -->
-<link rel="stylesheet" href="maplibre-gl.css?v=20261115a">
+<link rel="stylesheet" href="maplibre-gl.css?v=20261120a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,0..100&family=Manrope:wght@400;500;600;700&display=swap">
-<link rel="stylesheet" href="armazon.css?v=20261115a">
-<link rel="stylesheet" href="portada.css?v=20261115a">
-<link rel="stylesheet" href="analisis.css?v=20261115a">
+<link rel="stylesheet" href="armazon.css?v=20261120a">
+<link rel="stylesheet" href="portada.css?v=20261120a">
+<link rel="stylesheet" href="analisis.css?v=20261120a">
 <style>
 :root{
   --forest:#32402F; --forest-2:#4E6247; --gold:#9B7A48; --gold-2:#B8955C;
@@ -73,6 +73,12 @@ header .tit{font-family:var(--serif);font-size:17px;font-weight:600;letter-spaci
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 header .sub{font-size:10.5px;color:var(--muted);letter-spacing:.10em;text-transform:uppercase;white-space:nowrap}
 header .sp{flex:1}
+/* comercializa: Century 21 DAB. En escritorio va pegado a la barra de fondos
+   del mapa (en la cabecera no cabe: el menú ya ocupa dos filas). En el celular
+   la cabecera es una cinta y ahí sí va al lado del logo de Laureles. */
+header #logoC21{display:none}
+.fondos .c21{display:flex;align-items:center;margin-left:6px;padding:0 8px 0 12px;border-left:1px solid var(--line)}
+.fondos .c21 img{height:18px;width:auto;display:block;opacity:.9}
 .hbtn{border:1px solid var(--line);background:var(--surface);border-radius:var(--r-sm);
   padding:7px 12px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink-2);white-space:nowrap}
 .hbtn:hover{border-color:var(--gold);color:var(--gold)}
@@ -313,6 +319,8 @@ main.en3d .fondos, .stage.en3d .fondos{bottom:70px}
   header>*{order:2}
   header #logo{order:0;position:sticky;left:0;background:var(--surface);
     padding-right:6px;z-index:2}
+  header #logoC21{display:block;order:0;height:19px;width:auto;flex:none;opacity:.88;padding-left:9px;border-left:1px solid var(--line)}
+  .fondos .c21{display:none}
   header .hbtn{order:1}
   header #nav{order:5}
   header #idioma{order:4}
@@ -592,6 +600,7 @@ body.baseClara .rotCota{color:#6B5C38;
 <div class="app">
   <header>
     <img id="logo" src="medios/logo.png" alt="Laureles Campestre">
+    <img id="logoC21" src="medios/logo_c21dab.png" alt="Comercializa Century 21 DAB" title="Comercializa Century 21 DAB" width="103" height="24">
     <nav id="nav">
       <button data-m="proyecto">El proyecto</button>
       <button class="on" data-m="plano">Plano</button>
@@ -705,6 +714,7 @@ body.baseClara .rotCota{color:#6B5C38;
       <button data-f="osm">Mapa</button>
       <button data-f="sat" class="on">Satélite</button>
       <button data-f="oscuro">Oscuro</button>
+      <span class="c21" title="Comercializa Century 21 DAB"><img src="medios/logo_c21dab.png" alt="Comercializa Century 21 DAB" width="78" height="18"></span>
     </div>
     <div class="aviso" id="aviso"></div>
   </main>
@@ -883,6 +893,7 @@ body.baseClara .rotCota{color:#6B5C38;
         <button class="ptGhost" data-pt="wa"><svg class="ptIc " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 11.5a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1.4-4.4A8.5 8.5 0 1 1 20.5 11.5z"></path><path d="M8.5 10.5h7M8.5 13.5h4.5"></path></svg>Escribir por WhatsApp</button>
         <button class="ptGhost" data-pt="visita"><svg class="ptIc " viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path><path d="m9 15 2 2 4-4"></path></svg>Agendar visita</button>
       </div>
+      <div class="ptComercializa"><span>Comercializa</span><img src="medios/logo_c21dab_claro.png" alt="Century 21 DAB" width="189" height="44" loading="lazy"></div>
     </div>
     <p class="ptFicha"><a href="proyecto.html">Ficha completa del proyecto</a> · <a href="politica-datos.html">Política de datos</a></p>
     <details class="ptFuentes"><summary>Fuentes</summary><ul><li><a href="https://www.larepublica.co/empresas/armenia-cali-y-pereira-las-ciudades-en-las-que-mas-se-valoriza-la-vivienda-nueva-4380920" target="_blank" rel="noopener">Metrocuadrado en La República, 29/04/2026: Armenia, Cali y Pereira, las ciudades en las que más se valoriza la vivienda nueva</a></li><li><a href="https://observatorioarmenia.org/site/observatorio-inmobiliario-indice-de-precios-de-la-vivienda-nueva-ipvn-segundo-trimestre-de-2025/" target="_blank" rel="noopener">Observatorio Inmobiliario de Armenia: IPVN, II trimestre de 2025</a></li><li><a href="https://ciudadregion.com/regiones/quindio/conpes-aeropuerto-el-eden-armenia-inversion-pista-terminal" target="_blank" rel="noopener">Ciudad Región, 31/07/2026: CONPES para el aeropuerto El Edén por $312.363 millones</a></li><li><a href="https://camaraarmenia.org.co/el-eden-lo-que-representa-el-conpes/" target="_blank" rel="noopener">Cámara de Comercio de Armenia y del Quindío: El Edén, lo que representa el Conpes</a></li><li><a href="https://es.wikipedia.org/wiki/Aeropuerto_Internacional_El_Ed%C3%A9n" target="_blank" rel="noopener">Wikipedia: Aeropuerto Internacional El Edén</a></li><li><a href="https://www.fincaraiz.com.co/blog/el-caimo/" target="_blank" rel="noopener">Fincaraíz: El Caimo</a></li></ul></details>
@@ -910,7 +921,7 @@ body.baseClara .rotCota{color:#6B5C38;
   </div>
 </div>
 
-<script src="maplibre-gl.js?v=20261115a"></script>
+<script src="maplibre-gl.js?v=20261120a"></script>
 <script>
 /* Aviso franco si algo no carga: nunca una pantalla en blanco sin explicación */
 window.FALLO = function(t, d){
@@ -932,7 +943,7 @@ window.addEventListener("error", function(ev){
   }
 }, true);
 </script>
-<script src="lotes.js?v=20261115a"></script>
+<script src="lotes.js?v=20261120a"></script>
 <script>
 /* =============================================================================
    Laureles Campestre — mapa de ventas
@@ -3460,29 +3471,29 @@ function compartirLote(p){
 <!-- ------------- análisis del lote: mismo motor del plano vivo ------------- -->
 <div class="scrim" id="anlModal" hidden><div class="sheet ancha" id="anlBody"></div></div>
 <script>window.MEDIOS={"bosque":"medios/bosque.jpg","canada":"medios/canada.jpg","casa_aerea":"medios/aerea_cenital.jpg","casa_render":"medios/casa_render_316.jpg","casa_volumen":"medios/casa_volumen.jpg","casa_cerca":"medios/casa_cerca.jpg","casa_galpones":"medios/casa_galpones.jpg","clip":"medios/clip.mp4","cordillera":"medios/cordillera.jpg","guayacan":"medios/guayacan.jpg","hero":"medios/aerea_hero.jpg","praderas":"medios/aerea_lotes.jpg","intro":"medios/intro.mp4","logo":"medios/logo.png","vida_perfil_vial":"medios/vida_perfil_vial.jpg","vida_ciclorruta":"medios/vida_ciclorruta.jpg","vida_infantil":"medios/vida_infantil.jpg","vida_gimnasio":"medios/vida_gimnasio.jpg","vida_padel":"medios/vida_padel.jpg","aerea_hero":"medios/aerea_hero.jpg","aerea_predio":"medios/aerea_predio.jpg","aerea_cenital":"medios/aerea_cenital.jpg","aerea_anillo":"medios/aerea_anillo.jpg","aerea_canada":"medios/aerea_canada.jpg","aerea_samanes":"medios/aerea_samanes.jpg","aerea_via_pradera":"medios/aerea_via_pradera.jpg","aerea_via_samanes":"medios/aerea_via_samanes.jpg","aerea_via_cordillera":"medios/aerea_via_cordillera.jpg","aerea_lotes":"medios/aerea_lotes.jpg","aerea_sector_alto":"medios/aerea_sector_alto.jpg","aerea_acceso":"medios/aerea_acceso.jpg"};</script>
-<script src="datos-analisis.js?v=20261115a"></script>
-<script src="datos-terreno.js?v=20261115a"></script>
-<script src="datos-logo.js?v=20261115a"></script>
-<script src="adaptador.js?v=20261115a"></script>
-<script src="analisis.js?v=20261115a"></script>
-<script src="datos-via.js?v=20261115a"></script>
-<script src="datos-entrada.js?v=20261115a"></script>
-<script src="r3d.js?v=20261115a"></script>
-<script src="datos-arboles.js?v=20261115a"></script>
-<script src="paisaje.js?v=20261115a"></script>
-<script src="recorrido.js?v=20261115a"></script>
-<script src="maqueta.js?v=20261115a"></script>
-<script src="visor360.js?v=20261115a"></script>
-<script src="vuelo.js?v=20261115a"></script>
-<script src="sitios-iconos.js?v=20261115a"></script>
-<script src="armazon.js?v=20261115a"></script>
-<script src="acceso.js?v=20261115a"></script>
-<script src="portada.js?v=20261115a"></script>
-<script src="ia.js?v=20261115a"></script>
-<script src="panel.js?v=20261115a"></script>
-<script src="gerencia.js?v=20261115a"></script>
-<script src="comparador.js?v=20261115a"></script>
-<script src="ayuda.js?v=20261115a"></script>
+<script src="datos-analisis.js?v=20261120a"></script>
+<script src="datos-terreno.js?v=20261120a"></script>
+<script src="datos-logo.js?v=20261120a"></script>
+<script src="adaptador.js?v=20261120a"></script>
+<script src="analisis.js?v=20261120a"></script>
+<script src="datos-via.js?v=20261120a"></script>
+<script src="datos-entrada.js?v=20261120a"></script>
+<script src="r3d.js?v=20261120a"></script>
+<script src="datos-arboles.js?v=20261120a"></script>
+<script src="paisaje.js?v=20261120a"></script>
+<script src="recorrido.js?v=20261120a"></script>
+<script src="maqueta.js?v=20261120a"></script>
+<script src="visor360.js?v=20261120a"></script>
+<script src="vuelo.js?v=20261120a"></script>
+<script src="sitios-iconos.js?v=20261120a"></script>
+<script src="armazon.js?v=20261120a"></script>
+<script src="acceso.js?v=20261120a"></script>
+<script src="portada.js?v=20261120a"></script>
+<script src="ia.js?v=20261120a"></script>
+<script src="panel.js?v=20261120a"></script>
+<script src="gerencia.js?v=20261120a"></script>
+<script src="comparador.js?v=20261120a"></script>
+<script src="ayuda.js?v=20261120a"></script>
 <script>
 (function(){
   const m=document.getElementById("anlModal");

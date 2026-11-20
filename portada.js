@@ -448,6 +448,7 @@ function html(){
         <button class="ptGhost" data-pt="wa">${ic("chat")}${t.bWa}</button>
         <button class="ptGhost" data-pt="visita">${ic("calendario")}${t.bVis}</button>
       </div>
+      <div class="ptComercializa"><span>${l==="en"?"Marketed by":(l==="fr"?"Commercialisé par":"Comercializa")}</span><img src="medios/logo_c21dab_claro.png" alt="Century 21 DAB" width="189" height="44" loading="lazy"></div>
     </div>
     <p class="ptFicha"><a href="proyecto.html">${l==="en"?"Project fact sheet":(l==="fr"?"Fiche du projet":"Ficha completa del proyecto")}</a> · <a href="politica-datos.html">${l==="en"?"Privacy":(l==="fr"?"Confidentialité":"Política de datos")}</a></p>
     <details class="ptFuentes"><summary>${t.fuentes}</summary><ul>${FUENTES.map(([a,u])=>`<li><a href="${u}" target="_blank" rel="noopener">${a}</a></li>`).join("")}</ul></details>
